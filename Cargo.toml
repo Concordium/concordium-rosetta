@@ -1,0 +1,24 @@
+[package]
+name = "concordium-rosetta"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.concordium-rust-sdk]
+path = "./concordium-rust-sdk"
+version = "*"
+
+[dependencies.rosetta]
+path = "./rosetta"
+version = "*"
+
+[dependencies]
+anyhow = "1"
+clap = "2.33"
+futures = "0.3"
+structopt = "0.3"
+tokio = "1.8"
+tonic = "0.5"
+prometheus = "0.13.0"
+warp = "0.3"

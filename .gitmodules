@@ -1,0 +1,6 @@
+[submodule "rosetta-specifications"]
+	path = rosetta-specifications
+	url = https://github.com/coinbase/rosetta-specifications
+[submodule "concordium-rust-sdk"]
+	path = concordium-rust-sdk
+	url = https://github.com/Concordium/concordium-rust-sdk

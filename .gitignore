@@ -2,3 +2,4 @@
 !.*ignore
 /target
 /node_modules
+!/rosetta/**

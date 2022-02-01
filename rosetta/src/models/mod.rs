@@ -36,8 +36,6 @@ pub mod call_request;
 pub use self::call_request::CallRequest;
 pub mod call_response;
 pub use self::call_response::CallResponse;
-pub mod case;
-pub use self::case::Case;
 pub mod coin;
 pub use self::coin::Coin;
 pub mod coin_action;

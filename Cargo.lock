@@ -2052,7 +2052,7 @@ dependencies = [
 
 [[package]]
 name = "rosetta"
-version = "1.4.11"
+version = "1.4.10"
 dependencies = [
  "reqwest",
  "serde",

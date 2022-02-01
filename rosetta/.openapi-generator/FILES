@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 .travis.yml
 Cargo.toml
 README.md
@@ -25,7 +24,6 @@ docs/BlockTransactionResponse.md
 docs/CallApi.md
 docs/CallRequest.md
 docs/CallResponse.md
-docs/Case.md
 docs/Coin.md
 docs/CoinAction.md
 docs/CoinChange.md
@@ -116,7 +114,6 @@ src/models/block_transaction_request.rs
 src/models/block_transaction_response.rs
 src/models/call_request.rs
 src/models/call_response.rs
-src/models/case.rs
 src/models/coin.rs
 src/models/coin_action.rs
 src/models/coin_change.rs

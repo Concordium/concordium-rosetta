@@ -6,7 +6,7 @@ use std::convert::Infallible;
 use structopt::StructOpt;
 use warp::Filter;
 
-const ROSETTA_VERSION: &str = "1.4.11";
+const ROSETTA_VERSION: &str = "1.4.10";
 const NODE_VERSION: &str = "3.0.1";
 const SERVER_VERSION: &str = "0.1.0";
 

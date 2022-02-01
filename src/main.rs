@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use clap::AppSettings;
 use concordium_rust_sdk::endpoints::Client;
 use rosetta::models::*;
+use std::convert::Infallible;
 use structopt::StructOpt;
-use warp::http::StatusCode;
 use warp::Filter;
 
 #[derive(StructOpt)]
@@ -33,6 +33,34 @@ struct App {
     grpc_token: String,
 }
 
+async fn list_networks(_: MetadataRequest) -> Result<impl warp::Reply, Infallible> {
+    Ok(warp::reply::json(&NetworkListResponse {
+        network_identifiers: vec![NetworkIdentifier {
+            blockchain: "concordium".to_string(),
+            network: "mainnet".to_string(),
+            sub_network_identifier: None,
+        }],
+    }))
+}
+
+async fn network_options(_: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
+    Ok(warp::reply::json(&NetworkOptionsResponse {
+        version: Box::new(Default::default()),
+        allow: Box::new(Default::default()),
+    }))
+}
+
+async fn network_status(_: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
+    Ok(warp::reply::json(&NetworkStatusResponse {
+        current_block_identifier: Box::new(Default::default()),
+        current_block_timestamp: 0,
+        genesis_block_identifier: Box::new(Default::default()),
+        oldest_block_identifier: None,
+        sync_status: None,
+        peers: vec![],
+    }))
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let app = {
@@ -51,28 +79,24 @@ async fn main() -> Result<()> {
         .await
         .context("cannot connect to node")?;
 
-    let network_list_route = warp::path("list").map(|| {
-        warp::reply::json(&NetworkListResponse {
-            network_identifiers: vec![NetworkIdentifier {
-                blockchain: "concordium".to_string(),
-                network: "mainnet".to_string(),
-                sub_network_identifier: None,
-            }],
-        })
-    });
-    let network_options_route =
-        warp::path("options").map(|| warp::reply::with_status("<options result>", StatusCode::OK));
-    let network_status_route =
-        warp::path("status").map(|| warp::reply::with_status("<status result>", StatusCode::OK));
-    let network_route = warp::path("network").and(
-        network_list_route
-            .or(network_options_route)
-            .or(network_status_route),
-    );
-
     println!("Listening on port {}.", app.port);
-    warp::serve(warp::post().and(network_route))
-        .run(([0, 0, 0, 0], app.port))
-        .await;
+
+    let network_list_router = warp::path("list")
+        .and(warp::body::json())
+        .and_then(list_networks);
+    let network_options_router = warp::path("options")
+        .and(warp::body::json())
+        .and_then(network_options);
+    let network_status_router = warp::path("status")
+        .and(warp::body::json())
+        .and_then(network_status);
+    let network_route = warp::path("network").and(
+        network_list_router
+            .or(network_options_router)
+            .or(network_status_router),
+    );
+    let route = warp::post().and(network_route);
+
+    warp::serve(route).run(([0, 0, 0, 0], app.port)).await;
     Ok(())
 }

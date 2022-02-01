@@ -6,6 +6,10 @@ use std::convert::Infallible;
 use structopt::StructOpt;
 use warp::Filter;
 
+const ROSETTA_VERSION: &str = "1.4.11";
+const NODE_VERSION: &str = "3.0.1";
+const SERVER_VERSION: &str = "0.1.0";
+
 #[derive(StructOpt)]
 struct App {
     #[structopt(long = "port", help = "Listen port", default_value = "8080")]
@@ -43,22 +47,39 @@ async fn list_networks(_: MetadataRequest) -> Result<impl warp::Reply, Infallibl
     }))
 }
 
-async fn network_options(_: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
+async fn network_options(_: Client, _: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
     Ok(warp::reply::json(&NetworkOptionsResponse {
-        version: Box::new(Default::default()),
+        version: Box::new(Version{
+            rosetta_version: ROSETTA_VERSION.to_string(),
+            node_version: NODE_VERSION.to_string(),
+            middleware_version: Some(SERVER_VERSION.to_string()),
+            metadata: None
+        }),
         allow: Box::new(Default::default()),
     }))
 }
 
-async fn network_status(_: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
+// TODO How to change Client to mutable ref?
+async fn network_status(client: Client, _: NetworkRequest) -> Result<impl warp::Reply, Infallible> {
+    let result = client.clone().get_consensus_status().await.unwrap();
     Ok(warp::reply::json(&NetworkStatusResponse {
-        current_block_identifier: Box::new(Default::default()),
-        current_block_timestamp: 0,
-        genesis_block_identifier: Box::new(Default::default()),
+        current_block_identifier: Box::new(BlockIdentifier{
+            index: result.last_finalized_block_height.height as i64,
+            hash: result.last_finalized_block.to_string(),
+        }),
+        current_block_timestamp: result.last_finalized_time.unwrap().timestamp(),
+        genesis_block_identifier: Box::new(BlockIdentifier{
+            index: 0,
+            hash: result.genesis_block.to_string()
+        }),
         oldest_block_identifier: None,
         sync_status: None,
         peers: vec![],
     }))
+}
+
+fn with_client(client: Client) -> impl Filter<Extract = (Client,), Error = Infallible> + Clone {
+    warp::any().map(move || client.clone())
 }
 
 #[tokio::main]
@@ -75,7 +96,7 @@ async fn main() -> Result<()> {
     ))
     .context("invalid host and/or port")?;
     // Client is not mutated, but client methods take self as a mutable reference to ensure mutual exclusion.
-    let _client = Client::connect(endpoint, app.grpc_token)
+    let client = Client::connect(endpoint, app.grpc_token)
         .await
         .context("cannot connect to node")?;
 
@@ -85,9 +106,11 @@ async fn main() -> Result<()> {
         .and(warp::body::json())
         .and_then(list_networks);
     let network_options_router = warp::path("options")
+        .and(with_client(client.clone()))
         .and(warp::body::json())
         .and_then(network_options);
     let network_status_router = warp::path("status")
+        .and(with_client(client.clone()))
         .and(warp::body::json())
         .and_then(network_status);
     let network_route = warp::path("network").and(

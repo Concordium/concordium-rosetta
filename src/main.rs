@@ -1,3 +1,4 @@
+mod domain;
 mod handler;
 mod route;
 mod version;
@@ -53,7 +54,7 @@ async fn main() -> Result<()> {
         .context("cannot connect to node")?;
 
     println!("Listening on port {}.", app.port);
-    warp::serve(route::routes(client))
+    warp::serve(route::root(client))
         .run(([0, 0, 0, 0], app.port))
         .await;
     Ok(())

@@ -350,6 +350,7 @@ dependencies = [
  "futures",
  "prometheus",
  "rosetta",
+ "serde",
  "structopt",
  "tokio",
  "tonic",

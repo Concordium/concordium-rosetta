@@ -1,11 +1,13 @@
-mod domain;
 mod handler;
 mod route;
+mod service;
 mod version;
 
+use crate::service::network::NetworkService;
 use anyhow::{Context, Result};
 use clap::AppSettings;
 use concordium_rust_sdk::endpoints::Client;
+use rosetta::models::NetworkIdentifier;
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
@@ -53,8 +55,17 @@ async fn main() -> Result<()> {
         .await
         .context("cannot connect to node")?;
 
+    let network_service = NetworkService::new(
+        NetworkIdentifier {
+            blockchain: "concordium".to_string(),
+            network: "mainnet".to_string(),
+            sub_network_identifier: None,
+        },
+        client,
+    );
+
     println!("Listening on port {}.", app.port);
-    warp::serve(route::root(client))
+    warp::serve(route::root(network_service))
         .run(([0, 0, 0, 0], app.port))
         .await;
     Ok(())

@@ -1,6 +1,5 @@
 use concordium_rust_sdk::endpoints::Client;
 use rosetta::models::*;
-use std::convert::Infallible;
 
 use crate::version::*;
 
@@ -15,7 +14,7 @@ impl NetworkService {
         NetworkService { identifier, client }
     }
 
-    pub async fn network_list(&self) -> anyhow::Result<NetworkListResponse, Infallible> {
+    pub async fn network_list(&self) -> anyhow::Result<NetworkListResponse> {
         Ok(NetworkListResponse {
             network_identifiers: vec![self.identifier.clone()],
         })
@@ -24,7 +23,7 @@ impl NetworkService {
     pub async fn network_options(
         &self,
         _: NetworkRequest,
-    ) -> anyhow::Result<NetworkOptionsResponse, Infallible> {
+    ) -> anyhow::Result<NetworkOptionsResponse> {
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
                 rosetta_version: ROSETTA_VERSION.to_string(),
@@ -36,10 +35,7 @@ impl NetworkService {
         })
     }
 
-    pub async fn network_status(
-        &self,
-        _: NetworkRequest,
-    ) -> anyhow::Result<NetworkStatusResponse, Infallible> {
+    pub async fn network_status(&self, _: NetworkRequest) -> anyhow::Result<NetworkStatusResponse> {
         let result = self.client.clone().get_consensus_status().await.unwrap();
         Ok(NetworkStatusResponse {
             current_block_identifier: Box::new(BlockIdentifier {

@@ -12,6 +12,7 @@ fn network_list(
         .and(with_network_service(network_service))
         .and(warp::body::json())
         .and_then(handler::network_list)
+        .recover(handler::handle_rejection)
 }
 
 fn network_options(

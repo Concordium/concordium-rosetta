@@ -1,9 +1,9 @@
 mod handler;
 mod route;
-mod service;
+mod api;
 mod version;
 
-use crate::service::network::NetworkService;
+use crate::api::network::NetworkApi;
 use anyhow::{Context, Result};
 use clap::AppSettings;
 use concordium_rust_sdk::endpoints::Client;
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
         .await
         .context("cannot connect to node")?;
 
-    let network_service = NetworkService::new(
+    let network_api = NetworkApi::new(
         NetworkIdentifier {
             blockchain: "concordium".to_string(),
             network: "mainnet".to_string(),
@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     );
 
     println!("Listening on port {}.", app.port);
-    warp::serve(route::root(network_service))
+    warp::serve(route::root(network_api))
         .run(([0, 0, 0, 0], app.port))
         .await;
     Ok(())

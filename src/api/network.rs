@@ -6,25 +6,25 @@ use thiserror::Error;
 use crate::version::*;
 
 #[derive(Error, Debug)]
-pub enum ServiceError {
+pub enum Error {
     #[error("unsupported network identifier provided")]
     UnsupportedNetworkIdentifier,
 }
 
-impl warp::reject::Reject for ServiceError {}
+impl warp::reject::Reject for Error {}
 
 #[derive(Clone)]
-pub struct NetworkService {
+pub struct NetworkApi {
     identifier: NetworkIdentifier,
     client: Client,
 }
 
-impl NetworkService {
+impl NetworkApi {
     pub fn new(identifier: NetworkIdentifier, client: Client) -> Self {
-        NetworkService { identifier, client }
+        NetworkApi { identifier, client }
     }
 
-    pub async fn network_list(&self) -> Result<NetworkListResponse, ServiceError> {
+    pub async fn network_list(&self) -> Result<NetworkListResponse, Error> {
         Ok(NetworkListResponse {
             network_identifiers: vec![self.identifier.clone()],
         })
@@ -33,9 +33,9 @@ impl NetworkService {
     pub async fn network_options(
         &self,
         req: NetworkRequest,
-    ) -> Result<NetworkOptionsResponse, ServiceError> {
+    ) -> Result<NetworkOptionsResponse, Error> {
         if req.network_identifier.deref() != &self.identifier {
-            return Err(ServiceError::UnsupportedNetworkIdentifier);
+            return Err(Error::UnsupportedNetworkIdentifier);
         }
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
@@ -51,9 +51,9 @@ impl NetworkService {
     pub async fn network_status(
         &self,
         req: NetworkRequest,
-    ) -> Result<NetworkStatusResponse, ServiceError> {
+    ) -> Result<NetworkStatusResponse, Error> {
         if req.network_identifier.deref() != &self.identifier {
-            return Err(ServiceError::UnsupportedNetworkIdentifier);
+            return Err(Error::UnsupportedNetworkIdentifier);
         }
         let consensus_status = self.client.clone().get_consensus_status().await.unwrap();
         Ok(NetworkStatusResponse {

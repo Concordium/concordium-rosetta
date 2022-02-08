@@ -5,13 +5,13 @@ use warp::http::StatusCode;
 use warp::reject::Reject;
 use warp::{reject, reply, Rejection, Reply};
 
-use crate::service::network::ServiceError::{self, UnsupportedNetworkIdentifier};
-use crate::NetworkService;
+use crate::api::network::Error;
+use crate::NetworkApi;
 
 pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(err) = rej.find::<ServiceError>() {
+    if let Some(err) = rej.find::<Error>() {
         match err {
-            UnsupportedNetworkIdentifier => Ok(HttpApiProblem::new(StatusCode::BAD_REQUEST)
+            Error::UnsupportedNetworkIdentifier => Ok(HttpApiProblem::new(StatusCode::BAD_REQUEST)
                 .title(err.to_string())
                 .to_hyper_response()),
         }
@@ -21,28 +21,28 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
 }
 
 pub async fn network_list(
-    network_service: NetworkService,
+    api: NetworkApi,
     _: MetadataRequest,
 ) -> Result<impl Reply, Rejection> {
-    to_json(network_service.network_list().await)
+    to_json(api.network_list().await)
 }
 
 pub async fn network_options(
-    network_service: NetworkService,
+    api: NetworkApi,
     req: NetworkRequest,
 ) -> Result<impl Reply, Rejection> {
-    to_json(network_service.network_options(req).await)
+    to_json(api.network_options(req).await)
 }
 
 pub async fn network_status(
-    network_service: NetworkService,
+    api: NetworkApi,
     req: NetworkRequest,
 ) -> Result<impl Reply, Rejection> {
-    to_json(network_service.network_status(req).await)
+    to_json(api.network_status(req).await)
 }
 
 // TODO Can lift this function to remove the need for explicitly define above functions?
-fn to_json<T: Serialize, E: Reject>(res: Result<T, E>) -> Result<impl Reply, Rejection> {
+fn to_json(res: Result<impl Serialize, impl Reject>) -> Result<impl Reply, Rejection> {
     match res {
         Ok(val) => Ok(reply::json(&val)),
         Err(err) => Err(reject::custom(err)),

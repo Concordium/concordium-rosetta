@@ -12,7 +12,6 @@ fn network_list(
         .and(with_network_service(network_service))
         .and(warp::body::json())
         .and_then(handler::network_list)
-        .recover(handler::handle_rejection)
 }
 
 fn network_options(
@@ -46,7 +45,9 @@ fn network(
 pub fn root(
     network_service: NetworkService,
 ) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
-    warp::post().and(network(network_service))
+    warp::post()
+        .and(network(network_service))
+        .recover(handler::handle_rejection)
 }
 
 fn with_network_service(

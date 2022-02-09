@@ -348,10 +348,10 @@ dependencies = [
  "clap",
  "concordium-rust-sdk",
  "futures",
- "http-api-problem",
  "prometheus",
  "rosetta",
  "serde",
+ "serde_json",
  "structopt",
  "thiserror",
  "tokio",
@@ -1058,19 +1058,6 @@ dependencies = [
  "bytes",
  "fnv",
  "itoa 1.0.1",
-]
-
-[[package]]
-name = "http-api-problem"
-version = "0.51.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d43e8970113f6e4a9138e6cd57b20de3ed99585cab427eb99d27a440827dbe2"
-dependencies = [
- "http",
- "hyper",
- "serde",
- "serde_json",
- "warp",
 ]
 
 [[package]]

@@ -1,22 +1,29 @@
-use crate::api::network::Error::ClientRpcError;
+use crate::api::network::ApiError::ClientRpcError;
 use concordium_rust_sdk::endpoints::{Client, RPCError};
 use rosetta::models::*;
+use serde::Serialize;
 use std::ops::Deref;
 use thiserror::Error;
 
 use crate::version::*;
 
+#[derive(Debug, Serialize)]
+pub struct UnsupportedNetworkIdentifier {
+    provided: NetworkIdentifier,
+    supported: Vec<NetworkIdentifier>,
+}
+
 #[derive(Error, Debug)]
-pub enum Error {
+pub enum ApiError {
     #[error("unsupported network identifier provided")]
-    UnsupportedNetworkIdentifier,
+    UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
     #[error("client RPC error")]
     ClientRpcError(RPCError),
 }
 
-impl warp::reject::Reject for Error {}
+impl warp::reject::Reject for ApiError {}
 
-impl From<concordium_rust_sdk::endpoints::RPCError> for Error {
+impl From<concordium_rust_sdk::endpoints::RPCError> for ApiError {
     fn from(err: RPCError) -> Self {
         ClientRpcError(err)
     }
@@ -33,18 +40,23 @@ impl NetworkApi {
         NetworkApi { identifier, client }
     }
 
-    pub async fn network_list(&self) -> Result<NetworkListResponse, Error> {
-        Ok(NetworkListResponse {
+    pub fn network_list(&self) -> NetworkListResponse {
+        NetworkListResponse {
             network_identifiers: vec![self.identifier.clone()],
-        })
+        }
     }
 
     pub async fn network_options(
         &self,
         req: NetworkRequest,
-    ) -> Result<NetworkOptionsResponse, Error> {
+    ) -> Result<NetworkOptionsResponse, ApiError> {
         if req.network_identifier.deref() != &self.identifier {
-            return Err(Error::UnsupportedNetworkIdentifier);
+            return Err(ApiError::UnsupportedNetworkIdentifier(
+                UnsupportedNetworkIdentifier {
+                    provided: *req.network_identifier,
+                    supported: self.network_list().network_identifiers,
+                },
+            ));
         }
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
@@ -60,9 +72,14 @@ impl NetworkApi {
     pub async fn network_status(
         &self,
         req: NetworkRequest,
-    ) -> Result<NetworkStatusResponse, Error> {
+    ) -> Result<NetworkStatusResponse, ApiError> {
         if req.network_identifier.deref() != &self.identifier {
-            return Err(Error::UnsupportedNetworkIdentifier);
+            return Err(ApiError::UnsupportedNetworkIdentifier(
+                UnsupportedNetworkIdentifier {
+                    provided: *req.network_identifier,
+                    supported: self.network_list().network_identifiers,
+                },
+            ));
         }
         let consensus_status = self.client.clone().get_consensus_status().await?;
         Ok(NetworkStatusResponse {

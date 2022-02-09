@@ -6,7 +6,7 @@ use std::convert::Infallible;
 use warp::reject::Reject;
 use warp::{reject, reply, Rejection, Reply};
 
-use crate::api::network::ApiError;
+use crate::api::error::ApiError;
 use crate::api::network::NetworkApi;
 
 pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {

@@ -1,34 +1,10 @@
-use crate::api::network::ApiError::ClientRpcError;
-use concordium_rust_sdk::endpoints::{Client, RPCError};
+use crate::api::error::{ApiError, UnsupportedNetworkIdentifier};
+use concordium_rust_sdk::endpoints::Client;
 use rosetta::models::*;
-use serde::Serialize;
 use serde_json::json;
 use std::ops::Deref;
-use thiserror::Error;
 
 use crate::version::*;
-
-#[derive(Debug, Serialize)]
-pub struct UnsupportedNetworkIdentifier {
-    provided: NetworkIdentifier,
-    supported: Vec<NetworkIdentifier>,
-}
-
-#[derive(Error, Debug)]
-pub enum ApiError {
-    #[error("unsupported network identifier provided")]
-    UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
-    #[error("client RPC error")]
-    ClientRpcError(RPCError),
-}
-
-impl warp::reject::Reject for ApiError {}
-
-impl From<concordium_rust_sdk::endpoints::RPCError> for ApiError {
-    fn from(err: RPCError) -> Self {
-        ClientRpcError(err)
-    }
-}
 
 #[derive(Clone)]
 pub struct NetworkApi {
@@ -53,10 +29,10 @@ impl NetworkApi {
     ) -> Result<NetworkOptionsResponse, ApiError> {
         if req.network_identifier.deref() != &self.identifier {
             return Err(ApiError::UnsupportedNetworkIdentifier(
-                UnsupportedNetworkIdentifier {
-                    provided: *req.network_identifier,
-                    supported: self.network_list().network_identifiers,
-                },
+                UnsupportedNetworkIdentifier::new(
+                    *req.network_identifier,
+                    self.network_list().network_identifiers,
+                ),
             ));
         }
         Ok(NetworkOptionsResponse {
@@ -85,10 +61,10 @@ impl NetworkApi {
     ) -> Result<NetworkStatusResponse, ApiError> {
         if req.network_identifier.deref() != &self.identifier {
             return Err(ApiError::UnsupportedNetworkIdentifier(
-                UnsupportedNetworkIdentifier {
-                    provided: *req.network_identifier,
-                    supported: self.network_list().network_identifiers,
-                },
+                UnsupportedNetworkIdentifier::new(
+                    *req.network_identifier,
+                    self.network_list().network_identifiers,
+                ),
             ));
         }
         let consensus_status = self.client.clone().get_consensus_status().await?;

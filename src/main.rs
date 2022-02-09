@@ -1,6 +1,6 @@
+mod api;
 mod handler;
 mod route;
-mod api;
 mod version;
 
 use crate::api::network::NetworkApi;

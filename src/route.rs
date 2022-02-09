@@ -2,12 +2,10 @@ use core::clone::Clone;
 use std::convert::Infallible;
 use warp::{Filter, Rejection, Reply};
 
-use crate::handler;
 use crate::api::network::NetworkApi;
+use crate::handler;
 
-fn network_list(
-    api: NetworkApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn network_list(api: NetworkApi) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("list")
         .and(with_network_api(api))
         .and(warp::body::json())
@@ -23,9 +21,7 @@ fn network_options(
         .and_then(handler::network_options)
 }
 
-fn network_status(
-    api: NetworkApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn network_status(api: NetworkApi) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("status")
         .and(with_network_api(api))
         .and(warp::body::json())
@@ -42,9 +38,7 @@ fn network(
     )
 }
 
-pub fn root(
-    api: NetworkApi,
-) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
+pub fn root(api: NetworkApi) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
     warp::post()
         .and(network(api))
         .recover(handler::handle_rejection)

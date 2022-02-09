@@ -1,4 +1,5 @@
-use concordium_rust_sdk::endpoints::Client;
+use crate::api::network::Error::ClientRpcError;
+use concordium_rust_sdk::endpoints::{Client, RPCError};
 use rosetta::models::*;
 use std::ops::Deref;
 use thiserror::Error;
@@ -9,9 +10,17 @@ use crate::version::*;
 pub enum Error {
     #[error("unsupported network identifier provided")]
     UnsupportedNetworkIdentifier,
+    #[error("client RPC error")]
+    ClientRpcError(RPCError),
 }
 
 impl warp::reject::Reject for Error {}
+
+impl From<concordium_rust_sdk::endpoints::RPCError> for Error {
+    fn from(err: RPCError) -> Self {
+        ClientRpcError(err)
+    }
+}
 
 #[derive(Clone)]
 pub struct NetworkApi {
@@ -55,7 +64,7 @@ impl NetworkApi {
         if req.network_identifier.deref() != &self.identifier {
             return Err(Error::UnsupportedNetworkIdentifier);
         }
-        let consensus_status = self.client.clone().get_consensus_status().await.unwrap();
+        let consensus_status = self.client.clone().get_consensus_status().await?;
         Ok(NetworkStatusResponse {
             current_block_identifier: Box::new(BlockIdentifier {
                 index: consensus_status.last_finalized_block_height.height as i64,

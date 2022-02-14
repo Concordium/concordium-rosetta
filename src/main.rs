@@ -3,6 +3,7 @@ mod handler;
 mod route;
 mod version;
 
+use crate::api::account::AccountApi;
 use crate::api::network::NetworkApi;
 use anyhow::{Context, Result};
 use clap::AppSettings;
@@ -61,11 +62,12 @@ async fn main() -> Result<()> {
             network: "mainnet".to_string(),
             sub_network_identifier: None,
         },
-        client,
+        client.clone(),
     );
+    let account_api = AccountApi::new(network_api.clone(), client.clone());
 
     println!("Listening on port {}.", app.port);
-    warp::serve(route::root(network_api))
+    warp::serve(route::root(network_api.clone(), account_api))
         .run(([0, 0, 0, 0], app.port))
         .await;
     Ok(())

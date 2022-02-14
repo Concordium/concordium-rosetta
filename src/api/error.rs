@@ -1,4 +1,4 @@
-use concordium_rust_sdk::endpoints::RPCError;
+use concordium_rust_sdk::endpoints::{QueryError, RPCError};
 use rosetta::models::*;
 use serde::Serialize;
 use thiserror::Error;
@@ -18,12 +18,34 @@ impl UnsupportedNetworkIdentifier {
     }
 }
 
+#[derive(Debug)]
+pub enum InvalidPartialBlockIdentifier {
+    NoValues,
+    InconsistentValues,
+    InvalidHash,
+    InvalidIndex,
+}
+
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("unsupported network identifier provided")]
     UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
+    #[error("invalid partial block identifier")]
+    InvalidPartialBlockIdentifier(InvalidPartialBlockIdentifier),
+    #[error("invalid account address")]
+    InvalidAccountAddress,
+    #[error("invalid currency")]
+    InvalidCurrency,
+    #[error("no blocks matched")]
+    NoBlocksMatched,
+    #[error("multiple blocks matched")]
+    MultipleBlocksMatched,
     #[error("client RPC error")]
     ClientRpcError(RPCError),
+    #[error("client query error")]
+    ClientQueryError(QueryError),
+    #[error("sub-accounts are not yet implemented")]
+    SubAccountNotImplemented,
 }
 
 impl warp::reject::Reject for ApiError {}
@@ -33,3 +55,11 @@ impl From<concordium_rust_sdk::endpoints::RPCError> for ApiError {
         ApiError::ClientRpcError(err)
     }
 }
+
+impl From<concordium_rust_sdk::endpoints::QueryError> for ApiError {
+    fn from(err: QueryError) -> Self {
+        ApiError::ClientQueryError(err)
+    }
+}
+
+pub type ApiResult<T> = Result<T, ApiError>;

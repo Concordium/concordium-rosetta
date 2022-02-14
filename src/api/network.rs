@@ -1,8 +1,7 @@
-use crate::api::error::{ApiError, UnsupportedNetworkIdentifier};
+use crate::api::error::{ApiError, ApiResult, UnsupportedNetworkIdentifier};
 use concordium_rust_sdk::endpoints::Client;
 use rosetta::models::*;
 use serde_json::json;
-use std::ops::Deref;
 
 use crate::version::*;
 
@@ -17,24 +16,27 @@ impl NetworkApi {
         NetworkApi { identifier, client }
     }
 
+    pub fn check_network_identifier(&self, identifier: NetworkIdentifier) -> ApiResult<()> {
+        if identifier != self.identifier {
+            Err(ApiError::UnsupportedNetworkIdentifier(
+                UnsupportedNetworkIdentifier::new(
+                    identifier,
+                    self.network_list().network_identifiers,
+                ),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
     pub fn network_list(&self) -> NetworkListResponse {
         NetworkListResponse {
             network_identifiers: vec![self.identifier.clone()],
         }
     }
 
-    pub async fn network_options(
-        &self,
-        req: NetworkRequest,
-    ) -> Result<NetworkOptionsResponse, ApiError> {
-        if req.network_identifier.deref() != &self.identifier {
-            return Err(ApiError::UnsupportedNetworkIdentifier(
-                UnsupportedNetworkIdentifier::new(
-                    *req.network_identifier,
-                    self.network_list().network_identifiers,
-                ),
-            ));
-        }
+    pub async fn network_options(&self, req: NetworkRequest) -> ApiResult<NetworkOptionsResponse> {
+        self.check_network_identifier(*req.network_identifier)?;
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
                 rosetta_version: ROSETTA_VERSION.to_string(),
@@ -55,18 +57,8 @@ impl NetworkApi {
         })
     }
 
-    pub async fn network_status(
-        &self,
-        req: NetworkRequest,
-    ) -> Result<NetworkStatusResponse, ApiError> {
-        if req.network_identifier.deref() != &self.identifier {
-            return Err(ApiError::UnsupportedNetworkIdentifier(
-                UnsupportedNetworkIdentifier::new(
-                    *req.network_identifier,
-                    self.network_list().network_identifiers,
-                ),
-            ));
-        }
+    pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
+        self.check_network_identifier(*req.network_identifier)?;
         let consensus_status = self.client.clone().get_consensus_status().await?;
         let peer_list = self.client.clone().peer_list(false).await?;
         Ok(NetworkStatusResponse {

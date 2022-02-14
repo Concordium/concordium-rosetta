@@ -1,5 +1,6 @@
 use crate::api::error::{ApiError, ApiResult, InvalidPartialBlockIdentifier};
-use crate::NetworkApi;
+use crate::validate::network::NetworkValidator;
+use crate::AccountValidator;
 use concordium_rust_sdk::endpoints::{BlocksAtHeightInput, Client};
 use concordium_rust_sdk::id::types::AccountAddress;
 use concordium_rust_sdk::types::hashes::BlockHash;
@@ -11,26 +12,21 @@ use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct AccountApi {
-    network_api: NetworkApi,
+    account_validator: AccountValidator,
+    network_validator: NetworkValidator,
     client: Client,
 }
 
 impl AccountApi {
-    // TODO Extract network identifier thing such that we don't depend on the entire network API object.
-    pub fn new(network_api: NetworkApi, client: Client) -> Self {
-        AccountApi {
-            network_api,
+    pub fn new(
+        account_validator: AccountValidator,
+        network_validator: NetworkValidator,
+        client: Client,
+    ) -> Self {
+        Self {
+            account_validator,
+            network_validator,
             client,
-        }
-    }
-
-    pub fn check_currencies(&self, currencies: Option<Vec<Currency>>) -> ApiResult<()> {
-        match currencies {
-            None => Ok(()),
-            Some(cs) => match cs.iter().find(|c| c.symbol != *"CCD" || c.decimals != 6) {
-                None => Ok(()),
-                Some(_) => Err(ApiError::InvalidCurrency),
-            },
         }
     }
 
@@ -38,9 +34,9 @@ impl AccountApi {
         &self,
         req: AccountBalanceRequest,
     ) -> ApiResult<AccountBalanceResponse> {
-        self.network_api
-            .check_network_identifier(*req.network_identifier)?;
-        self.check_currencies(req.currencies)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
+        self.account_validator.validate_currencies(req.currencies)?;
         let block = self.resolve_block(req.block_identifier).await?;
         let block_hash = block_hash_from_string(block.block_hash.to_string().as_str())?;
         let address = account_address_from_identifier(req.account_identifier.deref())?;

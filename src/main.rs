@@ -1,10 +1,13 @@
 mod api;
 mod handler;
 mod route;
+mod validate;
 mod version;
 
 use crate::api::account::AccountApi;
 use crate::api::network::NetworkApi;
+use crate::validate::account::AccountValidator;
+use crate::validate::network::NetworkValidator;
 use anyhow::{Context, Result};
 use clap::AppSettings;
 use concordium_rust_sdk::endpoints::Client;
@@ -56,15 +59,18 @@ async fn main() -> Result<()> {
         .await
         .context("cannot connect to node")?;
 
-    let network_api = NetworkApi::new(
-        NetworkIdentifier {
-            blockchain: "concordium".to_string(),
-            network: "mainnet".to_string(),
-            sub_network_identifier: None,
-        },
+    let network_validator = NetworkValidator::new(NetworkIdentifier {
+        blockchain: "concordium".to_string(),
+        network: "mainnet".to_string(),
+        sub_network_identifier: None,
+    });
+    let account_validator = AccountValidator {};
+    let network_api = NetworkApi::new(network_validator.clone(), client.clone());
+    let account_api = AccountApi::new(
+        account_validator.clone(),
+        network_validator.clone(),
         client.clone(),
     );
-    let account_api = AccountApi::new(network_api.clone(), client.clone());
 
     println!("Listening on port {}.", app.port);
     warp::serve(route::root(network_api.clone(), account_api))

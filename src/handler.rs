@@ -1,3 +1,4 @@
+use crate::api::block::BlockApi;
 use crate::AccountApi;
 use concordium_rust_sdk::endpoints::RPCError;
 use rosetta::models::*;
@@ -7,7 +8,7 @@ use std::convert::Infallible;
 use warp::reject::Reject;
 use warp::{reject, reply, Rejection, Reply};
 
-use crate::api::error::{ApiError, InvalidPartialBlockIdentifier};
+use crate::api::error::{ApiError, InvalidBlockIdentifier};
 use crate::api::network::NetworkApi;
 use crate::handler::NotImplemented::*;
 
@@ -44,9 +45,9 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                 retriable: true,
                 details: Some(serde_json::to_value(err).unwrap()),
             })),
-            ApiError::InvalidPartialBlockIdentifier(reason) =>
+            ApiError::InvalidBlockIdentifier(reason) =>
                 match reason {
-                    InvalidPartialBlockIdentifier::NoValues =>
+                    InvalidBlockIdentifier::NoValues =>
                         Ok(reply::json(&Error {
                             code: 1010,
                             message: "missing block identifier".to_string(),
@@ -54,7 +55,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                             retriable: false,
                             details: None,
                         })),
-                    InvalidPartialBlockIdentifier::InconsistentValues =>
+                    InvalidBlockIdentifier::InconsistentValues =>
                         Ok(reply::json(&Error {
                             code: 1011,
                             message: "inconsistent block identifier".to_string(),
@@ -62,7 +63,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                             retriable: false,
                             details: None,
                         })),
-                    InvalidPartialBlockIdentifier::InvalidHash =>
+                    InvalidBlockIdentifier::InvalidHash =>
                         Ok(reply::json(&Error {
                             code: 1012,
                             message: "invalid block hash".to_string(),
@@ -70,7 +71,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                             retriable: false,
                             details: None,
                         })),
-                    InvalidPartialBlockIdentifier::InvalidIndex =>
+                    InvalidBlockIdentifier::InvalidIndex =>
                         Ok(reply::json(&Error {
                             code: 1013,
                             message: "invalid block index".to_string(),
@@ -103,6 +104,13 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
             ApiError::MultipleBlocksMatched => Ok(reply::json(&Error {
                 code: 1050,
                 message: "multiple blocks matched".to_string(),
+                description: Some("TODO".to_string()),
+                retriable: false,
+                details: None, // TODO
+            })),
+            ApiError::NoTransactionsMatched => Ok(reply::json(&Error {
+                code: 1060,
+                message: "no transactions matched".to_string(),
                 description: Some("TODO".to_string()),
                 retriable: false,
                 details: None, // TODO
@@ -168,6 +176,14 @@ pub async fn account_balance(
 
 pub async fn account_coins(_: AccountCoinsRequest) -> Result<impl Reply, Rejection> {
     not_implemented(EndpointNotImplemented("/account/coins".to_string()))
+}
+
+pub async fn block(api: BlockApi, req: BlockRequest) -> Result<impl Reply, Rejection> {
+    to_json(api.block(req).await)
+}
+
+pub async fn block_transaction(api: BlockApi, req: BlockTransactionRequest) -> Result<impl Reply, Rejection> {
+    to_json(api.block_transaction(req).await)
 }
 
 // TODO Can lift this function to remove the need for explicitly defining the above functions?

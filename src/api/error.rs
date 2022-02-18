@@ -19,7 +19,7 @@ impl UnsupportedNetworkIdentifier {
 }
 
 #[derive(Debug)]
-pub enum InvalidPartialBlockIdentifier {
+pub enum InvalidBlockIdentifier {
     NoValues,
     InconsistentValues,
     InvalidHash,
@@ -30,8 +30,8 @@ pub enum InvalidPartialBlockIdentifier {
 pub enum ApiError {
     #[error("unsupported network identifier provided")]
     UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
-    #[error("invalid partial block identifier")]
-    InvalidPartialBlockIdentifier(InvalidPartialBlockIdentifier),
+    #[error("invalid block identifier")]
+    InvalidBlockIdentifier(InvalidBlockIdentifier),
     #[error("invalid account address")]
     InvalidAccountAddress,
     #[error("invalid currency")]
@@ -40,6 +40,8 @@ pub enum ApiError {
     NoBlocksMatched,
     #[error("multiple blocks matched")]
     MultipleBlocksMatched,
+    #[error("no transactions matched")]
+    NoTransactionsMatched,
     #[error("client RPC error")]
     ClientRpcError(RPCError),
     #[error("client query error")]

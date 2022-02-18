@@ -1,6 +1,6 @@
 use crate::api::error::ApiResult;
 use crate::validate::network::NetworkValidator;
-use concordium_rust_sdk::endpoints::Client;
+use crate::QueryHelper;
 use rosetta::models::*;
 use serde_json::json;
 
@@ -9,12 +9,15 @@ use crate::version::*;
 #[derive(Clone)]
 pub struct NetworkApi {
     validator: NetworkValidator,
-    client: Client,
+    query_helper: QueryHelper,
 }
 
 impl NetworkApi {
-    pub fn new(validator: NetworkValidator, client: Client) -> Self {
-        Self { validator, client }
+    pub fn new(validator: NetworkValidator, query_helper: QueryHelper) -> Self {
+        Self {
+            validator,
+            query_helper,
+        }
     }
 
     pub fn network_list(&self) -> NetworkListResponse {
@@ -49,8 +52,13 @@ impl NetworkApi {
     pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
         self.validator
             .validate_network_identifier(*req.network_identifier)?;
-        let consensus_status = self.client.clone().get_consensus_status().await?;
-        let peer_list = self.client.clone().peer_list(false).await?;
+        let consensus_status = self
+            .query_helper
+            .client
+            .clone()
+            .get_consensus_status()
+            .await?;
+        let peer_list = self.query_helper.client.clone().peer_list(false).await?;
         Ok(NetworkStatusResponse {
             // Defining "current" block as last finalized block.
             current_block_identifier: Box::new(BlockIdentifier {

@@ -5,8 +5,6 @@ use rosetta::models::Currency;
 pub struct AccountValidator {}
 
 impl AccountValidator {
-    pub fn new() {}
-
     pub fn validate_currencies(&self, currencies: Option<Vec<Currency>>) -> ApiResult<()> {
         match currencies {
             None => Ok(()),

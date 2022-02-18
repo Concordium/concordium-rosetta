@@ -5,7 +5,9 @@ mod validate;
 mod version;
 
 use crate::api::account::AccountApi;
+use crate::api::block::BlockApi;
 use crate::api::network::NetworkApi;
+use crate::api::query::QueryHelper;
 use crate::validate::account::AccountValidator;
 use crate::validate::network::NetworkValidator;
 use anyhow::{Context, Result};
@@ -65,15 +67,17 @@ async fn main() -> Result<()> {
         sub_network_identifier: None,
     });
     let account_validator = AccountValidator {};
-    let network_api = NetworkApi::new(network_validator.clone(), client.clone());
+    let query_helper = QueryHelper::new(client);
+    let network_api = NetworkApi::new(network_validator.clone(), query_helper.clone());
     let account_api = AccountApi::new(
         account_validator.clone(),
         network_validator.clone(),
-        client.clone(),
+        query_helper.clone(),
     );
+    let block_api = BlockApi::new(network_validator.clone(), query_helper.clone());
 
     println!("Listening on port {}.", app.port);
-    warp::serve(route::root(network_api.clone(), account_api))
+    warp::serve(route::root(network_api, account_api, block_api))
         .run(([0, 0, 0, 0], app.port))
         .await;
     Ok(())

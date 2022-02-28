@@ -56,7 +56,9 @@ fn block_(api: BlockApi) -> impl Filter<Extract = impl Reply, Error = Rejection>
         .and_then(handler::block)
 }
 
-fn block_transaction(api: BlockApi) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn block_transaction(
+    api: BlockApi,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("transaction")
         .and(warp::path::end())
         .and(with_block_api(api))

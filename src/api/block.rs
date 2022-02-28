@@ -41,14 +41,21 @@ impl BlockApi {
                     hash: block_info.block_parent.to_string(),
                 }),
                 timestamp: block_info.block_slot_time.timestamp_millis(),
-                transactions: block_summary.transaction_summaries.iter().map(self::map_transaction).collect(),
+                transactions: block_summary
+                    .transaction_summaries
+                    .iter()
+                    .map(self::map_transaction)
+                    .collect(),
                 metadata: None, // TODO add minting and rewards
             })),
             other_transactions: None, // currently just expanding all transactions inline
         })
     }
 
-    pub async fn block_transaction(&self, req: BlockTransactionRequest) -> ApiResult<BlockTransactionResponse> {
+    pub async fn block_transaction(
+        &self,
+        req: BlockTransactionRequest,
+    ) -> ApiResult<BlockTransactionResponse> {
         // TODO Should verify that index is correct?
         let hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
         let block_summary = self
@@ -57,13 +64,15 @@ impl BlockApi {
             .clone()
             .get_block_summary(&hash) // TODO should probably use the "raw" variant
             .await?;
-        match block_summary.transaction_summaries.iter().find(|t| t.hash.to_string() == req.transaction_identifier.hash) {
+        match block_summary
+            .transaction_summaries
+            .iter()
+            .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
+        {
             None => Err(ApiError::NoTransactionsMatched),
-            Some(transaction) => Ok(
-                BlockTransactionResponse {
-                    transaction: Box::new(map_transaction(transaction)),
-                }
-            ),
+            Some(transaction) => Ok(BlockTransactionResponse {
+                transaction: Box::new(map_transaction(transaction)),
+            }),
         }
     }
 }

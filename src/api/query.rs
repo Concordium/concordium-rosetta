@@ -90,9 +90,8 @@ impl QueryHelper {
 }
 
 pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
-    BlockHash::from_str(hash).map_err(|_| {
-        ApiError::InvalidBlockIdentifier(InvalidBlockIdentifier::InvalidHash)
-    })
+    BlockHash::from_str(hash)
+        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifier::InvalidHash))
 }
 
 fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {

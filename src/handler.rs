@@ -182,7 +182,10 @@ pub async fn block(api: BlockApi, req: BlockRequest) -> Result<impl Reply, Rejec
     to_json(api.block(req).await)
 }
 
-pub async fn block_transaction(api: BlockApi, req: BlockTransactionRequest) -> Result<impl Reply, Rejection> {
+pub async fn block_transaction(
+    api: BlockApi,
+    req: BlockTransactionRequest,
+) -> Result<impl Reply, Rejection> {
     to_json(api.block_transaction(req).await)
 }
 

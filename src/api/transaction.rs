@@ -8,8 +8,8 @@ use concordium_rust_sdk::types::*;
 use rosetta::models::{
     AccountIdentifier, Operation, OperationIdentifier, Transaction, TransactionIdentifier,
 };
+use serde_json::{json, Error, Value};
 use std::ops::Deref;
-use serde_json::{Error, json, Value};
 
 #[derive(SerdeSerialize)]
 struct TransactionRejectedMetadata {
@@ -171,7 +171,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
             None,
         ),
     };
-    let metadata = cost_uccd.map(|c| json!({"cost_uccd": c}));
+    let metadata = cost_uccd.map(|c| json!({ "cost_uccd": c }));
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
             hash: info.hash.to_string(),
@@ -191,8 +191,8 @@ fn merge_optional_values(left: Option<Value>, right: Option<Value>) -> Option<Va
         None => right,
         Some(l) => match right.clone() {
             None => left.clone(),
-            Some(r) => Some(merge_values(l, r))
-        }
+            Some(r) => Some(merge_values(l, r)),
+        },
     }
 }
 
@@ -201,14 +201,16 @@ fn merge_values(left: Value, right: Value) -> Value {
         (Some(l), Some(r)) => {
             l.extend(r.clone());
             serde_json::to_value(l).unwrap()
-        },
+        }
         (Some(_), None) => left,
         (None, Some(_)) => right,
         (None, None) => left,
     }
 }
 
-fn operations_and_metadata_from_account_transaction_details(details: &AccountTransactionDetails) -> (Vec<Operation>, Option<Result<Value, Error>>) {
+fn operations_and_metadata_from_account_transaction_details(
+    details: &AccountTransactionDetails,
+) -> (Vec<Operation>, Option<Result<Value, Error>>) {
     match &details.effects {
         AccountTransactionEffects::None {
             transaction_type,
@@ -233,7 +235,7 @@ fn operations_and_metadata_from_account_transaction_details(details: &AccountTra
                     serde_json::to_value(&TransactionRejectedMetadata {
                         reject_reason: reject_reason.clone(),
                     })
-                        .unwrap(),
+                    .unwrap(),
                 ),
             }],
             None,
@@ -355,11 +357,7 @@ fn operations_and_metadata_from_account_transaction_details(details: &AccountTra
             None,
         ),
         AccountTransactionEffects::EncryptedAmountTransferred { removed, added } => (
-            encrypted_transfer_operations(
-                details,
-                removed,
-                added,
-            ),
+            encrypted_transfer_operations(details, removed, added),
             Some(serde_json::to_value(&AccountTransferMetadata {
                 transferred_amount_uccd: None,
                 memo: None,
@@ -370,11 +368,7 @@ fn operations_and_metadata_from_account_transaction_details(details: &AccountTra
             added,
             memo,
         } => (
-            encrypted_transfer_operations(
-                details,
-                removed,
-                added,
-            ),
+            encrypted_transfer_operations(details, removed, added),
             Some(serde_json::to_value(&AccountTransferMetadata {
                 transferred_amount_uccd: None,
                 memo: Some(memo.clone()),
@@ -466,7 +460,9 @@ fn operations_and_metadata_from_account_transaction_details(details: &AccountTra
     }
 }
 
-fn operations_and_metadata_from_account_creation_details(details: &AccountCreationDetails) -> (Vec<Operation>, Option<Result<Value, Error>>) {
+fn operations_and_metadata_from_account_creation_details(
+    details: &AccountCreationDetails,
+) -> (Vec<Operation>, Option<Result<Value, Error>>) {
     (
         vec![Operation {
             operation_identifier: Box::new(OperationIdentifier {
@@ -492,14 +488,16 @@ fn operations_and_metadata_from_account_creation_details(details: &AccountCreati
                     address: details.address,
                     registration_id: details.reg_id.clone(),
                 })
-                    .unwrap(),
+                .unwrap(),
             ),
         }],
         None,
     )
 }
 
-fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) -> (Vec<Operation>, Option<Result<Value, Error>>) {
+fn operations_and_metadata_from_chain_update_details(
+    details: &UpdateDetails,
+) -> (Vec<Operation>, Option<Result<Value, Error>>) {
     (
         vec![Operation {
             operation_identifier: Box::new(OperationIdentifier {
@@ -517,7 +515,7 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
                     effective_time: details.effective_time,
                     payload: details.payload.clone(),
                 })
-                    .unwrap(),
+                .unwrap(),
             ),
         }],
         None,
@@ -556,7 +554,7 @@ fn encrypted_transfer_operations(
     added: &NewEncryptedAmountEvent,
 ) -> Vec<Operation> {
     let sender_operation = account_transaction_operation(
-         0,
+        0,
         details,
         details.sender.to_string(), // assuming this to be the same as 'removed.account'
         None,

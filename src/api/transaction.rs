@@ -8,7 +8,7 @@ use concordium_rust_sdk::types::*;
 use rosetta::models::{
     AccountIdentifier, Operation, OperationIdentifier, Transaction, TransactionIdentifier,
 };
-use serde_json::{json, Error, Value};
+use serde_json::{Error, Value};
 use std::ops::Deref;
 
 #[derive(SerdeSerialize)]
@@ -37,9 +37,7 @@ struct ContractUpdateIssuedMetadata {
 
 #[derive(SerdeSerialize)]
 // TODO Name "transferred" for consistency?
-struct AccountTransferMetadata {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    transferred_amount_uccd: Option<Amount>,
+struct MemoMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     memo: Option<Memo>,
 }
@@ -112,7 +110,7 @@ struct TransferredToPublicMetadata {
 #[derive(SerdeSerialize)]
 struct TransferredWithScheduleMetadata {
     receiver_address: AccountAddress,
-    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map
+    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map?
     #[serde(skip_serializing_if = "Option::is_none")]
     memo: Option<Memo>,
 }
@@ -147,21 +145,30 @@ struct ChainUpdateMetadata {
     payload: UpdatePayload,
 }
 
-// pub fn map_transactions(transactions: Vec<BlockItemSummary>) -> Vec<Transaction> {
-//     let mut result = Vec::with_capacity(transactions.len());
-//     for transaction in transactions {
-//         let t = map_transaction(&transaction);
-//         result.push(t.clone());
-//     }
-//     result
-// }
-
 pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
-    let ((operations, extra_metadata), cost_uccd) = match &info.details {
-        BlockItemSummaryDetails::AccountTransaction(details) => (
-            operations_and_metadata_from_account_transaction_details(details),
-            Some(details.cost),
-        ),
+    let (operations, extra_metadata) = match &info.details {
+        BlockItemSummaryDetails::AccountTransaction(details) => {
+            let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);
+            let mut ops2 = ops.clone();
+            ops2.push(Operation {
+                operation_identifier: Box::new(OperationIdentifier {
+                    index: ops.len() as i64,
+                    network_index: None,
+                }),
+                related_operations: None,
+                _type: "fee".to_string(),
+                status: Some("ok".to_string()),
+                account: Some(Box::new(AccountIdentifier {
+                    address: details.sender.to_string(),
+                    sub_account: None,
+                    metadata: None,
+                })),
+                amount: Some(Box::new(amount_from_uccd(-(details.cost.microgtu as i64)))),
+                coin_change: None,
+                metadata: None,
+            });
+            (ops2, metadata)
+        }
         BlockItemSummaryDetails::AccountCreation(details) => (
             operations_and_metadata_from_account_creation_details(details),
             None,
@@ -171,40 +178,13 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
             None,
         ),
     };
-    let metadata = cost_uccd.map(|c| json!({ "cost_uccd": c }));
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
             hash: info.hash.to_string(),
         }),
         operations,
-        related_transactions: None, // TODO
-        metadata: transaction_metadata(metadata, extra_metadata.map(Result::unwrap)),
-    }
-}
-
-fn transaction_metadata(left: Option<Value>, right: Option<Value>) -> Option<Value> {
-    merge_optional_values(left, right)
-}
-
-fn merge_optional_values(left: Option<Value>, right: Option<Value>) -> Option<Value> {
-    match left.clone() {
-        None => right,
-        Some(l) => match right.clone() {
-            None => left.clone(),
-            Some(r) => Some(merge_values(l, r)),
-        },
-    }
-}
-
-fn merge_values(left: Value, right: Value) -> Value {
-    match (left.clone().as_object_mut(), right.clone().as_object()) {
-        (Some(l), Some(r)) => {
-            l.extend(r.clone());
-            serde_json::to_value(l).unwrap()
-        }
-        (Some(_), None) => left,
-        (None, Some(_)) => right,
-        (None, None) => left,
+        related_transactions: None,
+        metadata: extra_metadata.map(Result::unwrap),
     }
 }
 
@@ -272,17 +252,12 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::AccountTransfer { amount, to } => (
-            simple_transfer_operations(details, amount, to),
-            Some(serde_json::to_value(&AccountTransferMetadata {
-                transferred_amount_uccd: Some(*amount),
-                memo: None,
-            })),
-        ),
+        AccountTransactionEffects::AccountTransfer { amount, to } => {
+            (simple_transfer_operations(details, amount, to), None)
+        }
         AccountTransactionEffects::AccountTransferWithMemo { amount, to, memo } => (
             simple_transfer_operations(details, amount, to),
-            Some(serde_json::to_value(&AccountTransferMetadata {
-                transferred_amount_uccd: Some(*amount),
+            Some(serde_json::to_value(&MemoMetadata {
                 memo: Some(memo.clone()),
             })),
         ),
@@ -356,21 +331,16 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::EncryptedAmountTransferred { removed, added } => (
-            encrypted_transfer_operations(details, removed, added),
-            Some(serde_json::to_value(&AccountTransferMetadata {
-                transferred_amount_uccd: None,
-                memo: None,
-            })),
-        ),
+        AccountTransactionEffects::EncryptedAmountTransferred { removed, added } => {
+            (encrypted_transfer_operations(details, removed, added), None)
+        }
         AccountTransactionEffects::EncryptedAmountTransferredWithMemo {
             removed,
             added,
             memo,
         } => (
             encrypted_transfer_operations(details, removed, added),
-            Some(serde_json::to_value(&AccountTransferMetadata {
-                transferred_amount_uccd: None,
+            Some(serde_json::to_value(&MemoMetadata {
                 memo: Some(memo.clone()),
             })),
         ),
@@ -462,64 +432,56 @@ fn operations_and_metadata_from_account_transaction_details(
 
 fn operations_and_metadata_from_account_creation_details(
     details: &AccountCreationDetails,
-) -> (Vec<Operation>, Option<Result<Value, Error>>) {
-    (
-        vec![Operation {
-            operation_identifier: Box::new(OperationIdentifier {
-                index: 0,
-                network_index: None,
-            }),
-            related_operations: None,
-            _type: "AccountCreation".to_string(),
-            status: Some("ok".to_string()),
-            account: Some(Box::new(AccountIdentifier {
-                address: details.address.to_string(),
-                sub_account: None,
-                metadata: None,
-            })),
-            amount: None,
-            coin_change: None,
-            metadata: Some(
-                serde_json::to_value(&AccountCreatedMetadata {
-                    credential_type: match details.credential_type {
-                        CredentialType::Initial => "initial".to_string(),
-                        CredentialType::Normal => "normal".to_string(),
-                    },
-                    address: details.address,
-                    registration_id: details.reg_id.clone(),
-                })
-                .unwrap(),
-            ),
-        }],
-        None,
-    )
+) -> Vec<Operation> {
+    vec![Operation {
+        operation_identifier: Box::new(OperationIdentifier {
+            index: 0,
+            network_index: None,
+        }),
+        related_operations: None,
+        _type: "AccountCreation".to_string(),
+        status: Some("ok".to_string()),
+        account: Some(Box::new(AccountIdentifier {
+            address: details.address.to_string(),
+            sub_account: None,
+            metadata: None,
+        })),
+        amount: None,
+        coin_change: None,
+        metadata: Some(
+            serde_json::to_value(&AccountCreatedMetadata {
+                credential_type: match details.credential_type {
+                    CredentialType::Initial => "initial".to_string(),
+                    CredentialType::Normal => "normal".to_string(),
+                },
+                address: details.address,
+                registration_id: details.reg_id.clone(),
+            })
+            .unwrap(),
+        ),
+    }]
 }
 
-fn operations_and_metadata_from_chain_update_details(
-    details: &UpdateDetails,
-) -> (Vec<Operation>, Option<Result<Value, Error>>) {
-    (
-        vec![Operation {
-            operation_identifier: Box::new(OperationIdentifier {
-                index: 0,
-                network_index: None,
-            }),
-            related_operations: None,
-            _type: "ChainUpdate".to_string(),
-            status: Some("ok".to_string()),
-            account: None,
-            amount: None,
-            coin_change: None,
-            metadata: Some(
-                serde_json::to_value(&ChainUpdateMetadata {
-                    effective_time: details.effective_time,
-                    payload: details.payload.clone(),
-                })
-                .unwrap(),
-            ),
-        }],
-        None,
-    )
+fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) -> Vec<Operation> {
+    vec![Operation {
+        operation_identifier: Box::new(OperationIdentifier {
+            index: 0,
+            network_index: None,
+        }),
+        related_operations: None,
+        _type: "ChainUpdate".to_string(),
+        status: Some("ok".to_string()),
+        account: None,
+        amount: None,
+        coin_change: None,
+        metadata: Some(
+            serde_json::to_value(&ChainUpdateMetadata {
+                effective_time: details.effective_time,
+                payload: details.payload.clone(),
+            })
+            .unwrap(),
+        ),
+    }]
 }
 
 fn simple_transfer_operations(
@@ -531,9 +493,7 @@ fn simple_transfer_operations(
         0,
         details,
         details.sender.to_string(),
-        Some(amount_from_uccd(
-            -((amount.microgtu + details.cost.microgtu) as i64),
-        )),
+        Some(amount_from_uccd(-(amount.microgtu as i64))),
         None,
     );
     let mut receiver_operation = account_transaction_operation::<Value>(

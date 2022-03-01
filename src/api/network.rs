@@ -37,14 +37,14 @@ impl NetworkApi {
                 metadata: None,
             }),
             allow: Box::new(Allow {
-                operation_statuses: vec![],       // none yet
-                operation_types: vec![],          // none yet
-                errors: vec![], // TODO should be one result for each known error code?
-                historical_balance_lookup: false, // TODO do we support querying account balance at any block height?
+                operation_statuses: vec![], // none yet
+                operation_types: vec![],    // none yet
+                errors: vec![],             // TODO should be one result for each known error code?
+                historical_balance_lookup: true,
                 timestamp_start_index: None, // not populated as the genesis block has a valid time stamp
                 call_methods: vec![],        // none yet
-                balance_exemptions: vec![], // TODO unsure what this is for - rewards are paid out without operations??
-                mempool_coins: false,       // mempool is not available
+                balance_exemptions: vec![],
+                mempool_coins: false, // mempool is not available
             }),
         })
     }

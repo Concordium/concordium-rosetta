@@ -145,6 +145,42 @@ struct ChainUpdateMetadata {
     payload: UpdatePayload,
 }
 
+pub const OPERATION_STATUS_OK: &str = "ok";
+pub const OPERATION_STATUS_FAIL: &str = "fail";
+pub const OPERATION_TYPE_FEE: &str = "fee";
+pub const OPERATION_TYPE_MINT_BAKING_REWARD: &str = "mint_baking_reward";
+pub const OPERATION_TYPE_MINT_FINALIZATION_REWARD: &str = "mint_finalization_reward";
+pub const OPERATION_TYPE_MINT_PLATFORM_DEVELOPMENT_CHARGE: &str =
+    "mint_platform_development_charge";
+pub const OPERATION_TYPE_BLOCK_REWARD: &str = "block_reward";
+pub const OPERATION_TYPE_BAKING_REWARD: &str = "baking_reward";
+pub const OPERATION_TYPE_FINALIZATION_REWARD: &str = "finalization_reward";
+pub const OPERATION_TYPE_ACCOUNT_CREATION: &str = "account_creation";
+pub const OPERATION_TYPE_CHAIN_UPDATE: &str = "chain_update";
+pub const OPERATION_TYPE_DEPLOY_MODULE: &str = "deploy_module";
+pub const OPERATION_TYPE_INIT_CONTRACT: &str = "init_contract";
+pub const OPERATION_TYPE_UPDATE_CONTRACT: &str = "update_contract";
+pub const OPERATION_TYPE_TRANSFER: &str = "transfer";
+pub const OPERATION_TYPE_ADD_BAKER: &str = "add_baker";
+pub const OPERATION_TYPE_REMOVE_BAKER: &str = "remove_baker";
+pub const OPERATION_TYPE_UPDATE_BAKER_STAKE: &str = "update_baker_stake";
+pub const OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS: &str = "update_baker_restake_earnings";
+pub const OPERATION_TYPE_UPDATE_BAKER_KEYS: &str = "update_baker_keys";
+pub const OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS: &str = "update_credential_keys";
+pub const OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER: &str = "encrypted_amount_transfer";
+pub const OPERATION_TYPE_TRANSFER_TO_ENCRYPTED: &str = "transfer_to_encrypted";
+pub const OPERATION_TYPE_TRANSFER_TO_PUBLIC: &str = "transfer_to_public";
+pub const OPERATION_TYPE_TRANSFER_WITH_SCHEDULE: &str = "transfer_with_schedule";
+pub const OPERATION_TYPE_UPDATE_CREDENTIALS: &str = "update_credentials";
+pub const OPERATION_TYPE_REGISTER_DATA: &str = "register_data";
+pub const OPERATION_TYPE_TRANSFER_WITH_MEMO: &str = "transfer_with_memo";
+pub const OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER_WITH_MEMO: &str =
+    "encrypted_amount_transfer_with_memo";
+pub const OPERATION_TYPE_TRANSFER_WITH_SCHEDULE_AND_MEMO: &str = "transfer_with_schedule_and_memo";
+pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
+pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
+pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
+
 pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
     let (operations, extra_metadata) = match &info.details {
         BlockItemSummaryDetails::AccountTransaction(details) => {
@@ -156,8 +192,8 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
                     network_index: None,
                 }),
                 related_operations: None,
-                _type: "fee".to_string(),
-                status: Some("ok".to_string()),
+                _type: OPERATION_TYPE_FEE.to_string(),
+                status: Some(OPERATION_STATUS_OK.to_string()),
                 account: Some(Box::new(AccountIdentifier {
                     address: details.sender.to_string(),
                     sub_account: None,
@@ -203,7 +239,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 }),
                 related_operations: None,
                 _type: transaction_type_to_string(*transaction_type),
-                status: Some("fail".to_string()),
+                status: Some(OPERATION_STATUS_FAIL.to_string()),
                 account: Some(Box::new(AccountIdentifier {
                     address: details.sender.to_string(),
                     sub_account: None,
@@ -439,8 +475,8 @@ fn operations_and_metadata_from_account_creation_details(
             network_index: None,
         }),
         related_operations: None,
-        _type: "account_creation".to_string(),
-        status: Some("ok".to_string()),
+        _type: OPERATION_TYPE_ACCOUNT_CREATION.to_string(),
+        status: Some(OPERATION_STATUS_OK.to_string()),
         account: Some(Box::new(AccountIdentifier {
             address: details.address.to_string(),
             sub_account: None,
@@ -469,8 +505,8 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
             network_index: None,
         }),
         related_operations: None,
-        _type: "chain_update".to_string(),
-        status: Some("ok".to_string()),
+        _type: OPERATION_TYPE_CHAIN_UPDATE.to_string(),
+        status: Some(OPERATION_STATUS_OK.to_string()),
         account: None,
         amount: None,
         coin_change: None,
@@ -563,7 +599,7 @@ fn account_transaction_operation<T: SerdeSerialize>(
         }),
         related_operations: None,
         _type: transaction_type_to_string(details.transaction_type()),
-        status: Some("ok".to_string()),
+        status: Some(OPERATION_STATUS_OK.to_string()),
         account: Some(Box::new(AccountIdentifier {
             address: account_address,
             sub_account: None,
@@ -579,27 +615,31 @@ fn transaction_type_to_string(type_: Option<TransactionType>) -> String {
     let res = match type_ {
         None => "unknown",
         Some(t) => match t {
-            TransactionType::DeployModule => "deploy_module",
-            TransactionType::InitContract => "init_contract",
-            TransactionType::Update => "update_contract",
-            TransactionType::Transfer => "transfer",
-            TransactionType::AddBaker => "add_baker",
-            TransactionType::RemoveBaker => "remove_baker",
-            TransactionType::UpdateBakerStake => "update_baker_stake",
-            TransactionType::UpdateBakerRestakeEarnings => "update_baker_restake_earnings",
-            TransactionType::UpdateBakerKeys => "update_baker_keys",
-            TransactionType::UpdateCredentialKeys => "update_credential_keys",
-            TransactionType::EncryptedAmountTransfer => "encrypted_amount_transfer",
-            TransactionType::TransferToEncrypted => "transfer_to_encrypted",
-            TransactionType::TransferToPublic => "transfer_to_public",
-            TransactionType::TransferWithSchedule => "transfer_with_schedule",
-            TransactionType::UpdateCredentials => "update_credentials",
-            TransactionType::RegisterData => "register_data",
-            TransactionType::TransferWithMemo => "transfer_with_memo",
-            TransactionType::EncryptedAmountTransferWithMemo => {
-                "encrypted_amount_transfer_with_memo"
+            TransactionType::DeployModule => OPERATION_TYPE_DEPLOY_MODULE,
+            TransactionType::InitContract => OPERATION_TYPE_INIT_CONTRACT,
+            TransactionType::Update => OPERATION_TYPE_UPDATE_CONTRACT,
+            TransactionType::Transfer => OPERATION_TYPE_TRANSFER,
+            TransactionType::AddBaker => OPERATION_TYPE_ADD_BAKER,
+            TransactionType::RemoveBaker => OPERATION_TYPE_REMOVE_BAKER,
+            TransactionType::UpdateBakerStake => OPERATION_TYPE_UPDATE_BAKER_STAKE,
+            TransactionType::UpdateBakerRestakeEarnings => {
+                OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS
             }
-            TransactionType::TransferWithScheduleAndMemo => "transfer_with_schedule_and_memo",
+            TransactionType::UpdateBakerKeys => OPERATION_TYPE_UPDATE_BAKER_KEYS,
+            TransactionType::UpdateCredentialKeys => OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS,
+            TransactionType::EncryptedAmountTransfer => OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER,
+            TransactionType::TransferToEncrypted => OPERATION_TYPE_TRANSFER_TO_ENCRYPTED,
+            TransactionType::TransferToPublic => OPERATION_TYPE_TRANSFER_TO_PUBLIC,
+            TransactionType::TransferWithSchedule => OPERATION_TYPE_TRANSFER_WITH_SCHEDULE,
+            TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,
+            TransactionType::RegisterData => OPERATION_TYPE_REGISTER_DATA,
+            TransactionType::TransferWithMemo => OPERATION_TYPE_TRANSFER_WITH_MEMO,
+            TransactionType::EncryptedAmountTransferWithMemo => {
+                OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER_WITH_MEMO
+            }
+            TransactionType::TransferWithScheduleAndMemo => {
+                OPERATION_TYPE_TRANSFER_WITH_SCHEDULE_AND_MEMO
+            }
         },
     };
     res.to_string()

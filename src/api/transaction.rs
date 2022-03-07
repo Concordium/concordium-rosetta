@@ -149,8 +149,8 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
     let (operations, extra_metadata) = match &info.details {
         BlockItemSummaryDetails::AccountTransaction(details) => {
             let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);
-            let mut ops2 = ops.clone();
-            ops2.push(Operation {
+            let mut ops_with_fee = ops.clone();
+            ops_with_fee.push(Operation {
                 operation_identifier: Box::new(OperationIdentifier {
                     index: ops.len() as i64,
                     network_index: None,
@@ -167,7 +167,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
                 coin_change: None,
                 metadata: None,
             });
-            (ops2, metadata)
+            (ops_with_fee, metadata)
         }
         BlockItemSummaryDetails::AccountCreation(details) => (
             operations_and_metadata_from_account_creation_details(details),
@@ -439,7 +439,7 @@ fn operations_and_metadata_from_account_creation_details(
             network_index: None,
         }),
         related_operations: None,
-        _type: "AccountCreation".to_string(),
+        _type: "account_creation".to_string(),
         status: Some("ok".to_string()),
         account: Some(Box::new(AccountIdentifier {
             address: details.address.to_string(),
@@ -469,7 +469,7 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
             network_index: None,
         }),
         related_operations: None,
-        _type: "ChainUpdate".to_string(),
+        _type: "chain_update".to_string(),
         status: Some("ok".to_string()),
         account: None,
         amount: None,

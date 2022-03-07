@@ -37,12 +37,44 @@ impl NetworkApi {
                 metadata: None,
             }),
             allow: Box::new(Allow {
-                operation_statuses: vec![], // none yet
-                operation_types: vec![],    // none yet
-                errors: vec![],             // TODO should be one result for each known error code?
+                operation_statuses: vec![
+                    json!({"status": "ok", "successful": true}),
+                    json!({"status": "fail", "successful": false}),
+                ],
+                operation_types: vec![
+                    "fee".to_string(),
+                    "mint_baking_reward".to_string(),
+                    "mint_finalization_reward".to_string(),
+                    "mint_platform_development_charge".to_string(),
+                    "block_reward".to_string(),
+                    "baking_reward".to_string(),
+                    "finalization_reward".to_string(),
+                    "account_creation".to_string(),
+                    "chain_update".to_string(),
+                    "deploy_module".to_string(),
+                    "init_contract".to_string(),
+                    "update_contract".to_string(),
+                    "transfer".to_string(),
+                    "add_baker".to_string(),
+                    "remove_baker".to_string(),
+                    "update_baker_stake".to_string(),
+                    "update_baker_restake_earnings".to_string(),
+                    "update_baker_keys".to_string(),
+                    "update_credential_keys".to_string(),
+                    "encrypted_amount_transfer".to_string(),
+                    "transfer_to_encrypted".to_string(),
+                    "transfer_to_public".to_string(),
+                    "transfer_with_schedule".to_string(),
+                    "update_credentials".to_string(),
+                    "register_data".to_string(),
+                    "transfer_with_memo".to_string(),
+                    "encrypted_amount_transfer_with_memo".to_string(),
+                    "transfer_with_schedule_and_memo".to_string(),
+                ],
+                errors: vec![], // TODO should have one result for each known error code
                 historical_balance_lookup: true,
                 timestamp_start_index: None, // not populated as the genesis block has a valid time stamp
-                call_methods: vec![],        // none yet
+                call_methods: vec![],        // Call API is not implemented
                 balance_exemptions: vec![],
                 mempool_coins: false, // mempool is not available
             }),

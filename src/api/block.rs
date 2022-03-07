@@ -32,6 +32,8 @@ impl BlockApi {
             .clone()
             .get_block_summary(&block_info.block_hash)
             .await?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
             block: Some(Box::new(Block {
                 block_identifier: Box::new(BlockIdentifier {
@@ -99,10 +101,10 @@ fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
 fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operation> {
     let mut index_offset: i64 = 0;
     let next_index = |offset: &mut i64| {
+        let res = *offset;
         *offset += 1;
-        *offset
+        res
     };
-
     let mut res = vec![];
     for e in &block_summary.special_events {
         match e {
@@ -119,7 +121,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     }),
                     related_operations: None,
                     _type: "mint_baking_reward".to_string(),
-                    status: None,
+                    status: Some("ok".to_string()),
                     account: Some(Box::new(AccountIdentifier {
                         address: "baking_reward_account".to_string(),
                         sub_account: None,
@@ -138,7 +140,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     }),
                     related_operations: None,
                     _type: "mint_finalization_reward".to_string(),
-                    status: None,
+                    status: Some("ok".to_string()),
                     account: Some(Box::new(AccountIdentifier {
                         address: "finalization_reward_account".to_string(),
                         sub_account: None,
@@ -157,7 +159,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     }),
                     related_operations: None,
                     _type: "mint_platform_development_charge".to_string(),
-                    status: None,
+                    status: Some("ok".to_string()),
                     account: Some(Box::new(AccountIdentifier {
                         address: foundation_account.to_string(),
                         sub_account: None,
@@ -186,7 +188,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         }),
                         related_operations: None,
                         _type: "block_reward".to_string(),
-                        status: None,
+                        status: Some("ok".to_string()),
                         account: Some(Box::new(AccountIdentifier {
                             address: baker.to_string(),
                             sub_account: None,
@@ -205,7 +207,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         }),
                         related_operations: None,
                         _type: "block_reward".to_string(),
-                        status: None,
+                        status: Some("ok".to_string()),
                         account: Some(Box::new(AccountIdentifier {
                             address: foundation_account.to_string(),
                             sub_account: None,
@@ -233,7 +235,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         operation_identifier: Box::new(id),
                         related_operations: None,
                         _type: "baking_reward".to_string(),
-                        status: None,
+                        status: Some("ok".to_string()),
                         account: Some(Box::new(AccountIdentifier {
                             address: baker_account_address.to_string(),
                             sub_account: None,
@@ -251,7 +253,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     }),
                     related_operations: Some(operation_identifiers),
                     _type: "baking_reward".to_string(),
-                    status: None,
+                    status: Some("ok".to_string()),
                     account: Some(Box::new(AccountIdentifier {
                         address: "baking_reward_account".to_string(),
                         sub_account: None,
@@ -279,7 +281,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         operation_identifier: Box::new(id),
                         related_operations: None,
                         _type: "finalization_reward".to_string(),
-                        status: None,
+                        status: Some("ok".to_string()),
                         account: Some(Box::new(AccountIdentifier {
                             address: baker_account_address.to_string(),
                             sub_account: None,
@@ -297,7 +299,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     }),
                     related_operations: Some(operation_identifiers),
                     _type: "finalization_reward".to_string(),
-                    status: None,
+                    status: Some("ok".to_string()),
                     account: Some(Box::new(AccountIdentifier {
                         address: "finalization_reward_account".to_string(),
                         sub_account: None,

@@ -94,13 +94,13 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
         .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifier::InvalidHash))
 }
 
-fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {
+pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {
     match id.sub_account {
         None => account_address_from_string(id.address.as_str()),
         Some(_) => Err(ApiError::SubAccountNotImplemented),
     }
 }
 
-fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
+pub fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
     AccountAddress::from_str(addr).map_err(|_| ApiError::InvalidAccountAddress)
 }

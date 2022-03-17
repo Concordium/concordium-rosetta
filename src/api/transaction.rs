@@ -324,18 +324,16 @@ fn operations_and_metadata_from_account_transaction_details(
             None,
         ),
         AccountTransactionEffects::BakerStakeUpdated {
-            baker_id,
-            new_stake,
-            increased,
+            data,
         } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(&BakerStakeUpdatedMetadata {
-                    baker_id: *baker_id,
-                    new_stake_uccd: *new_stake,
-                    increased: *increased,
-                }),
+                data.map(|d| BakerStakeUpdatedMetadata {
+                    baker_id: d.baker_id,
+                    new_stake_uccd: d.new_stake,
+                    increased: d.increased,
+                }).as_ref(),
             )],
             None,
         ),

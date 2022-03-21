@@ -35,19 +35,18 @@ impl BlockApi {
         self.network_validator
             .validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
-            block: Some(Box::new(Block {
-                block_identifier: Box::new(BlockIdentifier {
-                    index: block_info.block_height.height as i64,
-                    hash: block_info.block_hash.to_string(),
-                }),
-                parent_block_identifier: Box::new(BlockIdentifier {
-                    index: max(block_info.block_height.height as i64 - 1, 0),
-                    hash: block_info.block_parent.to_string(),
-                }),
-                timestamp: block_info.block_slot_time.timestamp_millis(),
-                transactions: self::block_transactions(block_summary),
-                metadata: None,
-            })),
+            block: Some(Box::new(Block::new(
+                BlockIdentifier::new(
+                    block_info.block_height.height as i64,
+                    block_info.block_hash.to_string(),
+                ),
+                BlockIdentifier::new(
+                    max(block_info.block_height.height as i64 - 1, 0),
+                    block_info.block_parent.to_string(),
+                ),
+                block_info.block_slot_time.timestamp_millis(),
+                self::block_transactions(block_summary),
+            ))),
             other_transactions: None, // currently just expanding all transactions inline
         })
     }
@@ -70,9 +69,7 @@ impl BlockApi {
             .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
         {
             None => Err(ApiError::NoTransactionsMatched),
-            Some(transaction) => Ok(BlockTransactionResponse {
-                transaction: Box::new(map_transaction(transaction)),
-            }),
+            Some(transaction) => Ok(BlockTransactionResponse::new(map_transaction(transaction))),
         }
     }
 }
@@ -80,14 +77,10 @@ impl BlockApi {
 fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
     // Synthethic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
-    let tokenomics_transaction = Transaction {
-        transaction_identifier: Box::new(TransactionIdentifier {
-            hash: TRANSACTION_HASH_TOKENOMICS.to_string(),
-        }),
-        operations: self::tokenomics_transaction_operations(&block_summary),
-        related_transactions: None,
-        metadata: None,
-    };
+    let tokenomics_transaction = Transaction::new(
+        TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
+        self::tokenomics_transaction_operations(&block_summary),
+    );
     let mut res = vec![tokenomics_transaction];
     res.extend(
         block_summary
@@ -115,18 +108,15 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 foundation_account,
             } => res.extend(vec![
                 Operation {
-                    operation_identifier: Box::new(OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    }),
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
                     related_operations: None,
                     _type: OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     status: Some(OPERATION_STATUS_OK.to_string()),
-                    account: Some(Box::new(AccountIdentifier {
-                        address: "baking_reward_account".to_string(),
-                        sub_account: None,
-                        metadata: None,
-                    })),
+                    account: Some(Box::new(AccountIdentifier::new(
+                        "baking_reward_account".to_string(),
+                    ))),
                     amount: Some(Box::new(amount_from_uccd(
                         mint_baking_reward.microgtu as i64,
                     ))),
@@ -134,18 +124,15 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     metadata: None,
                 },
                 Operation {
-                    operation_identifier: Box::new(OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    }),
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
                     related_operations: None,
                     _type: OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),
                     status: Some(OPERATION_STATUS_OK.to_string()),
-                    account: Some(Box::new(AccountIdentifier {
-                        address: "finalization_reward_account".to_string(),
-                        sub_account: None,
-                        metadata: None,
-                    })),
+                    account: Some(Box::new(AccountIdentifier::new(
+                        "finalization_reward_account".to_string(),
+                    ))),
                     amount: Some(Box::new(amount_from_uccd(
                         mint_finalization_reward.microgtu as i64,
                     ))),
@@ -153,18 +140,15 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     metadata: None,
                 },
                 Operation {
-                    operation_identifier: Box::new(OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    }),
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
                     related_operations: None,
                     _type: OPERATION_TYPE_MINT_PLATFORM_DEVELOPMENT_CHARGE.to_string(),
                     status: Some(OPERATION_STATUS_OK.to_string()),
-                    account: Some(Box::new(AccountIdentifier {
-                        address: foundation_account.to_string(),
-                        sub_account: None,
-                        metadata: None,
-                    })),
+                    account: Some(Box::new(AccountIdentifier::new(
+                        foundation_account.to_string(),
+                    ))),
                     amount: Some(Box::new(amount_from_uccd(
                         mint_platform_development_charge.microgtu as i64,
                     ))),
@@ -182,18 +166,13 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 // Could add transaction fees going into GAS account and then extract block rewards, but it seems unnecessary?
                 if baker_reward.microgtu != 0 {
                     res.push(Operation {
-                        operation_identifier: Box::new(OperationIdentifier {
-                            index: next_index(&mut index_offset),
-                            network_index: None,
-                        }),
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
                         related_operations: None,
                         _type: OPERATION_TYPE_BLOCK_REWARD.to_string(),
                         status: Some(OPERATION_STATUS_OK.to_string()),
-                        account: Some(Box::new(AccountIdentifier {
-                            address: baker.to_string(),
-                            sub_account: None,
-                            metadata: None,
-                        })),
+                        account: Some(Box::new(AccountIdentifier::new(baker.to_string()))),
                         amount: Some(Box::new(amount_from_uccd(baker_reward.microgtu as i64))),
                         coin_change: None,
                         metadata: None,
@@ -201,18 +180,15 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 }
                 if foundation_charge.microgtu != 0 {
                     res.push(Operation {
-                        operation_identifier: Box::new(OperationIdentifier {
-                            index: next_index(&mut index_offset),
-                            network_index: None,
-                        }),
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
                         related_operations: None,
                         _type: OPERATION_TYPE_BLOCK_REWARD.to_string(),
                         status: Some(OPERATION_STATUS_OK.to_string()),
-                        account: Some(Box::new(AccountIdentifier {
-                            address: foundation_account.to_string(),
-                            sub_account: None,
-                            metadata: None,
-                        })),
+                        account: Some(Box::new(AccountIdentifier::new(
+                            foundation_account.to_string(),
+                        ))),
                         amount: Some(Box::new(amount_from_uccd(
                             foundation_charge.microgtu as i64,
                         ))),
@@ -226,39 +202,31 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in baker_rewards {
                     baking_reward_sum += amount.microgtu;
-                    let id = OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    };
+                    let id = OperationIdentifier::new(next_index(&mut index_offset));
                     operation_identifiers.push(id.clone());
                     res.push(Operation {
                         operation_identifier: Box::new(id),
                         related_operations: None,
                         _type: OPERATION_TYPE_BAKING_REWARD.to_string(),
                         status: Some(OPERATION_STATUS_OK.to_string()),
-                        account: Some(Box::new(AccountIdentifier {
-                            address: baker_account_address.to_string(),
-                            sub_account: None,
-                            metadata: None,
-                        })),
+                        account: Some(Box::new(AccountIdentifier::new(
+                            baker_account_address.to_string(),
+                        ))),
                         amount: Some(Box::new(amount_from_uccd(amount.microgtu as i64))),
                         coin_change: None,
                         metadata: None,
                     })
                 }
                 res.push(Operation {
-                    operation_identifier: Box::new(OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    }),
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
                     related_operations: Some(operation_identifiers),
                     _type: OPERATION_TYPE_BAKING_REWARD.to_string(),
                     status: Some(OPERATION_STATUS_OK.to_string()),
-                    account: Some(Box::new(AccountIdentifier {
-                        address: ACCOUNT_BAKING_REWARD.to_string(),
-                        sub_account: None,
-                        metadata: None,
-                    })),
+                    account: Some(Box::new(AccountIdentifier::new(
+                        ACCOUNT_BAKING_REWARD.to_string(),
+                    ))),
                     amount: Some(Box::new(amount_from_uccd(-(baking_reward_sum as i64)))),
                     coin_change: None,
                     metadata: None,
@@ -282,29 +250,24 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         related_operations: None,
                         _type: OPERATION_TYPE_FINALIZATION_REWARD.to_string(),
                         status: Some(OPERATION_STATUS_OK.to_string()),
-                        account: Some(Box::new(AccountIdentifier {
-                            address: baker_account_address.to_string(),
-                            sub_account: None,
-                            metadata: None,
-                        })),
+                        account: Some(Box::new(AccountIdentifier::new(
+                            baker_account_address.to_string(),
+                        ))),
                         amount: Some(Box::new(amount_from_uccd(amount.microgtu as i64))),
                         coin_change: None,
                         metadata: None,
                     })
                 }
                 res.push(Operation {
-                    operation_identifier: Box::new(OperationIdentifier {
-                        index: next_index(&mut index_offset),
-                        network_index: None,
-                    }),
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
                     related_operations: Some(operation_identifiers),
                     _type: OPERATION_TYPE_FINALIZATION_REWARD.to_string(),
                     status: Some(OPERATION_STATUS_OK.to_string()),
-                    account: Some(Box::new(AccountIdentifier {
-                        address: ACCOUNT_FINALIZATION_REWARD.to_string(),
-                        sub_account: None,
-                        metadata: None,
-                    })),
+                    account: Some(Box::new(AccountIdentifier::new(
+                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                    ))),
                     amount: Some(Box::new(amount_from_uccd(
                         -(finalization_reward_sum as i64),
                     ))),

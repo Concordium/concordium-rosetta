@@ -13,6 +13,7 @@ use crate::validate::network::NetworkValidator;
 use anyhow::{Context, Result};
 use clap::AppSettings;
 use concordium_rust_sdk::endpoints::Client;
+use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
 use structopt::StructOpt;
 
@@ -51,6 +52,9 @@ async fn main() -> Result<()> {
         App::from_clap(&matches)
     };
 
+    // Initialize logging.
+    Builder::from_env(Env::default().default_filter_or("info")).init();
+
     let endpoint = tonic::transport::Endpoint::from_shared(format!(
         "http://{}:{}",
         app.grpc_host, app.grpc_port
@@ -76,7 +80,6 @@ async fn main() -> Result<()> {
     );
     let block_api = BlockApi::new(network_validator.clone(), query_helper.clone());
 
-    println!("Listening on port {}.", app.port);
     warp::serve(route::root(network_api, account_api, block_api))
         .run(([0, 0, 0, 0], app.port))
         .await;

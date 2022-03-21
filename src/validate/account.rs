@@ -6,12 +6,24 @@ pub struct AccountValidator {}
 
 impl AccountValidator {
     pub fn validate_currencies(&self, currencies: Option<Vec<Currency>>) -> ApiResult<()> {
-        match currencies {
-            None => Ok(()),
-            Some(cs) => match cs.iter().find(|c| c.symbol != *"CCD" || c.decimals != 6) {
-                None => Ok(()),
-                Some(_) => Err(ApiError::InvalidCurrency),
-            },
-        }
+        validate_currencies(currencies)
     }
+}
+
+pub fn validate_currencies(currencies: Option<Vec<Currency>>) -> ApiResult<()> {
+    match currencies {
+        None => Ok(()),
+        Some(cs) => cs.iter().try_for_each(self::validate_currency),
+    }
+}
+
+pub fn validate_currency(c: &Currency) -> ApiResult<()> {
+    if !is_valid_currency(c) {
+        return Err(ApiError::InvalidCurrency);
+    }
+    Ok(())
+}
+
+fn is_valid_currency(c: &Currency) -> bool {
+    c.symbol == *"CCD" && c.decimals == 6
 }

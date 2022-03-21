@@ -323,9 +323,7 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::BakerStakeUpdated {
-            data,
-        } => (
+        AccountTransactionEffects::BakerStakeUpdated { data } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
@@ -333,7 +331,8 @@ fn operations_and_metadata_from_account_transaction_details(
                     baker_id: d.baker_id,
                     new_stake_uccd: d.new_stake,
                     increased: d.increased,
-                }).as_ref(),
+                })
+                .as_ref(),
             )],
             None,
         ),

@@ -6,7 +6,9 @@ use crate::api::block::BlockApi;
 use crate::api::network::NetworkApi;
 use crate::{handler, AccountApi};
 
-fn network_list(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+fn network_list(
+    api: NetworkApi,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("list")
         .and(warp::path::end())
         .and(with_network_api(api))
@@ -24,7 +26,9 @@ fn network_options(
         .and_then(handler::network_options)
 }
 
-fn network_status(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+fn network_status(
+    api: NetworkApi,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("status")
         .and(warp::path::end())
         .and(with_network_api(api))
@@ -66,9 +70,7 @@ fn block_transaction(
         .and_then(handler::block_transaction)
 }
 
-fn network(
-    api: NetworkApi,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+fn network(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("network").and(
         network_list(api.clone())
             .or(network_options(api.clone()))
@@ -76,9 +78,7 @@ fn network(
     )
 }
 
-fn account(
-    api: AccountApi,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+fn account(api: AccountApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("account").and(account_balance(api.clone()).or(account_coins()))
 }
 

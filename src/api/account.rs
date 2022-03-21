@@ -37,15 +37,14 @@ impl AccountApi {
             .query_helper
             .query_account_info(req.block_identifier, req.account_identifier.deref())
             .await?;
-        Ok(AccountBalanceResponse {
-            block_identifier: Box::new(BlockIdentifier {
-                index: block_info.block_height.height as i64,
-                hash: block_info.block_hash.to_string(),
-            }),
-            balances: vec![amount_from_uccd(
+        Ok(AccountBalanceResponse::new(
+            BlockIdentifier::new(
+                block_info.block_height.height as i64,
+                block_info.block_hash.to_string(),
+            ),
+            vec![amount_from_uccd(
                 account_info.account_amount.microgtu as i64,
             )],
-            metadata: None,
-        })
+        ))
     }
 }

@@ -52,13 +52,13 @@ pub enum ApiError {
 
 impl warp::reject::Reject for ApiError {}
 
-impl From<concordium_rust_sdk::endpoints::RPCError> for ApiError {
+impl From<RPCError> for ApiError {
     fn from(err: RPCError) -> Self {
         ApiError::ClientRpcError(err)
     }
 }
 
-impl From<concordium_rust_sdk::endpoints::QueryError> for ApiError {
+impl From<QueryError> for ApiError {
     fn from(err: QueryError) -> Self {
         ApiError::ClientQueryError(err)
     }

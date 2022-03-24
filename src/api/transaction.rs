@@ -1,4 +1,5 @@
 use crate::api::amount::amount_from_uccd;
+use crate::api::error::{ApiError, ApiResult};
 use concordium_rust_sdk::common::types::{Amount, Timestamp, TransactionTime};
 use concordium_rust_sdk::common::SerdeSerialize;
 use concordium_rust_sdk::constants::EncryptedAmountsCurve;
@@ -37,9 +38,9 @@ struct ContractUpdateIssuedMetadata {
 
 #[derive(SerdeSerialize)]
 // TODO Name "transferred" for consistency?
-struct MemoMetadata {
+pub struct MemoMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
-    memo: Option<Memo>,
+    pub memo: Option<Memo>,
 }
 
 #[derive(SerdeSerialize)]
@@ -145,41 +146,41 @@ struct ChainUpdateMetadata {
     payload: UpdatePayload,
 }
 
+pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
+pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
+
 pub const OPERATION_STATUS_OK: &str = "ok";
 pub const OPERATION_STATUS_FAIL: &str = "fail";
+
 pub const OPERATION_TYPE_FEE: &str = "fee";
+
+pub const OPERATION_TYPE_ACCOUNT_CREATION: &str = "account_creation";
+pub const OPERATION_TYPE_ADD_BAKER: &str = "add_baker";
+pub const OPERATION_TYPE_BAKING_REWARD: &str = "baking_reward";
+pub const OPERATION_TYPE_BLOCK_REWARD: &str = "block_reward";
+pub const OPERATION_TYPE_CHAIN_UPDATE: &str = "chain_update";
+pub const OPERATION_TYPE_DEPLOY_MODULE: &str = "deploy_module";
+pub const OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER: &str = "encrypted_amount_transfer";
+pub const OPERATION_TYPE_FINALIZATION_REWARD: &str = "finalization_reward";
+pub const OPERATION_TYPE_INIT_CONTRACT: &str = "init_contract";
 pub const OPERATION_TYPE_MINT_BAKING_REWARD: &str = "mint_baking_reward";
 pub const OPERATION_TYPE_MINT_FINALIZATION_REWARD: &str = "mint_finalization_reward";
 pub const OPERATION_TYPE_MINT_PLATFORM_DEVELOPMENT_CHARGE: &str =
     "mint_platform_development_charge";
-pub const OPERATION_TYPE_BLOCK_REWARD: &str = "block_reward";
-pub const OPERATION_TYPE_BAKING_REWARD: &str = "baking_reward";
-pub const OPERATION_TYPE_FINALIZATION_REWARD: &str = "finalization_reward";
-pub const OPERATION_TYPE_ACCOUNT_CREATION: &str = "account_creation";
-pub const OPERATION_TYPE_CHAIN_UPDATE: &str = "chain_update";
-pub const OPERATION_TYPE_DEPLOY_MODULE: &str = "deploy_module";
-pub const OPERATION_TYPE_INIT_CONTRACT: &str = "init_contract";
-pub const OPERATION_TYPE_UPDATE_CONTRACT: &str = "update_contract";
-pub const OPERATION_TYPE_TRANSFER: &str = "transfer";
-pub const OPERATION_TYPE_ADD_BAKER: &str = "add_baker";
+pub const OPERATION_TYPE_REGISTER_DATA: &str = "register_data";
 pub const OPERATION_TYPE_REMOVE_BAKER: &str = "remove_baker";
-pub const OPERATION_TYPE_UPDATE_BAKER_STAKE: &str = "update_baker_stake";
-pub const OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS: &str = "update_baker_restake_earnings";
-pub const OPERATION_TYPE_UPDATE_BAKER_KEYS: &str = "update_baker_keys";
-pub const OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS: &str = "update_credential_keys";
-pub const OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER: &str = "encrypted_amount_transfer";
+pub const OPERATION_TYPE_TRANSFER: &str = "transfer";
 pub const OPERATION_TYPE_TRANSFER_TO_ENCRYPTED: &str = "transfer_to_encrypted";
 pub const OPERATION_TYPE_TRANSFER_TO_PUBLIC: &str = "transfer_to_public";
-pub const OPERATION_TYPE_TRANSFER_WITH_SCHEDULE: &str = "transfer_with_schedule";
+pub const OPERATION_TYPE_TRANSFER_WITH_SCHEDULE: &str = "transfer_with_schedule"; // TODO is just a transfer with schedule metadata?
+pub const OPERATION_TYPE_UPDATE_BAKER_KEYS: &str = "update_baker_keys";
+pub const OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS: &str = "update_baker_restake_earnings";
+pub const OPERATION_TYPE_UPDATE_BAKER_STAKE: &str = "update_baker_stake";
+pub const OPERATION_TYPE_UPDATE_CONTRACT: &str = "update_contract";
+pub const OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS: &str = "update_credential_keys";
 pub const OPERATION_TYPE_UPDATE_CREDENTIALS: &str = "update_credentials";
-pub const OPERATION_TYPE_REGISTER_DATA: &str = "register_data";
-pub const OPERATION_TYPE_TRANSFER_WITH_MEMO: &str = "transfer_with_memo";
-pub const OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER_WITH_MEMO: &str =
-    "encrypted_amount_transfer_with_memo";
-pub const OPERATION_TYPE_TRANSFER_WITH_SCHEDULE_AND_MEMO: &str = "transfer_with_schedule_and_memo";
+
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
-pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
-pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
 
 pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
     let (operations, extra_metadata) = match &info.details {
@@ -187,18 +188,11 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
             let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);
             let mut ops_with_fee = ops.clone();
             ops_with_fee.push(Operation {
-                operation_identifier: Box::new(OperationIdentifier {
-                    index: ops.len() as i64,
-                    network_index: None,
-                }),
+                operation_identifier: Box::new(OperationIdentifier::new(ops.len() as i64)),
                 related_operations: None,
                 _type: OPERATION_TYPE_FEE.to_string(),
                 status: Some(OPERATION_STATUS_OK.to_string()),
-                account: Some(Box::new(AccountIdentifier {
-                    address: details.sender.to_string(),
-                    sub_account: None,
-                    metadata: None,
-                })),
+                account: Some(Box::new(AccountIdentifier::new(details.sender.to_string()))),
                 amount: Some(Box::new(amount_from_uccd(-(details.cost.microgtu as i64)))),
                 coin_change: None,
                 metadata: None,
@@ -233,18 +227,11 @@ fn operations_and_metadata_from_account_transaction_details(
             reject_reason,
         } => (
             vec![Operation {
-                operation_identifier: Box::new(OperationIdentifier {
-                    index: 0,
-                    network_index: None,
-                }),
+                operation_identifier: Box::new(OperationIdentifier::new(0)),
                 related_operations: None,
-                _type: transaction_type_to_string(*transaction_type),
+                _type: transaction_type_to_operation_type(*transaction_type),
                 status: Some(OPERATION_STATUS_FAIL.to_string()),
-                account: Some(Box::new(AccountIdentifier {
-                    address: details.sender.to_string(),
-                    sub_account: None,
-                    metadata: None,
-                })),
+                account: Some(Box::new(AccountIdentifier::new(details.sender.to_string()))),
                 amount: Some(Box::new(amount_from_uccd(details.cost.microgtu as i64))),
                 coin_change: None,
                 metadata: Some(
@@ -595,7 +582,7 @@ fn account_transaction_operation<T: SerdeSerialize>(
             network_index: None,
         }),
         related_operations: None,
-        _type: transaction_type_to_string(details.transaction_type()),
+        _type: transaction_type_to_operation_type(details.transaction_type()),
         status: Some(OPERATION_STATUS_OK.to_string()),
         account: Some(Box::new(AccountIdentifier {
             address: account_address,
@@ -608,35 +595,55 @@ fn account_transaction_operation<T: SerdeSerialize>(
     }
 }
 
-fn transaction_type_to_string(type_: Option<TransactionType>) -> String {
+pub fn transaction_type_from_operation_type(type_: &str) -> ApiResult<TransactionType> {
+    match type_ {
+        OPERATION_TYPE_ADD_BAKER => Ok(TransactionType::AddBaker),
+        OPERATION_TYPE_DEPLOY_MODULE => Ok(TransactionType::DeployModule),
+        OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER => Ok(TransactionType::EncryptedAmountTransfer),
+        OPERATION_TYPE_INIT_CONTRACT => Ok(TransactionType::InitContract),
+        OPERATION_TYPE_REGISTER_DATA => Ok(TransactionType::RegisterData),
+        OPERATION_TYPE_REMOVE_BAKER => Ok(TransactionType::RemoveBaker),
+        OPERATION_TYPE_TRANSFER => Ok(TransactionType::Transfer),
+        OPERATION_TYPE_TRANSFER_TO_ENCRYPTED => Ok(TransactionType::TransferToEncrypted),
+        OPERATION_TYPE_TRANSFER_TO_PUBLIC => Ok(TransactionType::TransferToPublic),
+        OPERATION_TYPE_TRANSFER_WITH_SCHEDULE => Ok(TransactionType::TransferWithSchedule),
+        OPERATION_TYPE_UPDATE_BAKER_KEYS => Ok(TransactionType::UpdateBakerKeys),
+        OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS => {
+            Ok(TransactionType::UpdateBakerRestakeEarnings)
+        }
+        OPERATION_TYPE_UPDATE_BAKER_STAKE => Ok(TransactionType::UpdateBakerStake),
+        OPERATION_TYPE_UPDATE_CONTRACT => Ok(TransactionType::Update),
+        OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS => Ok(TransactionType::UpdateCredentialKeys),
+        OPERATION_TYPE_UPDATE_CREDENTIALS => Ok(TransactionType::UpdateCredentials),
+        _ => Err(ApiError::UnsupportedOperationType(type_.to_string())),
+    }
+}
+
+pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> String {
     let res = match type_ {
         None => "unknown",
         Some(t) => match t {
-            TransactionType::DeployModule => OPERATION_TYPE_DEPLOY_MODULE,
-            TransactionType::InitContract => OPERATION_TYPE_INIT_CONTRACT,
-            TransactionType::Update => OPERATION_TYPE_UPDATE_CONTRACT,
-            TransactionType::Transfer => OPERATION_TYPE_TRANSFER,
             TransactionType::AddBaker => OPERATION_TYPE_ADD_BAKER,
+            TransactionType::DeployModule => OPERATION_TYPE_DEPLOY_MODULE,
+            TransactionType::EncryptedAmountTransfer => OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER,
+            TransactionType::EncryptedAmountTransferWithMemo => OPERATION_TYPE_TRANSFER,
+            TransactionType::InitContract => OPERATION_TYPE_INIT_CONTRACT,
+            TransactionType::RegisterData => OPERATION_TYPE_REGISTER_DATA,
             TransactionType::RemoveBaker => OPERATION_TYPE_REMOVE_BAKER,
-            TransactionType::UpdateBakerStake => OPERATION_TYPE_UPDATE_BAKER_STAKE,
+            TransactionType::Transfer => OPERATION_TYPE_TRANSFER,
+            TransactionType::TransferToEncrypted => OPERATION_TYPE_TRANSFER_TO_ENCRYPTED,
+            TransactionType::TransferToPublic => OPERATION_TYPE_TRANSFER_TO_PUBLIC,
+            TransactionType::TransferWithMemo => OPERATION_TYPE_TRANSFER,
+            TransactionType::TransferWithScheduleAndMemo => OPERATION_TYPE_TRANSFER,
+            TransactionType::TransferWithSchedule => OPERATION_TYPE_TRANSFER_WITH_SCHEDULE,
+            TransactionType::Update => OPERATION_TYPE_UPDATE_CONTRACT,
+            TransactionType::UpdateBakerKeys => OPERATION_TYPE_UPDATE_BAKER_KEYS,
             TransactionType::UpdateBakerRestakeEarnings => {
                 OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS
             }
-            TransactionType::UpdateBakerKeys => OPERATION_TYPE_UPDATE_BAKER_KEYS,
+            TransactionType::UpdateBakerStake => OPERATION_TYPE_UPDATE_BAKER_STAKE,
             TransactionType::UpdateCredentialKeys => OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS,
-            TransactionType::EncryptedAmountTransfer => OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER,
-            TransactionType::TransferToEncrypted => OPERATION_TYPE_TRANSFER_TO_ENCRYPTED,
-            TransactionType::TransferToPublic => OPERATION_TYPE_TRANSFER_TO_PUBLIC,
-            TransactionType::TransferWithSchedule => OPERATION_TYPE_TRANSFER_WITH_SCHEDULE,
             TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,
-            TransactionType::RegisterData => OPERATION_TYPE_REGISTER_DATA,
-            TransactionType::TransferWithMemo => OPERATION_TYPE_TRANSFER_WITH_MEMO,
-            TransactionType::EncryptedAmountTransferWithMemo => {
-                OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER_WITH_MEMO
-            }
-            TransactionType::TransferWithScheduleAndMemo => {
-                OPERATION_TYPE_TRANSFER_WITH_SCHEDULE_AND_MEMO
-            }
         },
     };
     res.to_string()

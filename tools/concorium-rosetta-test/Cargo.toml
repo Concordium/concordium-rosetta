@@ -1,0 +1,26 @@
+[package]
+name = "concorium-rosetta-test"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies.concordium-rust-sdk]
+path = "../../concordium-rust-sdk"
+version = "*"
+
+[dependencies.rosetta]
+path = "../../rosetta"
+version = "*"
+
+[dependencies.sign-transaction-hash]
+path = "../sign-transaction-hash"
+version = "*"
+
+[dependencies]
+anyhow = "1"
+clap = "2"
+chrono = { version = "0.4" }
+hex = "0.4"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+structopt = "0.3"

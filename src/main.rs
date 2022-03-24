@@ -6,6 +6,7 @@ mod version;
 
 use crate::api::account::AccountApi;
 use crate::api::block::BlockApi;
+use crate::api::construction::ConstructionApi;
 use crate::api::network::NetworkApi;
 use crate::api::query::QueryHelper;
 use crate::validate::account::AccountValidator;
@@ -79,9 +80,15 @@ async fn main() -> Result<()> {
         query_helper.clone(),
     );
     let block_api = BlockApi::new(network_validator.clone(), query_helper.clone());
+    let construction_api = ConstructionApi::new(network_validator.clone(), query_helper.clone());
 
-    warp::serve(route::root(network_api, account_api, block_api))
-        .run(([0, 0, 0, 0], app.port))
-        .await;
+    warp::serve(route::root(
+        network_api,
+        account_api,
+        block_api,
+        construction_api,
+    ))
+    .run(([0, 0, 0, 0], app.port))
+    .await;
     Ok(())
 }

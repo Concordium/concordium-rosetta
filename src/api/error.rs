@@ -26,6 +26,15 @@ pub enum InvalidBlockIdentifier {
     InvalidIndex,
 }
 
+#[derive(Debug)]
+pub enum InvalidSignature {
+    MissingSeparator,
+    MissingIndexSeparator,
+    InvalidCredentialIndex(String),
+    InvalidKeyIndex(String),
+    InvalidSignatureHexBytes(String),
+}
+
 #[derive(Error, Debug)]
 pub enum ApiError {
     #[error("unsupported network identifier provided")]
@@ -36,21 +45,47 @@ pub enum ApiError {
     InvalidAccountAddress,
     #[error("invalid currency")]
     InvalidCurrency,
+    #[error("invalid amount")]
+    InvalidAmount,
     #[error("no blocks matched")]
     NoBlocksMatched,
     #[error("multiple blocks matched")]
     MultipleBlocksMatched,
     #[error("no transactions matched")]
     NoTransactionsMatched,
+    #[error("unsupported combination of operations")]
+    UnsupportedCombinationOfOperations,
+    #[error("unsupported operation type")]
+    UnsupportedOperationType(String),
+    #[error("field is not supported")]
+    UnsupportedFieldPresent(String),
+    #[error("required field is missing")]
+    RequiredFieldMissing(String),
     #[error("client RPC error")]
     ClientRpcError(RPCError),
     #[error("client query error")]
     ClientQueryError(QueryError),
+    #[error("json encode or decode error")]
+    SerdeError(serde_json::Error),
     #[error("sub-accounts are not yet implemented")]
     SubAccountNotImplemented,
+    #[error("invalid transaction")]
+    InvalidTransaction, // TODO add details
+    #[error("invalid encoded payload")]
+    InvalidEncodedPayload,
+    #[error("invalid signature")]
+    InvalidSignature(String, InvalidSignature),
+    #[error("transaction not accepted by node")]
+    TransactionNotAccepted,
 }
 
 impl warp::reject::Reject for ApiError {}
+
+impl From<serde_json::Error> for ApiError {
+    fn from(err: serde_json::Error) -> Self {
+        ApiError::SerdeError(err)
+    }
+}
 
 impl From<RPCError> for ApiError {
     fn from(err: RPCError) -> Self {

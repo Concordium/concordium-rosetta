@@ -40,10 +40,13 @@ impl QueryHelper {
     ) -> ApiResult<BlockInfo> {
         match block_id {
             None => {
+                println!("query consensus status");
                 let consensus_status = self.client.clone().get_consensus_status().await?;
+                println!("query block hash");
                 let block_hash = block_hash_from_string(
                     consensus_status.last_finalized_block.to_string().as_str(),
                 )?;
+                println!("done query block info");
                 Ok(self.client.clone().get_block_info(&block_hash).await?)
             }
             Some(bid) => {

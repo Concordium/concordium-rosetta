@@ -1,12 +1,9 @@
 use anyhow::{Context, Error, Result};
-use concordium_rust_sdk::id::types::AccountKeys;
-use concordium_rust_sdk::types::hashes::TransactionSignHash;
-use concordium_rust_sdk::types::transactions::TransactionSigner;
 use serde_json;
 use std::env;
-use std::fs;
 use std::io;
-use std::str::FromStr;
+
+mod lib;
 
 fn main() -> Result<()> {
     // Read keys from JSON file.
@@ -15,9 +12,7 @@ fn main() -> Result<()> {
         None => return Err(Error::msg("key file not provided")),
         Some(p) => p,
     };
-    let data = fs::read_to_string(path).context("cannot read file")?;
-    let keys: AccountKeys =
-        serde_json::from_str(&data).context("cannot parse keys read from file")?;
+    let keys = lib::load_keys(path).context("cannot load account keys")?;
 
     // Read hash from stdin.
     let mut input = String::new();
@@ -31,9 +26,7 @@ fn main() -> Result<()> {
     // println!("Stdin: {}", input);
 
     // Sign hash using loaded keys.
-    let tx_hash =
-        TransactionSignHash::from_str(trimmed_input).context("cannot parse hash from input")?;
-    let tx_sig = keys.sign_transaction_hash(&tx_hash);
+    let tx_sig = lib::sign_hash(&keys, trimmed_input)?;
 
     // Print as JSON.
     let str = serde_json::to_string(&tx_sig).context("cannot serialize signatures into JSON")?;

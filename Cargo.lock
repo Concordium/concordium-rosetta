@@ -358,6 +358,7 @@ dependencies = [
  "concordium-rust-sdk",
  "env_logger",
  "futures",
+ "hex",
  "log",
  "prometheus",
  "rosetta",

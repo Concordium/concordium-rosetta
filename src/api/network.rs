@@ -68,9 +68,6 @@ impl NetworkApi {
                     OPERATION_TYPE_TRANSFER_WITH_SCHEDULE.to_string(),
                     OPERATION_TYPE_UPDATE_CREDENTIALS.to_string(),
                     OPERATION_TYPE_REGISTER_DATA.to_string(),
-                    OPERATION_TYPE_TRANSFER_WITH_MEMO.to_string(),
-                    OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER_WITH_MEMO.to_string(),
-                    OPERATION_TYPE_TRANSFER_WITH_SCHEDULE_AND_MEMO.to_string(),
                 ],
                 errors: vec![], // TODO should have one result for each known error code
                 historical_balance_lookup: true,

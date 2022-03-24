@@ -11,10 +11,9 @@ TODO: Add CLI args.
 ## Implementation status
 
 All required features of the Rosetta specification v1.4.10 are implemented.
-Detailed status descriptions are given in the sections below.
-
-The descriptions don't explain the intended behavior/usage according to the specification.
-See the linked pages to the official documentation or the example section below (TODO) for details on this.
+The sections below describe how the implementations behave relative to the specification.
+To learn more about the intended behavior and usage of the endpoints,
+see the official documentation (linked) or the example section below (TODO).
 
 ### Data API
 
@@ -36,6 +35,7 @@ All applicable endpoints except for the
   (think of Bitcoin's "coinbase" transaction).
   These operations reference the special internal "baker-" and "finalization reward" accounts with the pseudo-addresses
   `baking_reward_account` and `finalization_reward_account`, respectively.
+  Likewise, almost all regular transactions have a "fee" operation.
 
 - [Mempool](https://www.rosetta-api.org/docs/MempoolApi.html):
   Not implemented as the node doesn't expose the necessary information.
@@ -92,9 +92,9 @@ Not implemented.
 ### Identifiers
 
 The Rosetta API uses a common set of identifiers across all endpoints.
-This implementation imposes the following restrictions:
+This implementation imposes the following restrictions on these identifiers:
 
-- `network_identifier`: The only supported value is `{"blockchain": "concordium", "network": "<network>"}`
+- `network_identifier`: The only accepted value is `{"blockchain": "concordium", "network": "<network>"}`
   where `<network>` is the value provided on startup (TODO).
   The field `sub_network_identifier` is not applicable.
 
@@ -108,8 +108,45 @@ This implementation imposes the following restrictions:
 Identifier strings are generally expected in standard formats (hex for hashes, base58-check for account addresses etc.).
 No prefixes such as "0x" may be added.
 
+### Operations
+
+Rosetta represents transactions as a list of operations,
+each of which indicate that the balance of some account has changed for some reason.
+All 
+
 ## Example
 
-The tool `tools/concordium-rosetta-test` uses the implementation to send a transfer from one account to another. The transfer may optionally include a memo.
+The tool `tools/concordium-rosetta-test` project is a simple client tool
+that uses the implementation to send a transfer from one account to another.
+The transfer may optionally include a memo.
 
-The following manual procedure outlines the flow performed by the tool: TODO
+An example of the construction flow if it were to be performed by hand is as follows:
+
+0. The `derive` endpoint derives an account address for a public key. This is not applicable to Concordium.
+
+1. Call `preprocess` with a list of operations representing the transfer.
+
+   Request:
+   ```
+   ```
+
+   Response:
+   ```
+   ```
+
+2. Call `metadata` with the options from the `preprocess` response.
+   This might as well have been the first step as these options are trivially constructed by hand.
+
+   Request:
+   ```
+   ```
+
+   Response:
+   ```
+   ```
+
+3. Call `payloads`... Has memo in the metadata?
+4. Call `parse` to verify that the operations match the constructed transaction...
+5. Call `combine`...
+6. Call `parse` to verify that the operations still match the signed transaction...
+7. Call `submit` to send the transaction to the node that the server is connected to.

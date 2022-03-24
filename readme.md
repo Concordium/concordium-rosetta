@@ -4,9 +4,9 @@ An implementation of the [Rosetta API](https://www.rosetta-api.org/) for the [Co
 
 ## Build and run
 
-```
-cargo run
-```
+The command `cargo build --release` will place an optimized binary in `./target/release/concordium-rosetta`.
+
+TODO: Add CLI args.
 
 ## Implementation status
 
@@ -32,6 +32,10 @@ All applicable endpoints except for the
 
 - [Block](https://www.rosetta-api.org/docs/BlockApi.html):
   All endpoints (`block`, `transaction`) are implemented according to the specification.
+  All blocks contain a synthetic first transaction containing operations for minting and rewards
+  (think of Bitcoin's "coinbase" transaction).
+  These operations reference the special internal "baker-" and "finalization reward" accounts with the pseudo-addresses
+  `baking_reward_account` and `finalization_reward_account`, respectively.
 
 - [Mempool](https://www.rosetta-api.org/docs/MempoolApi.html):
   Not implemented as the node doesn't expose the necessary information.
@@ -39,6 +43,8 @@ All applicable endpoints except for the
 ### Construction API
 
 All applicable endpoints are supported to construct and submit transfer transactions with or without a memo.
+
+TODO: Mention which endpoints will fail if other transactions are attempted. And where the memo field is expected.
 
 - [`derive`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionderive):
   Not applicable as account addresses aren't derivable from public keys.
@@ -85,14 +91,25 @@ Not implemented.
 
 ### Identifiers
 
-Rosetta uses a common set of identifiers across all endpoints:
+The Rosetta API uses a common set of identifiers across all endpoints.
+This implementation imposes the following restrictions:
 
-- `network_identifier`: Only supported value is `{"blockchain": "concordium", "network": "<network>"}`
+- `network_identifier`: The only supported value is `{"blockchain": "concordium", "network": "<network>"}`
   where `<network>` is the value provided on startup (TODO).
   The field `sub_network_identifier` is not applicable.
 
-- `block_identifier`: Defaults to the most recently finalized block if not specified.
+- `block_identifier`: When provided in queries, only one of the fields `index` and `hash` may be specified.
+  If the identifier is optional and omitted, it defaults to the most recently finalized block.
 
-- `currencies`: Only supported value is `{"symbol": "CCD", "decimal": 6}`.
+- `currencies`: The only supported value is `{"symbol": "CCD", "decimal": 6}`. The `metadata` field is ignored.
 
-- `account_identifier`: TODO
+- `account_identifier`: Only the `address` field is applicable.
+
+Identifier strings are generally expected in standard formats (hex for hashes, base58-check for account addresses etc.).
+No prefixes such as "0x" may be added.
+
+## Example
+
+The tool `tools/concordium-rosetta-test` uses the implementation to send a transfer from one account to another. The transfer may optionally include a memo.
+
+The following manual procedure outlines the flow performed by the tool: TODO

@@ -20,7 +20,16 @@ use structopt::StructOpt;
 
 #[derive(StructOpt)]
 struct App {
-    #[structopt(long = "port", help = "Listen port", default_value = "8080")]
+    #[structopt(
+        long = "network",
+        help = "The name of the network that the connected node is part of; i.e. 'testnet' or 'mainnet'. Only requests with network identifier using this value will be accepted (see docs for details)."
+    )]
+    network: String,
+    #[structopt(
+        long = "port",
+        help = "The port that HTTP requests are to be served on.",
+        default_value = "8080"
+    )]
     port: u16,
     #[structopt(
         long = "grpc-host",
@@ -47,6 +56,7 @@ struct App {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Parse CLI args.
     let app = {
         let app = App::clap().global_setting(AppSettings::ColoredHelp);
         let matches = app.get_matches();
@@ -56,19 +66,20 @@ async fn main() -> Result<()> {
     // Initialize logging.
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
+    // Initialize gRPC and client.
     let endpoint = tonic::transport::Endpoint::from_shared(format!(
         "http://{}:{}",
         app.grpc_host, app.grpc_port
     ))
     .context("invalid host and/or port")?;
-
     let client = Client::connect(endpoint, app.grpc_token)
         .await
         .context("cannot connect to node")?;
 
+    // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {
         blockchain: "concordium".to_string(),
-        network: "mainnet".to_string(),
+        network: app.network,
         sub_network_identifier: None,
     });
     let account_validator = AccountValidator {};
@@ -82,6 +93,7 @@ async fn main() -> Result<()> {
     let block_api = BlockApi::new(network_validator.clone(), query_helper.clone());
     let construction_api = ConstructionApi::new(network_validator.clone(), query_helper.clone());
 
+    // Configure and start web server.
     warp::serve(route::root(
         network_api,
         account_api,

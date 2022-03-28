@@ -13,10 +13,12 @@ The server performs all on-chain activity against a node through its gRPC interf
 The command `cargo build --release` will place an optimized binary in `./target/release/concordium-rosetta`.
 The application accepts the following parameters:
 
-- `--port`: The port that HTTP requests are served on (default: `8080`).
 - `--grpc-host`: Host address of a node with accessible gRPC interface (default: `localhost`).
 - `--grpc-port`: Port of the node's gRPC interface (default: `10000`).
 - `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
+- `--network`: The name of the network that the connected node is part of; i.e. `testnet` or `mainnet`.
+  Only requests with network identifier using this value will be accepted (see [below](#Identifiers)).
+- `--port`: The port that HTTP requests are to be served on (default: `8080`).
 
 ## Rosetta
 
@@ -123,7 +125,7 @@ Rosetta uses a common set of identifiers across all endpoints.
 This implementation imposes the following restrictions on these identifiers:
 
 - `network_identifier`: The only accepted value is `{"blockchain": "concordium", "network": "<network>"}`
-  where `<network>` is the value provided on startup (TODO).
+  where `<network>` is the value provided with the CLI parameter `--network` on startup.
   The field `sub_network_identifier` is not applicable.
 
 - `block_identifier`: When provided in queries, only one of the fields `index` and `hash` may be specified.
@@ -133,7 +135,7 @@ This implementation imposes the following restrictions on these identifiers:
 
 - `account_identifier`: Only the `address` field is applicable.
 
-Identifier strings are generally expected in standard formats (hex for hashes, base58-check for account addresses etc.).
+Identifier strings are generally expected in standard formats (hex for hashes, Base58Check for account addresses etc.).
 No prefixes such as "0x" may be added.
 
 ### Operations

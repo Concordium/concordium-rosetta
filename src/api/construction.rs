@@ -351,6 +351,7 @@ impl ConstructionApi {
             .send_transaction(DEFAULT_NETWORK_ID, &block_item)
             .await?;
         if !success {
+            // TODO Verify signatures in this case?
             return Err(ApiError::TransactionNotAccepted);
         }
         Ok(TransactionIdentifierResponse::new(

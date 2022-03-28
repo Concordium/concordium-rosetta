@@ -39,11 +39,11 @@ struct App {
     url: String,
     #[structopt(
         long = "network",
-        help = "Network name (supported values: 'mainnet').",
-        default_value = "mainnet"
+        help = "Network name. Used in network identifier.",
+        default_value = "testnet"
     )]
     network: String,
-    #[structopt(long = "sender", help = "Address of the account sending a transfer.")]
+    #[structopt(long = "sender", help = "Address of the account sending the transfer.")]
     sender_addr: String,
     #[structopt(
         long = "receiver",
@@ -54,7 +54,7 @@ struct App {
     amount: i64,
     #[structopt(
         long = "keys-file",
-        help = "File containing the signing keys for the sender account."
+        help = "Path of file containing the signing keys for the sender account."
     )]
     keys_file: String,
     #[structopt(
@@ -127,8 +127,11 @@ fn main() -> Result<()> {
         false,
         payloads_response.unsigned_transaction.clone(),
     )?;
-    println!("parse unsigned response: {}", serde_json::to_string_pretty(&parse_unsigned_response)?);
-    
+    println!(
+        "parse unsigned response: {}",
+        serde_json::to_string_pretty(&parse_unsigned_response)?
+    );
+
     if parse_unsigned_response.operations != operations {
         return Err(anyhow::Error::msg("failed comparison of unsigned parse"));
     }
@@ -143,7 +146,7 @@ fn main() -> Result<()> {
         payloads_response.unsigned_transaction,
         sigs,
     )?;
-    
+
     let parse_signed_response = call_parse(
         client.clone(),
         &base_url,
@@ -151,8 +154,11 @@ fn main() -> Result<()> {
         true,
         combine_response.signed_transaction.clone(),
     )?;
-    println!("parsed signed transaction: {}", serde_json::to_string_pretty(&parse_signed_response)?);
-    
+    println!(
+        "parsed signed transaction: {}",
+        serde_json::to_string_pretty(&parse_signed_response)?
+    );
+
     if parse_signed_response.operations != operations {
         return Err(anyhow::Error::msg("failed comparison of signed parse"));
     }

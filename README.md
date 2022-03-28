@@ -155,8 +155,8 @@ The Construction API only supports operations of type `transfer`.
 
 ### Construction API
 
-The tool `tools/concordium-rosetta-test` project is a simple client tool
-that uses the implementation to send a transfer from one account to another.
+The tool [`tools/transfer-client`](tools/transfer-client) project is a simple client
+that uses the Rosetta implementation to make a CCD transfer from one account to another.
 The transfer may optionally include a memo.
 
 An example of the construction flow if it were to be performed by hand is as follows: TODO

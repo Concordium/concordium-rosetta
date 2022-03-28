@@ -93,6 +93,7 @@ TODO: Mention which endpoints will fail if other transactions are attempted. And
   Implemented, but doesn't support the field `public_keys` for the same reason as above
   (though here the sender address is derived from the operations, not passed explicitly).
   The response contains a transaction payload that the caller needs to sign with the appropriate keys.
+  TODO: Mention expected metadata fields.
 
 - [`combine`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructioncombine):
   Implemented with the caveat that the provided signatures must be prepended with some extra values that are necessary but don't fit well into the API:
@@ -159,7 +160,298 @@ The tool [`tools/transfer-client`](tools/transfer-client) project is a simple cl
 that uses the Rosetta implementation to make a CCD transfer from one account to another.
 The transfer may optionally include a memo.
 
-An example of the construction flow if it were to be performed by hand is as follows: TODO
+### Example
+
+Transfer 1000 µCCD along with a memo from account
+`3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi` to `4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS`
+
+The command for doing this using the client is
+
+```shell
+transfer-client \
+  --network=testnet \
+  --sender=3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi \
+  --receiver=4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS \
+  --amount=1000 \
+  --memo-hex='674869204d6f6d21' \
+  --keys-file=./sender.keys
+```
+
+The request/response flow of the command is a sequence of calls to the Construction API:
+
+0. The `derive` endpoint derives an account address for a public key. This is not applicable to Concordium.
+
+1. Call `preprocess` with a list of operations representing the transfer.
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "operations": [
+        {
+          "operation_identifier": { "index": 0 },
+          "type": "transfer",
+          "account": { "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi" },
+          "amount": {
+            "value": "-1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        },
+        {
+          "operation_identifier": { "index": 1 },
+          "type": "transfer",
+          "account": { "address": "4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS" },
+          "amount": {
+            "value": "1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        }
+      ]
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "options": {
+        "sender": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+      },
+      "required_public_keys": [
+        {
+          "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+        }
+      ]
+    }
+   ```
+
+2. Call `metadata` with the options from the `preprocess` response.
+   This might as well have been the first step as these options are trivially constructed by hand.
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "options": {
+        "sender": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+      }
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "metadata": {
+        "account_nonce": 87
+      }
+    }
+   ```
+
+3. Call `payloads`. The memo is passed as part of the metadata.
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "operations": [
+        {
+          "operation_identifier": { "index": 0 },
+          "type": "transfer",
+          "account": { "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi" },
+          "amount": {
+            "value": "-1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        },
+        {
+          "operation_identifier": { "index": 1 },
+          "type": "transfer",
+          "account": { "address": "4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS" },
+          "amount": {
+            "value": "1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        }
+      ],
+      "metadata": {
+        "account_nonce": 87,
+        "expiry_unix_millis": 1648481235675,
+        "memo": "674869204d6f6d21",
+        "signature_count": 2
+      }
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "unsigned_transaction": "{\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}",
+      "payloads": [
+        {
+          "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi",
+          "account_identifier": { "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi" },
+          "hex_bytes": "6b0f407bece7b782998547e3ae4ed4e7df9faa3b621f0d1ed4f0ddaea20a9cbc",
+          "signature_type": "ed25519"
+        }
+      ]
+    }
+   ```
+
+4. Call `parse` to verify that the operations match the constructed transaction...
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "signed": false,
+      "transaction": "{\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}"
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "operations": [
+        {
+          "operation_identifier": { "index": 0 },
+          "type": "transfer",
+          "account": { "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi" },
+          "amount": {
+            "value": "-1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        },
+        {
+          "operation_identifier": { "index": 1 },
+          "type": "transfer",
+          "account": {
+            "address": "4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS"
+          },
+          "amount": {
+            "value": "1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        }
+      ],
+      "metadata": {
+        "memo": "674869204d6f6d21"
+      }
+    }
+   ```
+
+5. Call `combine`...
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "unsigned_transaction": "{\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}",
+      "signatures": [
+        {
+          "signing_payload": {
+            "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi",
+            "account_identifier": {
+              "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+            },
+            "hex_bytes": "6b0f407bece7b782998547e3ae4ed4e7df9faa3b621f0d1ed4f0ddaea20a9cbc",
+            "signature_type": "ed25519"
+          },
+          "public_key": {
+            "hex_bytes": "660095bfc536effbfdc5bc6ed58ae10810103482ea9e4af02cb5a393c21d8fc6",
+            "curve_type": "edwards25519"
+          },
+          "signature_type": "ed25519",
+          "hex_bytes": "0:0/2b31e8dddc617b780db49fc7e1b15da7545082ace496548c1c2eaa97d1628e23d04e04cfa8fd58a500df955192b5aa7ab3e4039900c929bcea71a2bc4bbf3001"
+        },
+        {
+          "signing_payload": {
+            "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi",
+            "account_identifier": {
+              "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+            },
+            "hex_bytes": "6b0f407bece7b782998547e3ae4ed4e7df9faa3b621f0d1ed4f0ddaea20a9cbc",
+            "signature_type": "ed25519"
+          },
+          "public_key": {
+            "hex_bytes": "8de8ff2a9ee861ec64db65d552a59b01bbfc41d51796c6678934ecfb518a2194",
+            "curve_type": "edwards25519"
+          },
+          "signature_type": "ed25519",
+          "hex_bytes": "0:1/085c7edb5fb460290c243955e3680070e3279fc82a2fbf6f219352da1ea0f5b773813f48e382d7dd25d1fdb54d262239172409506215e6524500809f6b4bc30f"
+        }
+      ]
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "signed_transaction": "{\"signature\":{\"0\":{\"0\":\"2b31e8dddc617b780db49fc7e1b15da7545082ace496548c1c2eaa97d1628e23d04e04cfa8fd58a500df955192b5aa7ab3e4039900c929bcea71a2bc4bbf3001\",\"1\":\"085c7edb5fb460290c243955e3680070e3279fc82a2fbf6f219352da1ea0f5b773813f48e382d7dd25d1fdb54d262239172409506215e6524500809f6b4bc30f\"}},\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}"
+    }
+   ```
+
+6. Call `parse` to verify that the operations still match the signed transaction.
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "signed": true,
+      "transaction": "{\"signature\":{\"0\":{\"0\":\"2b31e8dddc617b780db49fc7e1b15da7545082ace496548c1c2eaa97d1628e23d04e04cfa8fd58a500df955192b5aa7ab3e4039900c929bcea71a2bc4bbf3001\",\"1\":\"085c7edb5fb460290c243955e3680070e3279fc82a2fbf6f219352da1ea0f5b773813f48e382d7dd25d1fdb54d262239172409506215e6524500809f6b4bc30f\"}},\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}"
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "operations": [
+        {
+          "operation_identifier": { "index": 0 },
+          "type": "transfer",
+          "account": { "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi" },
+          "amount": {
+            "value": "-1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        },
+        {
+          "operation_identifier": { "index": 1 },
+          "type": "transfer",
+          "account": { "address": "4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS" },
+          "amount": {
+            "value": "1000",
+            "currency": { "symbol": "CCD", "decimals": 6 }
+          }
+        }
+      ],
+      "account_identifier_signers": [
+        {
+          "address": "3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi"
+        }
+      ],
+      "metadata": {
+        "memo": "674869204d6f6d21"
+      }
+    }
+   ```
+
+7. Call `submit` to send the transaction to the node that the server is connected to.
+
+   Request:
+   ```json
+    {
+      "network_identifier": { "blockchain": "concordium", "network": "testnet" },
+      "signed_transaction": "{\"signature\":{\"0\":{\"0\":\"2b31e8dddc617b780db49fc7e1b15da7545082ace496548c1c2eaa97d1628e23d04e04cfa8fd58a500df955192b5aa7ab3e4039900c929bcea71a2bc4bbf3001\",\"1\":\"085c7edb5fb460290c243955e3680070e3279fc82a2fbf6f219352da1ea0f5b773813f48e382d7dd25d1fdb54d262239172409506215e6524500809f6b4bc30f\"}},\"header\":{\"sender\":\"3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi\",\"nonce\":87,\"energyAmount\":611,\"payloadSize\":51,\"expiry\":1648481235},\"payload\":\"16ae79db76ee0f8d93e47a0fc09b8c1ec89ce3932e66ecb351341e3f6e570225180008674869204d6f6d2100000000000003e8\"}"
+    }
+   ```
+
+   Response:
+   ```json
+    {
+      "transaction_identifier": {
+        "hash": "bea16341103d332d7ff57bde96276722bf7a97b79fbf8a8df0d3711f81f533ef"
+      }
+    }
+   ```
 
 ## Resources
 

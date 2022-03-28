@@ -330,7 +330,7 @@ fn sign_payload(payload: &SigningPayload, keys: &AccountKeys) -> Result<Signatur
                         let public_key = keys.keys[cred_idx].keys[key_idx].public;
                         let public_key_hex = hex::encode(public_key);
                         let sig_hex = format!(
-                            "{}/{}/{}",
+                            "{}:{}/{}",
                             cred_idx.index,
                             u8::from(*key_idx),
                             hex::encode(sig)

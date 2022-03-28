@@ -1,19 +1,47 @@
 # Concordium Rosetta
 
-An implementation of the [Rosetta API](https://www.rosetta-api.org/) for the [Concordium](https://www.concordium.com/) blockchain.
+A server implementing the [Rosetta API](https://www.rosetta-api.org/)
+for the [Concordium](https://www.concordium.com/) blockchain.
+
+The application serves plain unencrypted HTTP requests.
+Any TLS connections must be terminated by a reverse proxy before the requests hit the server.
+
+The server performs all on-chain activity against a node through its gRPC interface.
 
 ## Build and run
 
 The command `cargo build --release` will place an optimized binary in `./target/release/concordium-rosetta`.
+The application accepts the following parameters:
 
-TODO: Add CLI args.
+- `--port`: The port that HTTP requests are served on (default: `8080`).
+- `--grpc-host`: Host address of a node with accessible gRPC interface (default: `localhost`).
+- `--grpc-port`: Port of the node's gRPC interface (default: `10000`).
+- `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
+
+## Rosetta
+
+Rosetta is a specification of an HTTP-based API designed by Coinbase
+to provide a common layer of abstraction for interacting with blockchains.
+
+The Rosetta API is divided into three categories:
+
+- Data API: Used to access blocks, transactions, and balances of any blockchain in a standard format.
+- Construction API: Construct and submit transactions to the chain.
+- Indexers API: Additional integrations that build on top of the Data and Construction APIs.
+  It includes things like searching for a transaction by hash or accessing all transactions that affected a particular account.
+
+There are also mentions of a [Call API](https://www.rosetta-api.org/docs/CallApi.html) for network-specific RPC,
+but it doesn't appear to be a first class member of the spec.
+
+To learn more about the intended behavior and usage of the endpoints,
+see the [official documentation](https://www.rosetta-api.org/docs/welcome.html) or the example section below (TODO).
 
 ## Implementation status
 
 All required features of the Rosetta specification v1.4.10 are implemented.
-The sections below describe how the implementations behave relative to the specification.
-To learn more about the intended behavior and usage of the endpoints,
-see the official documentation (linked) or the example section below (TODO).
+I.e. everything that isn't implemented is marked as optional in the spec/docs.
+
+The sections below outline the status for the individual endpoints along with details relevant to integrating Rosetta clients.
 
 ### Data API
 
@@ -91,7 +119,7 @@ Not implemented.
 
 ### Identifiers
 
-The Rosetta API uses a common set of identifiers across all endpoints.
+Rosetta uses a common set of identifiers across all endpoints.
 This implementation imposes the following restrictions on these identifiers:
 
 - `network_identifier`: The only accepted value is `{"blockchain": "concordium", "network": "<network>"}`
@@ -112,41 +140,28 @@ No prefixes such as "0x" may be added.
 
 Rosetta represents transactions as a list of operations,
 each of which indicate that the balance of some account has changed for some reason.
-All 
 
-## Example
+Transactions with memo are represented as the same operation types as the ones without memo.
+The memo is simply included as metadata if the transaction contains one.
+Transaction types are otherwise represented by operation types named after the transaction type.
+
+For consistency, operation type names are styled with snake_case.
+
+The Construction API only supports operations of type `transfer`.
+
+## Examples
+
+### Construction API
 
 The tool `tools/concordium-rosetta-test` project is a simple client tool
 that uses the implementation to send a transfer from one account to another.
 The transfer may optionally include a memo.
 
-An example of the construction flow if it were to be performed by hand is as follows:
+An example of the construction flow if it were to be performed by hand is as follows: TODO
 
-0. The `derive` endpoint derives an account address for a public key. This is not applicable to Concordium.
+## Resources
 
-1. Call `preprocess` with a list of operations representing the transfer.
-
-   Request:
-   ```
-   ```
-
-   Response:
-   ```
-   ```
-
-2. Call `metadata` with the options from the `preprocess` response.
-   This might as well have been the first step as these options are trivially constructed by hand.
-
-   Request:
-   ```
-   ```
-
-   Response:
-   ```
-   ```
-
-3. Call `payloads`... Has memo in the metadata?
-4. Call `parse` to verify that the operations match the constructed transaction...
-5. Call `combine`...
-6. Call `parse` to verify that the operations still match the signed transaction...
-7. Call `submit` to send the transaction to the node that the server is connected to.
+- [List of implementations](https://github.com/coinbase/rosetta-ecosystem/blob/master/implementations.md)
+- Client side usage guide for Bitcoin implementation:
+  [Data API](https://medium.com/lunar-dev/getting-started-with-rosetta-bitcoin-93304775515e),
+  [Construction API](https://medium.com/lunar-dev/getting-started-with-rosetta-bitcoin-construction-api-2b7cee86fdc).

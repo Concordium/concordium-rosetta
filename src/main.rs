@@ -25,21 +25,21 @@ struct App {
     #[structopt(
         long = "grpc-host",
         env = "GRPC_HOST",
-        help = "Hostname or IP of the node's GRPC endpoint.",
+        help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
     grpc_host: String,
     #[structopt(
         long = "grpc-port",
         env = "GRPC_PORT",
-        help = "Port of the node's GRPC endpoint.",
+        help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
     grpc_port: u16,
     #[structopt(
         long = "grpc-token",
         env = "GRPC_TOKEN",
-        help = "Access token of the node's GRPC endpoint.",
+        help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
     grpc_token: String,

@@ -192,7 +192,7 @@ impl ConstructionApi {
                 payload: builder.encoded.clone(),
             })?,
             payloads: vec![SigningPayload {
-                address: Some(account_address.to_string()), // deprecated
+                address: None, // deprecated
                 account_identifier: Some(Box::new(AccountIdentifier::new(
                     account_address.to_string(),
                 ))),

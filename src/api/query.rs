@@ -96,11 +96,11 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {
     match id.sub_account {
-        None => account_address_from_string(id.address.as_str()),
+        None => account_address_from_string(&id.address),
         Some(_) => Err(ApiError::SubAccountNotImplemented),
     }
 }
 
-pub fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
-    AccountAddress::from_str(addr).map_err(|_| ApiError::InvalidAccountAddress)
+pub fn account_address_from_string(addr: &String) -> ApiResult<AccountAddress> {
+    AccountAddress::from_str(addr.as_str()).map_err(|_| ApiError::InvalidAccountAddress(addr.clone()))
 }

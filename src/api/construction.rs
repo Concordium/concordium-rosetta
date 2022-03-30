@@ -399,25 +399,37 @@ fn parse_operations(ops: &Vec<Operation>) -> ApiResult<Vec<ParsedOperation>> {
 
 fn parse_transaction(ops: &Vec<ParsedOperation>) -> ApiResult<ParsedTransaction> {
     match &ops[..] {
-        [ParsedOperation::Transfer(t1), ParsedOperation::Transfer(t2)] => {
-            if t1.amount_uccd != -t2.amount_uccd {
-                return Err(ApiError::InvalidTransaction);
-            }
-            let (sender, receiver) = if t1.amount_uccd < 0 {
-                (t1, t2)
-            } else if t2.amount_uccd < 0 {
-                (t2, t1)
-            } else {
-                return Err(ApiError::InvalidTransaction);
-            };
-            Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
-                sender_address: sender.account_address,
-                receiver_address: receiver.account_address,
-                amount_uccd: -sender.amount_uccd as u64,
-            }))
+        [ParsedOperation::Transfer(sender), ParsedOperation::Transfer(receiver)] => {
+            parse_transfer_transaction(sender, receiver)
         }
         _ => Err(ApiError::UnsupportedCombinationOfOperations),
     }
+}
+
+fn parse_transfer_transaction(
+    sender: &ParsedTransferOperation,
+    receiver: &ParsedTransferOperation,
+) -> Result<ParsedTransaction, ApiError> {
+    if sender.amount_uccd >= 0 {
+        return Err(ApiError::InconsistentOperations(
+            "amount of first transfer operation must be negative".to_string(),
+        ));
+    }
+    if receiver.amount_uccd <= 0 {
+        return Err(ApiError::InconsistentOperations(
+            "amount of second transfer operation must be positive".to_string(),
+        ));
+    }
+    if sender.amount_uccd != -receiver.amount_uccd {
+        return Err(ApiError::InconsistentOperations(
+            "amount of transfer operations must sum to zero".to_string(),
+        ));
+    }
+    Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
+        sender_address: sender.account_address,
+        receiver_address: receiver.account_address,
+        amount_uccd: receiver.amount_uccd as u64,
+    }))
 }
 
 fn transaction_from_operations(ops: &Vec<Operation>) -> ApiResult<ParsedTransaction> {

@@ -69,8 +69,8 @@ pub enum ApiError {
     SerdeError(serde_json::Error),
     #[error("sub-accounts are not yet implemented")]
     SubAccountNotImplemented,
-    #[error("invalid transaction")]
-    InvalidTransaction, // TODO add details
+    #[error("invalid operations")]
+    InconsistentOperations(String),
     #[error("invalid encoded payload")]
     InvalidEncodedPayload,
     #[error("invalid signature")]

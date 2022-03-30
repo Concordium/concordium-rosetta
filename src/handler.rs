@@ -140,9 +140,9 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     retriable: false,
                     details: None, // TODO
                 })),
-                ApiError::InvalidTransaction => Ok(reply::json(&Error {
+                ApiError::InconsistentOperations(_) => Ok(reply::json(&Error {
                     code: 1110,
-                    message: "invalid transaction".to_string(),
+                    message: "invalid operations".to_string(),
                     description: Some("TODO".to_string()),
                     retriable: false,
                     details: None, // TODO

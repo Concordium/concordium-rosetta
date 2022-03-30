@@ -4,19 +4,13 @@ use crate::AccountApi;
 use concordium_rust_sdk::endpoints::{QueryError, RPCError};
 use rosetta::models::*;
 use serde::Serialize;
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value};
 use std::convert::Infallible;
 use warp::reject::Reject;
 use warp::{reject, reply, Rejection, Reply};
 
 use crate::api::error::{ApiError};
 use crate::api::network::NetworkApi;
-use crate::handler::NotImplemented::*;
-
-enum NotImplemented {
-    EndpointNotImplemented(String),
-    ParameterNotImplemented(String),
-}
 
 pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     // Error code structure:
@@ -325,20 +319,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     }
 }
 
-fn not_implemented(err: NotImplemented) -> Result<reply::Json, Rejection> {
-    let details = match err {
-        NotImplemented::EndpointNotImplemented(e) => json!({ "endpoint": e }),
-        NotImplemented::ParameterNotImplemented(p) => json!({ "parameter": p }),
-    };
-    Ok(reply::json(&Error {
-        code: 9000,
-        message: "feature is not implemented".to_string(),
-        description: None,
-        retriable: false,
-        details: Some(details),
-    }))
-}
-
 fn key_value(k: &str, v: &str) -> Value {
     let mut details = Map::new();
     details.insert(k.to_string(), Value::String(v.to_string()));
@@ -495,10 +475,6 @@ pub async fn account_balance(
     to_json(api.account_balance(req).await)
 }
 
-pub async fn account_coins(_: AccountCoinsRequest) -> Result<impl Reply, Rejection> {
-    not_implemented(EndpointNotImplemented("/account/coins".to_string()))
-}
-
 pub async fn block(api: BlockApi, req: BlockRequest) -> Result<impl Reply, Rejection> {
     to_json(api.block(req).await)
 }
@@ -508,10 +484,6 @@ pub async fn block_transaction(
     req: BlockTransactionRequest,
 ) -> Result<impl Reply, Rejection> {
     to_json(api.block_transaction(req).await)
-}
-
-pub async fn construction_derive(_: AccountCoinsRequest) -> Result<impl Reply, Rejection> {
-    not_implemented(EndpointNotImplemented("/construction/derive".to_string()))
 }
 
 pub async fn construction_preprocess(

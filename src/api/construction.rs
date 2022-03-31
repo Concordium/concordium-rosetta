@@ -155,7 +155,7 @@ impl ConstructionApi {
         }
         let metadata = match req.metadata {
             None => return Err(RequiredFieldMissing("metadata".to_string())),
-            Some(v) => serde_json::from_value::<PayloadRequestMetadata>(v).map_err(|err| ApiError::InvalidPayloadsMetadata)?,
+            Some(v) => serde_json::from_value::<PayloadRequestMetadata>(v).map_err(|_| ApiError::InvalidPayloadsMetadata)?,
         };
         let parsed_transaction = transaction_from_operations(&req.operations)?;
         let (builder, account_address) = match parsed_transaction {
@@ -220,7 +220,7 @@ impl ConstructionApi {
             )
         };
         let payload = match encoded_payload.decode() {
-            Err(err) => return Err(ApiError::InvalidEncodedPayload),
+            Err(_) => return Err(ApiError::InvalidEncodedPayload),
             Ok(p) => p,
         };
 
@@ -239,7 +239,7 @@ impl ConstructionApi {
                 metadata,
             }),
 
-            Some(s) => {
+            Some(_) => {
                 Ok(ConstructionParseResponse {
                     operations,
                     signers: None, // deprecated
@@ -286,7 +286,7 @@ impl ConstructionApi {
             };
             let cred_idx = CredentialIndex {
                 index: match u8::from_str(cred_idx_str) {
-                    Err(err) => {
+                    Err(_) => {
                         return Err(ApiError::InvalidSignature(
                             hex_bytes.clone(),
                             InvalidSignatureError::InvalidCredentialIndex(cred_idx_str.to_string()),
@@ -296,7 +296,7 @@ impl ConstructionApi {
                 },
             };
             let key_idx = KeyIndex(match u8::from_str(key_idx_str) {
-                Err(err) => {
+                Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::InvalidKeyIndex(key_idx_str.to_string()),
@@ -305,7 +305,7 @@ impl ConstructionApi {
                 Ok(v) => v,
             });
             let sig = match hex::decode(&sig_hex_bytes) {
-                Err(err) => {
+                Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::InvalidSignatureHexBytes(sig_hex_bytes.to_string()),

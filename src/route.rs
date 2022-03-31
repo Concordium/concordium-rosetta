@@ -5,6 +5,7 @@ use warp::{Filter, Rejection, Reply};
 use crate::api::block::BlockApi;
 use crate::api::network::NetworkApi;
 use crate::{handler, AccountApi, ConstructionApi};
+use crate::handler_error::handle_rejection;
 
 fn network_list(
     api: NetworkApi,
@@ -176,7 +177,7 @@ pub fn root(
                 .or(block(block_api))
                 .or(construction(construction_api)),
         )
-        .recover(handler::handle_rejection)
+        .recover(handle_rejection)
 }
 
 fn with_network_api(

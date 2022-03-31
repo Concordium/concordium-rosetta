@@ -73,16 +73,12 @@ pub enum ApiError {
     InvalidConstructionOptions,
     #[error("invalid payloads metadata")]
     InvalidPayloadsMetadata,
-    // #[error("json encode or decode error")]
-    // SerdeError(serde_json::Error),
     
     // Invalid input: Unsupported field value.
     #[error("unsupported operation type")]
     UnsupportedOperationType(String),
     
     // Invalid input: Inconsistent value.
-    // #[error("unsupported combination of operations")]
-    // UnsupportedCombinationOfOperations,
     #[error("inconsistent operations")]
     InconsistentOperations(String),
     

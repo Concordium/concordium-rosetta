@@ -1,28 +1,15 @@
 use concordium_rust_sdk::endpoints::{QueryError, RPCError};
-use rosetta::models::*;
-use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Serialize)]
-pub struct UnsupportedNetworkIdentifier {
-    provided: NetworkIdentifier,
-    supported: Vec<NetworkIdentifier>,
-}
-
-impl UnsupportedNetworkIdentifier {
-    pub fn new(provided: NetworkIdentifier, supported: Vec<NetworkIdentifier>) -> Self {
-        UnsupportedNetworkIdentifier {
-            provided,
-            supported,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum InvalidBlockIdentifier {
+#[derive(Error, Debug)]
+pub enum InvalidBlockIdentifierError {
+    #[error("no values")]
     NoValues,
+    #[error("inconsistent values")]
     InconsistentValues,
+    #[error("invalid hash value")]
     InvalidHash,
+    #[error("invalid index value")]
     InvalidIndex,
 }
 
@@ -32,7 +19,7 @@ pub enum InvalidSignatureError {
     MissingSeparator(String),
     #[error("index separator '{0}' is missing")]
     MissingIndexSeparator(String),
-    #[error("invalid credential index")]
+    #[error("invalid credential index '{0}'")]
     InvalidCredentialIndex(String),
     #[error("invalid key index '{0}'")]
     InvalidKeyIndex(String),
@@ -43,25 +30,25 @@ pub enum InvalidSignatureError {
 #[derive(Error, Debug)]
 pub enum ApiError {
     // Invalid input: Unsupported field.
-    #[error("field is not supported")]
+    #[error("field '{0}' is not supported")]
     UnsupportedFieldPresent(String),
     #[error("sub-accounts are not supported")]
     SubAccountNotImplemented,
 
     // Invalid input: Missing field.
-    #[error("required field is missing")]
+    #[error("required field '{0}' is missing")]
     RequiredFieldMissing(String),
 
     // Invalid input: Invalid value or identifier (type or format).
-    #[error("invalid account address")]
+    #[error("invalid account address '{0}'")]
     InvalidAccountAddress(String),
     #[error("invalid currency")]
     InvalidCurrency,
-    #[error("invalid amount")]
+    #[error("invalid amount '{0}'")]
     InvalidAmount(String),
     #[error("invalid block identifier")]
-    InvalidBlockIdentifier(InvalidBlockIdentifier),
-    #[error("invalid signature")]
+    InvalidBlockIdentifier(InvalidBlockIdentifierError),
+    #[error("invalid signature '{0}': {1}")]
     InvalidSignature(String, InvalidSignatureError),
     #[error("invalid encoded transaction payload")]
     InvalidEncodedPayload,
@@ -75,16 +62,16 @@ pub enum ApiError {
     InvalidPayloadsMetadata,
 
     // Invalid input: Unsupported field value.
-    #[error("unsupported operation type")]
+    #[error("unsupported operation type '{0}'")]
     UnsupportedOperationType(String),
 
     // Invalid input: Inconsistent value.
-    #[error("inconsistent operations")]
+    #[error("inconsistent operations: {0}")]
     InconsistentOperations(String),
 
     // Identifier not resolved: Unresolved identifier.
     #[error("unsupported network identifier provided")]
-    UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
+    UnsupportedNetworkIdentifier,
     #[error("no blocks matched")]
     NoBlocksMatched,
     #[error("no transactions matched")]

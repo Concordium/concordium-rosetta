@@ -1,4 +1,4 @@
-use crate::api::error::{ApiError, ApiResult, UnsupportedNetworkIdentifier};
+use crate::api::error::{ApiError, ApiResult};
 use rosetta::models::NetworkIdentifier;
 
 #[derive(Clone)]
@@ -17,11 +17,8 @@ impl NetworkValidator {
 
     pub fn validate_network_identifier(&self, identifier: NetworkIdentifier) -> ApiResult<()> {
         if identifier != self.identifier {
-            Err(ApiError::UnsupportedNetworkIdentifier(
-                UnsupportedNetworkIdentifier::new(identifier, self.supported_networks()),
-            ))
-        } else {
-            Ok(())
+            return Err(ApiError::UnsupportedNetworkIdentifier);
         }
+        Ok(())
     }
 }

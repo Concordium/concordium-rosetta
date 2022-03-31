@@ -1,4 +1,4 @@
-use crate::api::error::{ApiError, ApiResult, InvalidBlockIdentifier};
+use crate::api::error::{ApiError, ApiResult, InvalidBlockIdentifierError};
 use concordium_rust_sdk::endpoints::{BlocksAtHeightInput, Client};
 use concordium_rust_sdk::id::types::AccountAddress;
 use concordium_rust_sdk::types::hashes::BlockHash;
@@ -51,7 +51,7 @@ impl QueryHelper {
                     (Some(height), None) => {
                         if height < 0 {
                             return Err(ApiError::InvalidBlockIdentifier(
-                                InvalidBlockIdentifier::InvalidIndex,
+                                InvalidBlockIdentifierError::InvalidIndex,
                             ));
                         }
                         let blocks = self
@@ -78,10 +78,10 @@ impl QueryHelper {
                     }
                     // TODO Allow if height and hash are consistent.
                     (Some(_), Some(_)) => Err(ApiError::InvalidBlockIdentifier(
-                        InvalidBlockIdentifier::InconsistentValues,
+                        InvalidBlockIdentifierError::InconsistentValues,
                     )),
                     (None, None) => Err(ApiError::InvalidBlockIdentifier(
-                        InvalidBlockIdentifier::NoValues,
+                        InvalidBlockIdentifierError::NoValues,
                     )),
                 }
             }
@@ -91,7 +91,7 @@ impl QueryHelper {
 
 pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     BlockHash::from_str(hash)
-        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifier::InvalidHash))
+        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InvalidHash))
 }
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {

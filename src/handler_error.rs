@@ -73,12 +73,12 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     Some(amount.clone()),
                     None,
                 ),
-                ApiError::InvalidBlockIdentifier(_) => {
+                ApiError::InvalidBlockIdentifier(err) => {
                     invalid_input_invalid_value_or_identifier_error(
                         Some("block identifier".to_string()),
                         None,
                         None,
-                        None,
+                        Some(err.to_string()),
                     )
                 }
                 ApiError::InvalidSignature(sig, err) => {
@@ -131,10 +131,10 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     Some("operation type".to_string()),
                     Some(name.clone()),
                 ),
-                ApiError::InconsistentOperations(_) => {
-                    invalid_input_inconsistent_value_error(Some("operations".to_string()))
+                ApiError::InconsistentOperations(err) => {
+                    invalid_input_inconsistent_value_error(Some("operations".to_string()), Some(err.clone()))
                 }
-                ApiError::UnsupportedNetworkIdentifier(_) => {
+                ApiError::UnsupportedNetworkIdentifier => {
                     identifier_not_resolved_no_matches_error(Some("network_identifier".to_string()))
                 }
                 ApiError::NoBlocksMatched => {
@@ -234,7 +234,7 @@ pub fn invalid_input_unsupported_value_error(name: Option<String>, value: Option
     }
 }
 
-pub fn invalid_input_inconsistent_value_error(field_name: Option<String>) -> Error {
+pub fn invalid_input_inconsistent_value_error(field_name: Option<String>, msg: Option<String>) -> Error {
     Error {
         code: 1400,
         message: "invalid input: inconsistent value".to_string(),
@@ -242,7 +242,7 @@ pub fn invalid_input_inconsistent_value_error(field_name: Option<String>) -> Err
             "The provided value does not satisfy all consistency requirements.".to_string(),
         ),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
+        details: key_value_pairs(&vec![key_value_pair("field", field_name), key_value_pair("message", msg)]),
     }
 }
 

@@ -102,5 +102,6 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Acco
 }
 
 pub fn account_address_from_string(addr: &String) -> ApiResult<AccountAddress> {
-    AccountAddress::from_str(addr.as_str()).map_err(|_| ApiError::InvalidAccountAddress(addr.clone()))
+    AccountAddress::from_str(addr.as_str())
+        .map_err(|_| ApiError::InvalidAccountAddress(addr.clone()))
 }

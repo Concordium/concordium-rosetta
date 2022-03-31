@@ -4,8 +4,8 @@ use warp::{Filter, Rejection, Reply};
 
 use crate::api::block::BlockApi;
 use crate::api::network::NetworkApi;
-use crate::{handler, AccountApi, ConstructionApi};
 use crate::handler_error::handle_rejection;
+use crate::{handler, AccountApi, ConstructionApi};
 
 fn network_list(
     api: NetworkApi,
@@ -154,7 +154,7 @@ fn construction(
     api: ConstructionApi,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     warp::path("construction").and(
-            construction_preprocess(api.clone())
+        construction_preprocess(api.clone())
             .or(construction_metadata(api.clone()))
             .or(construction_payloads(api.clone()))
             .or(construction_parse(api.clone()))

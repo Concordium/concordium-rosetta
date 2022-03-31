@@ -47,7 +47,7 @@ pub enum ApiError {
     UnsupportedFieldPresent(String),
     #[error("sub-accounts are not supported")]
     SubAccountNotImplemented,
-    
+
     // Invalid input: Missing field.
     #[error("required field is missing")]
     RequiredFieldMissing(String),
@@ -73,15 +73,15 @@ pub enum ApiError {
     InvalidConstructionOptions,
     #[error("invalid payloads metadata")]
     InvalidPayloadsMetadata,
-    
+
     // Invalid input: Unsupported field value.
     #[error("unsupported operation type")]
     UnsupportedOperationType(String),
-    
+
     // Invalid input: Inconsistent value.
     #[error("inconsistent operations")]
     InconsistentOperations(String),
-    
+
     // Identifier not resolved: Unresolved identifier.
     #[error("unsupported network identifier provided")]
     UnsupportedNetworkIdentifier(UnsupportedNetworkIdentifier),
@@ -89,7 +89,7 @@ pub enum ApiError {
     NoBlocksMatched,
     #[error("no transactions matched")]
     NoTransactionsMatched,
-    
+
     // Identifier not resolved: Ambiguous identifier.
     #[error("multiple blocks matched")]
     MultipleBlocksMatched,

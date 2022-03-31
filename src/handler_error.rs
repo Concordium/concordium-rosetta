@@ -1,8 +1,7 @@
-use concordium_rust_sdk::endpoints::{QueryError, RPCError};
+use crate::api::error::ApiError;
 use rosetta::models::*;
 use serde_json::{Map, Value};
 use warp::{reply, Rejection, Reply};
-use crate::api::error::ApiError;
 
 pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     // Error code structure:
@@ -44,205 +43,268 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
         Some(err) => {
             let e = match err {
                 ApiError::UnsupportedFieldPresent(field_name) => {
-                    invalid_input_unsupported_field_error(field_name.as_str())
+                    invalid_input_unsupported_field_error(Some(field_name.to_string()))
                 }
                 ApiError::SubAccountNotImplemented => {
-                    invalid_input_unsupported_field_error("sub_account")
+                    invalid_input_unsupported_field_error(Some("sub_account".to_string()))
                 }
                 ApiError::RequiredFieldMissing(name) => {
-                    invalid_input_missing_field_error(name.as_str())
+                    invalid_input_missing_field_error(Some(name.to_string()))
                 }
                 ApiError::InvalidAccountAddress(addr) => {
-                    invalid_input_invalid_value_or_identifier_error("account address", None, Some(addr.clone()), Some("invalid format".to_string()))
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("account address".to_string()),
+                        None,
+                        Some(addr.clone()),
+                        Some("invalid format".to_string()),
+                    )
                 }
-                ApiError::InvalidCurrency => {
-                    invalid_input_invalid_value_or_identifier_error("currency", None, None, Some("only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'".to_string()))
-                }
-                ApiError::InvalidAmount(amount) => {
-                    invalid_input_invalid_value_or_identifier_error("amount", None, Some(amount.clone()), None)
-                }
+                ApiError::InvalidCurrency => invalid_input_invalid_value_or_identifier_error(
+                    Some("currency".to_string()),
+                    None,
+                    None,
+                    Some(
+                        "only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'".to_string(),
+                    ),
+                ),
+                ApiError::InvalidAmount(amount) => invalid_input_invalid_value_or_identifier_error(
+                    Some("amount".to_string()),
+                    None,
+                    Some(amount.clone()),
+                    None,
+                ),
                 ApiError::InvalidBlockIdentifier(_) => {
-                    invalid_input_invalid_value_or_identifier_error("block identifier", None, None, None)
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("block identifier".to_string()),
+                        None,
+                        None,
+                        None,
+                    )
                 }
                 ApiError::InvalidSignature(sig, err) => {
-                    invalid_input_invalid_value_or_identifier_error("signature", None, Some(sig.clone()), Some(err.to_string()))
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("signature".to_string()),
+                        None,
+                        Some(sig.clone()),
+                        Some(err.to_string()),
+                    )
                 }
-                ApiError::InvalidEncodedPayload => {
-                    invalid_input_invalid_value_or_identifier_error("encoded transaction payload", None, None, None)
-                }
+                ApiError::InvalidEncodedPayload => invalid_input_invalid_value_or_identifier_error(
+                    Some("encoded transaction payload".to_string()),
+                    None,
+                    None,
+                    None,
+                ),
                 ApiError::InvalidUnsignedTransaction => {
-                    invalid_input_invalid_value_or_identifier_error("unsigned transaction", None, None, None)
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("unsigned transaction".to_string()),
+                        None,
+                        None,
+                        None,
+                    )
                 }
                 ApiError::InvalidSignedTransaction => {
-                    invalid_input_invalid_value_or_identifier_error("signed transaction", None, None, None)
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("signed transaction".to_string()),
+                        None,
+                        None,
+                        None,
+                    )
                 }
                 ApiError::InvalidConstructionOptions => {
-                    invalid_input_invalid_value_or_identifier_error("construction options", None, None, None)
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("construction options".to_string()),
+                        None,
+                        None,
+                        None,
+                    )
                 }
                 ApiError::InvalidPayloadsMetadata => {
-                    invalid_input_invalid_value_or_identifier_error("payloads metadata", None, None, None)
+                    invalid_input_invalid_value_or_identifier_error(
+                        Some("payloads metadata".to_string()),
+                        None,
+                        None,
+                        None,
+                    )
                 }
-                ApiError::UnsupportedOperationType(name) => {
-                    invalid_input_unsupported_value_error("operation type", name.as_str())
-                }
+                ApiError::UnsupportedOperationType(name) => invalid_input_unsupported_value_error(
+                    Some("operation type".to_string()),
+                    Some(name.clone()),
+                ),
                 ApiError::InconsistentOperations(_) => {
-                    invalid_input_inconsistent_value_error("operations")
+                    invalid_input_inconsistent_value_error(Some("operations".to_string()))
                 }
                 ApiError::UnsupportedNetworkIdentifier(_) => {
-                    identifier_not_resolved_no_matches_error("network_identifier")
+                    identifier_not_resolved_no_matches_error(Some("network_identifier".to_string()))
                 }
                 ApiError::NoBlocksMatched => {
-                    identifier_not_resolved_no_matches_error("block_identifier")
+                    identifier_not_resolved_no_matches_error(Some("block_identifier".to_string()))
                 }
-                ApiError::NoTransactionsMatched => {
-                    identifier_not_resolved_no_matches_error("transaction_identifier")
-                }
-                ApiError::MultipleBlocksMatched => {
-                    identifier_not_resolved_multiple_matches_error("block_identifier")
-                }
+                ApiError::NoTransactionsMatched => identifier_not_resolved_no_matches_error(Some(
+                    "transaction_identifier".to_string(),
+                )),
+                ApiError::MultipleBlocksMatched => identifier_not_resolved_multiple_matches_error(
+                    Some("block_identifier".to_string()),
+                ),
                 ApiError::JsonEncodingFailed(field_name, err) => {
-                    internal_json_encoding_failed_error(field_name, err)
+                    internal_json_encoding_failed_error(
+                        Some(field_name.clone()),
+                        Some(err.to_string()),
+                    )
                 }
-                ApiError::ClientRpcError(err) => {
-                    proxy_client_rpc_error(err)
-                }
-                ApiError::ClientQueryError(err) => {
-                    proxy_client_query_error(err)
-                }
-                ApiError::TransactionNotAccepted => {
-                    proxy_transaction_rejected()
-                }
+                ApiError::ClientRpcError(err) => proxy_client_rpc_error(Some(err.to_string())),
+                ApiError::ClientQueryError(err) => proxy_client_query_error(Some(err.to_string())),
+                ApiError::TransactionNotAccepted => proxy_transaction_rejected(),
             };
             Ok(reply::json(&e))
         }
     }
 }
 
-fn key_value(k: &str, v: &str) -> Value {
-    let mut details = Map::new();
-    details.insert(k.to_string(), Value::String(v.to_string()));
-    Value::Object(details)
+fn key_value_pairs(pairs: &Vec<Option<(String, String)>>) -> Option<Value> {
+    let mut m = Map::new();
+    for pair in pairs {
+        if let Some((k, v)) = pair {
+            m.insert(k.clone(), Value::String(v.clone()));
+        }
+    }
+    if m.is_empty() {
+        None
+    } else {
+        Some(Value::Object(m))
+    }
 }
 
-fn key_value2(k1: &str, v1: &str, k2: &str, v2: &str) -> Value {
-    let mut details = Map::new();
-    details.insert(k1.to_string(), Value::String(v1.to_string()));
-    details.insert(k2.to_string(), Value::String(v2.to_string()));
-    Value::Object(details)
+fn key_value_pair(key: &str, value: Option<String>) -> Option<(String, String)> {
+    value.map(|v| (key.to_string(), v))
 }
 
-fn invalid_input_unsupported_field_error(field_name: &str) -> Error {
+pub fn invalid_input_unsupported_field_error(field_name: Option<String>) -> Error {
     Error {
         code: 1000,
         message: "invalid input: field is not supported".to_string(),
         description: Some("The provided field is not supported.".to_string()),
         retriable: false,
-        details: Some(key_value("field", field_name)),
+        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
     }
 }
 
-fn invalid_input_missing_field_error(field_name: &str) -> Error {
+pub fn invalid_input_missing_field_error(field_name: Option<String>) -> Error {
     Error {
         code: 1100,
         message: "invalid input: required field is missing".to_string(),
         description: Some("The required field is not provided.".to_string()),
         retriable: false,
-        details: Some(key_value("field", field_name)),
+        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
     }
 }
 
-fn invalid_input_invalid_value_or_identifier_error(name: &str, type_: Option<String>, value: Option<String>, msg: Option<String>) -> Error {
-    let mut details = Map::new();
-    details.insert("name".to_string(), Value::String(name.to_string()));
-    if let Some(t) = type_ {
-        details.insert("type".to_string(), Value::String(t.to_string()));
-    }
-    if let Some(v) = value {
-        details.insert("value".to_string(), Value::String(v.to_string()));
-    }
-    if let Some(m) = msg {
-        details.insert("message".to_string(), Value::String(m.to_string()));
-    }
+pub fn invalid_input_invalid_value_or_identifier_error(
+    name: Option<String>,
+    type_: Option<String>,
+    value: Option<String>,
+    msg: Option<String>,
+) -> Error {
     Error {
         code: 1200,
         message: "invalid input: invalid value or identifier".to_string(),
-        description: Some("The provided value or identifier is incorrectly typed or formatted.".to_string()),
+        description: Some(
+            "The provided value or identifier is incorrectly typed or formatted.".to_string(),
+        ),
         retriable: false,
-        details: Some(Value::Object(details)),
+        details: key_value_pairs(&vec![
+            key_value_pair("name", name),
+            key_value_pair("value", value),
+            key_value_pair("type", type_),
+            key_value_pair("message", msg),
+        ]),
     }
 }
 
-fn invalid_input_unsupported_value_error(name: &str, value: &str) -> Error {
+pub fn invalid_input_unsupported_value_error(name: Option<String>, value: Option<String>) -> Error {
     Error {
         code: 1300,
         message: "invalid input: unsupported value".to_string(),
         description: Some("".to_string()),
         retriable: false,
-        details: Some(key_value2("name", name, "value", value)),
+        details: key_value_pairs(&vec![
+            key_value_pair("name", name),
+            key_value_pair("value", value),
+        ]),
     }
 }
 
-fn invalid_input_inconsistent_value_error(field_name: &str) -> Error {
+pub fn invalid_input_inconsistent_value_error(field_name: Option<String>) -> Error {
     Error {
         code: 1400,
         message: "invalid input: inconsistent value".to_string(),
-        description: Some("The provided value does not satisfy all consistency requirements.".to_string()),
+        description: Some(
+            "The provided value does not satisfy all consistency requirements.".to_string(),
+        ),
         retriable: false,
-        details: Some(key_value("field", field_name)),
+        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
     }
 }
 
-fn identifier_not_resolved_no_matches_error(field_name: &str) -> Error {
+pub fn identifier_not_resolved_no_matches_error(identifier_type: Option<String>) -> Error {
     Error {
         code: 2000,
-        message: "".to_string(),
-        description: Some("".to_string()),
+        message: "identifier not resolved: no matches".to_string(),
+        description: Some("The provided identifier did not match any objects.".to_string()),
         retriable: false,
-        details: Some(key_value("field", field_name)),
+        details: key_value_pairs(&vec![key_value_pair("type", identifier_type)]),
     }
 }
 
-fn identifier_not_resolved_multiple_matches_error(field_name: &str) -> Error {
+pub fn identifier_not_resolved_multiple_matches_error(identifier_type: Option<String>) -> Error {
     Error {
         code: 2100,
-        message: "".to_string(),
-        description: Some("".to_string()),
+        message: "identifier not resolved: multiple matches".to_string(),
+        description: Some("The provided identifier matched multiple objects.".to_string()),
         retriable: false,
-        details: Some(key_value("field", field_name)),
+        details: key_value_pairs(&vec![key_value_pair("type", identifier_type)]),
     }
 }
 
-fn internal_json_encoding_failed_error(field_name: &str, err: &serde_json::Error) -> Error {
+pub fn internal_json_encoding_failed_error(
+    field_name: Option<String>,
+    err: Option<String>,
+) -> Error {
     Error {
         code: 9000,
-        message: "".to_string(),
-        description: Some("".to_string()),
+        message: "internal error: JSON encoding failed".to_string(),
+        description: Some("JSON encoding failed.".to_string()),
         retriable: false,
-        details: Some(key_value2("field", field_name, "message", err.to_string().as_str())),
+        details: key_value_pairs(&vec![
+            key_value_pair("field", field_name),
+            key_value_pair("message", err),
+        ]),
     }
 }
 
-fn proxy_client_rpc_error(err: &RPCError) -> Error {
+pub fn proxy_client_rpc_error(err: Option<String>) -> Error {
     Error {
         code: 10000,
         message: "proxy error: node RPC error".to_string(),
         description: Some("Some interaction with the node failed with an 'RPC error'.".to_string()),
         retriable: true,
-        details: Some(key_value("message", err.to_string().as_str())),
+        details: key_value_pairs(&vec![key_value_pair("message", err)]),
     }
 }
 
-fn proxy_client_query_error(err: &QueryError) -> Error {
+pub fn proxy_client_query_error(err: Option<String>) -> Error {
     Error {
         code: 10100,
         message: "proxy error: node query error".to_string(),
-        description: Some("Some interaction with the node failed with a 'query error'.".to_string()),
+        description: Some(
+            "Some interaction with the node failed with a 'query error'.".to_string(),
+        ),
         retriable: true,
-        details: Some(key_value("message", err.to_string().as_str())),
+        details: key_value_pairs(&vec![key_value_pair("message", err)]),
     }
 }
 
-fn proxy_transaction_rejected() -> Error {
+pub fn proxy_transaction_rejected() -> Error {
     Error {
         code: 10200,
         message: "proxy error: node rejected transaction".to_string(),

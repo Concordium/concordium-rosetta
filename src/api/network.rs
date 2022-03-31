@@ -1,7 +1,7 @@
-use crate::api::error::ApiResult;
+use crate::api::error::{ApiError, ApiResult};
 use crate::api::transaction::*;
 use crate::validate::network::NetworkValidator;
-use crate::QueryHelper;
+use crate::{handler_error, QueryHelper};
 use rosetta::models::*;
 use serde_json::json;
 
@@ -69,7 +69,8 @@ impl NetworkApi {
                     OPERATION_TYPE_UPDATE_CREDENTIALS.to_string(),
                     OPERATION_TYPE_REGISTER_DATA.to_string(),
                 ],
-                errors: vec![], // TODO should have one result for each known error code
+                errors: errors()
+                    .map_err(|err| ApiError::JsonEncodingFailed("errors".to_string(), err))?,
                 historical_balance_lookup: true,
                 timestamp_start_index: None, // not populated as the genesis block has a valid time stamp
                 call_methods: vec![],        // Call API is not implemented
@@ -114,4 +115,26 @@ impl NetworkApi {
                 .collect(),
         })
     }
+}
+
+fn errors() -> Result<Vec<serde_json::Value>, serde_json::Error> {
+    error_types()
+        .iter()
+        .map(|e| serde_json::to_value(e))
+        .collect()
+}
+
+fn error_types() -> Vec<Error> {
+    vec![
+        handler_error::invalid_input_unsupported_field_error(None),
+        handler_error::invalid_input_missing_field_error(None),
+        handler_error::invalid_input_invalid_value_or_identifier_error(None, None, None, None),
+        handler_error::invalid_input_unsupported_value_error(None, None),
+        handler_error::invalid_input_inconsistent_value_error(None),
+        handler_error::identifier_not_resolved_no_matches_error(None),
+        handler_error::identifier_not_resolved_multiple_matches_error(None),
+        handler_error::proxy_client_rpc_error(None),
+        handler_error::proxy_client_query_error(None),
+        handler_error::proxy_transaction_rejected(),
+    ]
 }

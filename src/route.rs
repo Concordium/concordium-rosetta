@@ -4,6 +4,7 @@ use warp::{Filter, Rejection, Reply};
 
 use crate::api::block::BlockApi;
 use crate::api::network::NetworkApi;
+use crate::handler_error::handle_rejection;
 use crate::{handler, AccountApi, ConstructionApi};
 
 fn network_list(
@@ -46,13 +47,6 @@ fn account_balance(
         .and_then(handler::account_balance)
 }
 
-fn account_coins() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path("coins")
-        .and(warp::path::end())
-        .and(warp::body::json())
-        .and_then(handler::account_coins)
-}
-
 fn block_(api: BlockApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path::end()
         .and(with_block_api(api))
@@ -68,13 +62,6 @@ fn block_transaction(
         .and(with_block_api(api))
         .and(warp::body::json())
         .and_then(handler::block_transaction)
-}
-
-fn construction_derive() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path("derive")
-        .and(warp::path::end())
-        .and(warp::body::json())
-        .and_then(handler::construction_derive)
 }
 
 fn construction_preprocess(
@@ -156,7 +143,7 @@ fn network(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Reje
 }
 
 fn account(api: AccountApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path("account").and(account_balance(api.clone()).or(account_coins()))
+    warp::path("account").and(account_balance(api.clone()))
 }
 
 fn block(api: BlockApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -167,8 +154,7 @@ fn construction(
     api: ConstructionApi,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     warp::path("construction").and(
-        construction_derive()
-            .or(construction_preprocess(api.clone()))
+        construction_preprocess(api.clone())
             .or(construction_metadata(api.clone()))
             .or(construction_payloads(api.clone()))
             .or(construction_parse(api.clone()))
@@ -191,7 +177,7 @@ pub fn root(
                 .or(block(block_api))
                 .or(construction(construction_api)),
         )
-        .recover(handler::handle_rejection)
+        .recover(handle_rejection)
 }
 
 fn with_network_api(

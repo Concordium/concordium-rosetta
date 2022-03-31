@@ -1,6 +1,6 @@
 use crate::api::amount::{amount_from_uccd, uccd_from_amount};
 use crate::api::error::ApiError::RequiredFieldMissing;
-use crate::api::error::{ApiError, ApiResult, InvalidSignature};
+use crate::api::error::{ApiError, ApiResult, InvalidSignatureError};
 use crate::api::query::account_address_from_identifier;
 use crate::api::transaction::{
     transaction_type_from_operation_type, transaction_type_to_operation_type, MemoMetadata,
@@ -104,7 +104,10 @@ impl ConstructionApi {
             },
         };
         Ok(ConstructionPreprocessResponse {
-            options: Some(serde_json::to_value(&options)?),
+            options: Some(
+                serde_json::to_value(&options)
+                    .map_err(|err| ApiError::JsonEncodingFailed("options".to_string(), err))?,
+            ),
             required_public_keys: Some(vec![AccountIdentifier::new(options.sender.to_string())]),
         })
     }
@@ -120,7 +123,8 @@ impl ConstructionApi {
         }
         let opts = match req.options {
             None => return Err(ApiError::RequiredFieldMissing("options".to_string())),
-            Some(v) => serde_json::from_value::<ConstructionOptions>(v)?,
+            Some(v) => serde_json::from_value::<ConstructionOptions>(v)
+                .map_err(|_| ApiError::InvalidConstructionOptions)?,
         };
         let consensus_status = self
             .query_helper
@@ -155,10 +159,8 @@ impl ConstructionApi {
         }
         let metadata = match req.metadata {
             None => return Err(RequiredFieldMissing("metadata".to_string())),
-            Some(v) => match serde_json::from_value::<PayloadRequestMetadata>(v) {
-                Err(err) => return Err(err.into()),
-                Ok(p) => p,
-            },
+            Some(v) => serde_json::from_value::<PayloadRequestMetadata>(v)
+                .map_err(|_| ApiError::InvalidPayloadsMetadata)?,
         };
         let parsed_transaction = transaction_from_operations(&req.operations)?;
         let (builder, account_address) = match parsed_transaction {
@@ -190,7 +192,8 @@ impl ConstructionApi {
             unsigned_transaction: serde_json::to_string(&UnsignedTransaction {
                 header: builder.header.clone(),
                 payload: builder.encoded.clone(),
-            })?,
+            })
+            .map_err(|err| ApiError::JsonEncodingFailed("unsigned_transaction".to_string(), err))?,
             payloads: vec![SigningPayload {
                 address: None, // deprecated
                 account_identifier: Some(Box::new(AccountIdentifier::new(
@@ -211,13 +214,10 @@ impl ConstructionApi {
             .validate_network_identifier(*req.network_identifier)?;
 
         let (header, encoded_payload, signature) = if !req.signed {
-            let unsigned_tx =
-                serde_json::from_str::<UnsignedTransaction>(req.transaction.as_str())?;
+            let unsigned_tx = decode_unsigned_transaction(req.transaction.as_str())?;
             (unsigned_tx.header, unsigned_tx.payload, None)
         } else {
-            let signed_tx = serde_json::from_str::<AccountTransaction<EncodedPayload>>(
-                req.transaction.as_str(),
-            )?;
+            let signed_tx = decode_signed_transaction(req.transaction.as_str())?;
             (
                 signed_tx.header,
                 signed_tx.payload,
@@ -225,7 +225,7 @@ impl ConstructionApi {
             )
         };
         let payload = match encoded_payload.decode() {
-            Err(err) => return Err(ApiError::InvalidEncodedPayload),
+            Err(_) => return Err(ApiError::InvalidEncodedPayload),
             Ok(p) => p,
         };
 
@@ -244,7 +244,7 @@ impl ConstructionApi {
                 metadata,
             }),
 
-            Some(s) => {
+            Some(_) => {
                 Ok(ConstructionParseResponse {
                     operations,
                     signers: None, // deprecated
@@ -263,8 +263,7 @@ impl ConstructionApi {
     ) -> ApiResult<ConstructionCombineResponse> {
         self.network_validator
             .validate_network_identifier(*req.network_identifier)?;
-        let unsigned_tx =
-            serde_json::from_str::<UnsignedTransaction>(req.unsigned_transaction.as_str())?;
+        let unsigned_tx = decode_unsigned_transaction(req.unsigned_transaction.as_str())?;
         let mut signatures: BTreeMap<
             CredentialIndex,
             BTreeMap<KeyIndex, concordium_rust_sdk::common::types::Signature>,
@@ -275,7 +274,7 @@ impl ConstructionApi {
                 None => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
-                        InvalidSignature::MissingSeparator,
+                        InvalidSignatureError::MissingSeparator('/'.to_string()),
                     ))
                 }
                 Some(v) => v,
@@ -284,36 +283,36 @@ impl ConstructionApi {
                 None => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
-                        InvalidSignature::MissingIndexSeparator,
+                        InvalidSignatureError::MissingIndexSeparator(':'.to_string()),
                     ))
                 }
                 Some(v) => v,
             };
             let cred_idx = CredentialIndex {
                 index: match u8::from_str(cred_idx_str) {
-                    Err(err) => {
+                    Err(_) => {
                         return Err(ApiError::InvalidSignature(
                             hex_bytes.clone(),
-                            InvalidSignature::InvalidCredentialIndex(cred_idx_str.to_string()),
+                            InvalidSignatureError::InvalidCredentialIndex(cred_idx_str.to_string()),
                         ))
                     }
                     Ok(v) => v,
                 },
             };
             let key_idx = KeyIndex(match u8::from_str(key_idx_str) {
-                Err(err) => {
+                Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
-                        InvalidSignature::InvalidKeyIndex(key_idx_str.to_string()),
+                        InvalidSignatureError::InvalidKeyIndex(key_idx_str.to_string()),
                     ))
                 }
                 Ok(v) => v,
             });
             let sig = match hex::decode(&sig_hex_bytes) {
-                Err(err) => {
+                Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
-                        InvalidSignature::InvalidSignatureHexBytes(sig_hex_bytes.to_string()),
+                        InvalidSignatureError::InvalidSignatureHexBytes(sig_hex_bytes.to_string()),
                     ))
                 }
                 Ok(v) => v,
@@ -330,7 +329,8 @@ impl ConstructionApi {
             signature: TransactionSignature { signatures },
             header: unsigned_tx.header,
             payload: unsigned_tx.payload.encode(),
-        })?;
+        })
+        .map_err(|err| ApiError::JsonEncodingFailed("signed_transaction".to_string(), err))?;
         Ok(ConstructionCombineResponse {
             signed_transaction: tx,
         })
@@ -399,25 +399,39 @@ fn parse_operations(ops: &Vec<Operation>) -> ApiResult<Vec<ParsedOperation>> {
 
 fn parse_transaction(ops: &Vec<ParsedOperation>) -> ApiResult<ParsedTransaction> {
     match &ops[..] {
-        [ParsedOperation::Transfer(t1), ParsedOperation::Transfer(t2)] => {
-            if t1.amount_uccd != -t2.amount_uccd {
-                return Err(ApiError::InvalidTransaction);
-            }
-            let (sender, receiver) = if t1.amount_uccd < 0 {
-                (t1, t2)
-            } else if t2.amount_uccd < 0 {
-                (t2, t1)
-            } else {
-                return Err(ApiError::InvalidTransaction);
-            };
-            Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
-                sender_address: sender.account_address,
-                receiver_address: receiver.account_address,
-                amount_uccd: -sender.amount_uccd as u64,
-            }))
+        [ParsedOperation::Transfer(sender), ParsedOperation::Transfer(receiver)] => {
+            parse_transfer_transaction(sender, receiver)
         }
-        _ => Err(ApiError::UnsupportedCombinationOfOperations),
+        _ => Err(ApiError::InconsistentOperations(
+            "invalid type or number of operations".to_string(),
+        )),
     }
+}
+
+fn parse_transfer_transaction(
+    sender: &ParsedTransferOperation,
+    receiver: &ParsedTransferOperation,
+) -> Result<ParsedTransaction, ApiError> {
+    if sender.amount_uccd >= 0 {
+        return Err(ApiError::InconsistentOperations(
+            "amount in first transfer operation must be negative".to_string(),
+        ));
+    }
+    if receiver.amount_uccd <= 0 {
+        return Err(ApiError::InconsistentOperations(
+            "amount in second transfer operation must be positive".to_string(),
+        ));
+    }
+    if sender.amount_uccd != -receiver.amount_uccd {
+        return Err(ApiError::InconsistentOperations(
+            "amount in transfer operations must sum to zero".to_string(),
+        ));
+    }
+    Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
+        sender_address: sender.account_address,
+        receiver_address: receiver.account_address,
+        amount_uccd: receiver.amount_uccd as u64,
+    }))
 }
 
 fn transaction_from_operations(ops: &Vec<Operation>) -> ApiResult<ParsedTransaction> {
@@ -425,8 +439,23 @@ fn transaction_from_operations(ops: &Vec<Operation>) -> ApiResult<ParsedTransact
 }
 
 fn parse_block_item(signed_transaction: &str) -> ApiResult<BlockItem<EncodedPayload>> {
-    let tx = serde_json::from_str::<AccountTransaction<EncodedPayload>>(signed_transaction)?;
-    Ok(concordium_rust_sdk::types::transactions::BlockItem::AccountTransaction(tx.clone()))
+    Ok(
+        concordium_rust_sdk::types::transactions::BlockItem::AccountTransaction(
+            decode_signed_transaction(signed_transaction)?,
+        ),
+    )
+}
+
+fn decode_unsigned_transaction(unsigned_transaction: &str) -> ApiResult<UnsignedTransaction> {
+    serde_json::from_str::<UnsignedTransaction>(unsigned_transaction)
+        .map_err(|_| ApiError::InvalidUnsignedTransaction)
+}
+
+fn decode_signed_transaction(
+    signed_transaction: &str,
+) -> ApiResult<AccountTransaction<EncodedPayload>> {
+    serde_json::from_str::<AccountTransaction<EncodedPayload>>(signed_transaction)
+        .map_err(|_| ApiError::InvalidSignedTransaction)
 }
 
 fn operations_from_transaction(

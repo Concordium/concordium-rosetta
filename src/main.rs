@@ -1,5 +1,6 @@
 mod api;
 mod handler;
+mod handler_error;
 mod route;
 mod validate;
 mod version;

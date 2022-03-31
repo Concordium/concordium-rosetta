@@ -131,9 +131,10 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     Some("operation type".to_string()),
                     Some(name.clone()),
                 ),
-                ApiError::InconsistentOperations(err) => {
-                    invalid_input_inconsistent_value_error(Some("operations".to_string()), Some(err.clone()))
-                }
+                ApiError::InconsistentOperations(err) => invalid_input_inconsistent_value_error(
+                    Some("operations".to_string()),
+                    Some(err.clone()),
+                ),
                 ApiError::UnsupportedNetworkIdentifier => {
                     identifier_not_resolved_no_matches_error(Some("network_identifier".to_string()))
                 }
@@ -234,7 +235,10 @@ pub fn invalid_input_unsupported_value_error(name: Option<String>, value: Option
     }
 }
 
-pub fn invalid_input_inconsistent_value_error(field_name: Option<String>, msg: Option<String>) -> Error {
+pub fn invalid_input_inconsistent_value_error(
+    field_name: Option<String>,
+    msg: Option<String>,
+) -> Error {
     Error {
         code: 1400,
         message: "invalid input: inconsistent value".to_string(),
@@ -242,7 +246,10 @@ pub fn invalid_input_inconsistent_value_error(field_name: Option<String>, msg: O
             "The provided value does not satisfy all consistency requirements.".to_string(),
         ),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("field", field_name), key_value_pair("message", msg)]),
+        details: key_value_pairs(&vec![
+            key_value_pair("field", field_name),
+            key_value_pair("message", msg),
+        ]),
     }
 }
 

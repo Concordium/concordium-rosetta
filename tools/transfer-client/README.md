@@ -20,8 +20,8 @@ The application has the following CLI parameters:
 
 - `--url`: URL of the Rosetta server (default: `http://localhost:8080`).
 - `--network`: Network name to be used in network identifier (default: `testnet`).
-- `--sender_addr`: Address of the account sending the transfer.
-- `--receiver_addr`: Address of the account receiving the transfer.
+- `--sender`: Address of the account sending the transfer.
+- `--receiver`: Address of the account receiving the transfer.
 - `--amount`: Amount of µCCD to transfer.
 - `--keys-file`: Path of file containing the signing keys for the sender account.
 - `--memo-hex`: Optional hex-encoded memo to attach to the transfer transaction.

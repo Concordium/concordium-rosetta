@@ -51,7 +51,7 @@ impl QueryHelper {
                     (Some(height), None) => {
                         if height < 0 {
                             return Err(ApiError::InvalidBlockIdentifier(
-                                InvalidBlockIdentifierError::InvalidIndex,
+                                InvalidBlockIdentifierError::InvalidIndex(height),
                             ));
                         }
                         let blocks = self
@@ -91,7 +91,7 @@ impl QueryHelper {
 
 pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     BlockHash::from_str(hash)
-        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InvalidHash))
+        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InvalidHash(hash.to_string())))
 }
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {

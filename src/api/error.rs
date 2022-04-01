@@ -5,12 +5,12 @@ use thiserror::Error;
 pub enum InvalidBlockIdentifierError {
     #[error("no values")]
     NoValues,
-    #[error("inconsistent values")]
+    #[error("inconsistent values: hash and index are mutually exclusive")]
     InconsistentValues,
-    #[error("invalid hash value")]
-    InvalidHash,
-    #[error("invalid index value")]
-    InvalidIndex,
+    #[error("invalid hash value '{0}'")]
+    InvalidHash(String),
+    #[error("invalid index value '{0}'")]
+    InvalidIndex(i64),
 }
 
 #[derive(Error, Debug)]

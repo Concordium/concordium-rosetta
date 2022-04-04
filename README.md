@@ -62,7 +62,7 @@ All applicable endpoints except for the
 - [Account](https://www.rosetta-api.org/docs/AccountApi.html):
   The `balance` endpoint is implemented according to the specification.
   The `coins` endpoint is not applicable as Concordium is account-,
-  not [UTXO](https://www.investopedia.com/terms/u/utxo.asp) based,
+  not [UTXO](https://www.investopedia.com/terms/u/utxo.asp)-based,
   and thus doesn't have this concept of "coins".
 
 - [Block](https://www.rosetta-api.org/docs/BlockApi.html):
@@ -89,7 +89,7 @@ All applicable endpoints are supported to construct and submit transfer transact
   and cannot be boosted to expedite the transaction.
   One can get the fee from the output of `parse` and choose not to proceed if the fee is deemed too large.
   An error is returned if the operations don't form a valid transfer
-  (i.e. a pair operations of type "transfer" with opposite amounts to valid addresses etc.).
+  (i.e. a pair of operations of type "transfer" with zero-sum amounts and valid addresses etc.).
 
 - [`metadata`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionmetadata):
   Implemented, but doesn't support the field `public_keys` as the request is served based on sender address
@@ -101,7 +101,7 @@ All applicable endpoints are supported to construct and submit transfer transact
   (though here the sender address is derived from the operations, not passed explicitly).
   The response contains a transaction payload that the caller needs to sign with the appropriate keys.
   An error is returned if the operations don't form a valid transfer
-  (i.e. a pair operations of type "transfer" with opposite amounts to valid addresses etc.).
+  (i.e. a pair of operations of type "transfer" with zero-sum amounts and valid addresses etc.).
 
   Like `preprocess`, this endpoint returns an error if the operations don't form a valid transfer.
 

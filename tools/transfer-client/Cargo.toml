@@ -1,5 +1,5 @@
 [package]
-name = "concorium-rosetta-test"
+name = "transfer-client"
 version = "0.1.0"
 edition = "2018"
 

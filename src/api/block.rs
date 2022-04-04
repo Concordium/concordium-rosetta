@@ -55,7 +55,6 @@ impl BlockApi {
         &self,
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
-        // TODO Should verify that index is correct?
         let hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
         let block_summary = self
             .query_helper
@@ -75,7 +74,7 @@ impl BlockApi {
 }
 
 fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
-    // Synthethic transaction that contains all the minting and rewards operations.
+    // Synthetic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),

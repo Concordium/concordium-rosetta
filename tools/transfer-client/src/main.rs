@@ -191,7 +191,7 @@ fn parse_memo(memo_hex: Option<String>) -> Result<Option<Memo>> {
 fn signature_maps_to_signatures(signatures: Vec<SignatureMap>) -> Vec<Signature> {
     signatures
         .into_iter()
-        .flat_map(|s| s.into_values().flat_map(|x| x.into_values()))
+        .flat_map(|s| s.values().flat_map(|x| x.values().cloned()).collect::<Vec<Signature>>())
         .collect()
 }
 

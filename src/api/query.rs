@@ -23,7 +23,7 @@ impl QueryHelper {
         account_identifier: &AccountIdentifier,
     ) -> ApiResult<(BlockInfo, AccountInfo)> {
         let block_info = self.query_block_info(block_identifier).await?;
-        let block_hash = block_hash_from_string(block_info.block_hash.to_string().as_str())?;
+        let block_hash = block_info.block_hash;
         let address = account_address_from_identifier(account_identifier)?;
         Ok((
             block_info,
@@ -41,9 +41,7 @@ impl QueryHelper {
         match block_id {
             None => {
                 let consensus_status = self.client.clone().get_consensus_status().await?;
-                let block_hash = block_hash_from_string(
-                    consensus_status.last_finalized_block.to_string().as_str(),
-                )?;
+                let block_hash = consensus_status.last_finalized_block;
                 Ok(self.client.clone().get_block_info(&block_hash).await?)
             }
             Some(bid) => {
@@ -90,8 +88,9 @@ impl QueryHelper {
 }
 
 pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
-    BlockHash::from_str(hash)
-        .map_err(|_| ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InvalidHash(hash.to_string())))
+    BlockHash::from_str(hash).map_err(|_| {
+        ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InvalidHash(hash.to_string()))
+    })
 }
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {
@@ -101,7 +100,7 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Acco
     }
 }
 
-pub fn account_address_from_string(addr: &String) -> ApiResult<AccountAddress> {
-    AccountAddress::from_str(addr.as_str())
-        .map_err(|_| ApiError::InvalidAccountAddress(addr.clone()))
+pub fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
+    AccountAddress::from_str(addr)
+        .map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))
 }

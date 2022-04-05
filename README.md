@@ -26,6 +26,20 @@ The application accepts the following parameters:
 - `--grpc-port`: Port of the node's gRPC interface (default: `10000`).
 - `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
 
+### Docker
+
+*Build*
+
+```shell
+docker build --build-arg=build_image=rust:1.53-slim-buster --build-arg=base_image=debian:buster-slim -t concordium-rosetta --pull .
+```
+
+*Run*
+
+```shell
+docker run --rm concordium-rosetta
+```
+
 ## Rosetta
 
 Rosetta is a specification of an HTTP-based API designed by Coinbase
@@ -485,7 +499,7 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 ## Resources
 
-- [List of implementations](https://github.com/coinbase/rosetta-ecosystem/blob/master/implementations.md)
+- [List of implementations for other blockchains](https://github.com/coinbase/rosetta-ecosystem/blob/master/implementations.md).
 - Client side usage guide for Bitcoin implementation:
   [Data API](https://medium.com/lunar-dev/getting-started-with-rosetta-bitcoin-93304775515e),
   [Construction API](https://medium.com/lunar-dev/getting-started-with-rosetta-bitcoin-construction-api-2b7cee86fdc).

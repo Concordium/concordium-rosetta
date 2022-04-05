@@ -1,0 +1,12 @@
+**/.*
+**/target
+**/Dockerfile
+**/Jenkinsfile
+**/LICENSE
+**/*.md
+**/*.sh
+**/*.json
+**/*.deb
+**/node_modules
+tmp
+tools

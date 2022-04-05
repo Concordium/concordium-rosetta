@@ -1,5 +1,7 @@
 .*
 !.*ignore
-/target
-/node_modules
 !/rosetta/**
+target
+node_modules
+tmp
+*.deb

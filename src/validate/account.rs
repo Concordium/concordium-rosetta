@@ -24,6 +24,4 @@ pub fn validate_currency(c: &Currency) -> ApiResult<()> {
     Ok(())
 }
 
-fn is_valid_currency(c: &Currency) -> bool {
-    c.symbol == *"CCD" && c.decimals == 6
-}
+fn is_valid_currency(c: &Currency) -> bool { c.symbol == *"CCD" && c.decimals == 6 }

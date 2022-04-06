@@ -8,12 +8,12 @@ pub struct NetworkValidator {
 
 impl NetworkValidator {
     pub fn new(identifier: NetworkIdentifier) -> Self {
-        Self { identifier }
+        Self {
+            identifier,
+        }
     }
 
-    pub fn supported_networks(&self) -> Vec<NetworkIdentifier> {
-        vec![self.identifier.clone()]
-    }
+    pub fn supported_networks(&self) -> Vec<NetworkIdentifier> { vec![self.identifier.clone()] }
 
     pub fn validate_network_identifier(&self, identifier: NetworkIdentifier) -> ApiResult<()> {
         if identifier != self.identifier {

@@ -97,9 +97,7 @@ pub enum ApiError {
 impl warp::reject::Reject for ApiError {}
 
 impl From<RPCError> for ApiError {
-    fn from(err: RPCError) -> Self {
-        ApiError::ClientRpcError(err)
-    }
+    fn from(err: RPCError) -> Self { ApiError::ClientRpcError(err) }
 }
 
 impl From<QueryError> for ApiError {

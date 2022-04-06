@@ -1,5 +1,7 @@
-use crate::api::error::{ApiError, ApiResult};
-use crate::validate::account::validate_currency;
+use crate::{
+    api::error::{ApiError, ApiResult},
+    validate::account::validate_currency,
+};
 use rosetta::models::{Amount, Currency};
 use std::ops::Deref;
 
@@ -9,7 +11,5 @@ pub fn amount_from_uccd(v: i64) -> Amount {
 
 pub fn uccd_from_amount(v: &Amount) -> ApiResult<i64> {
     validate_currency(v.currency.deref())?;
-    v.value
-        .parse()
-        .map_err(|_| ApiError::InvalidAmount(v.value.clone()))
+    v.value.parse().map_err(|_| ApiError::InvalidAmount(v.value.clone()))
 }

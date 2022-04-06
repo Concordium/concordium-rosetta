@@ -1,9 +1,9 @@
 use crate::api::error::{ApiError, ApiResult, InvalidBlockIdentifierError};
-use concordium_rust_sdk::endpoints::{BlocksAtHeightInput, Client};
-use concordium_rust_sdk::id::types::AccountAddress;
-use concordium_rust_sdk::types::hashes::BlockHash;
-use concordium_rust_sdk::types::queries::BlockInfo;
-use concordium_rust_sdk::types::{AbsoluteBlockHeight, AccountInfo};
+use concordium_rust_sdk::{
+    endpoints::{BlocksAtHeightInput, Client},
+    id::types::AccountAddress,
+    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, AccountInfo},
+};
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
 
@@ -14,7 +14,9 @@ pub struct QueryHelper {
 
 impl QueryHelper {
     pub fn new(client: Client) -> Self {
-        Self { client }
+        Self {
+            client,
+        }
     }
 
     pub async fn query_account_info(
@@ -25,13 +27,7 @@ impl QueryHelper {
         let block_info = self.query_block_info(block_identifier).await?;
         let block_hash = block_info.block_hash;
         let address = account_address_from_identifier(account_identifier)?;
-        Ok((
-            block_info,
-            self.client
-                .clone()
-                .get_account_info(address, &block_hash)
-                .await?,
-        ))
+        Ok((block_info, self.client.clone().get_account_info(address, &block_hash).await?))
     }
 
     pub async fn query_block_info(
@@ -65,7 +61,8 @@ impl QueryHelper {
                             [] => Err(ApiError::NoBlocksMatched),
                             // Note that unless we decide to return additional block metadata,
                             // this particular GetBlockInfo call is redundant
-                            // (as we don't really need to return an "entire" BlockInfo, only hash and height).
+                            // (as we don't really need to return an "entire" BlockInfo, only hash
+                            // and height).
                             [block] => Ok(self.client.clone().get_block_info(&block).await?),
                             _ => Err(ApiError::MultipleBlocksMatched),
                         }
@@ -78,9 +75,9 @@ impl QueryHelper {
                     (Some(_), Some(_)) => Err(ApiError::InvalidBlockIdentifier(
                         InvalidBlockIdentifierError::InconsistentValues,
                     )),
-                    (None, None) => Err(ApiError::InvalidBlockIdentifier(
-                        InvalidBlockIdentifierError::NoValues,
-                    )),
+                    (None, None) => {
+                        Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
+                    }
                 }
             }
         }
@@ -101,6 +98,5 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Acco
 }
 
 pub fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
-    AccountAddress::from_str(addr)
-        .map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))
+    AccountAddress::from_str(addr).map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))
 }

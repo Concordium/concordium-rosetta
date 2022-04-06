@@ -1,8 +1,8 @@
-use crate::api::amount::amount_from_uccd;
-use crate::api::error::ApiResult;
-use crate::api::query::QueryHelper;
-use crate::validate::network::NetworkValidator;
-use crate::AccountValidator;
+use crate::{
+    api::{amount::amount_from_uccd, error::ApiResult, query::QueryHelper},
+    validate::network::NetworkValidator,
+    AccountValidator,
+};
 use rosetta::models::*;
 use std::ops::Deref;
 
@@ -10,7 +10,7 @@ use std::ops::Deref;
 pub struct AccountApi {
     account_validator: AccountValidator,
     network_validator: NetworkValidator,
-    query_helper: QueryHelper,
+    query_helper:      QueryHelper,
 }
 
 impl AccountApi {
@@ -30,8 +30,7 @@ impl AccountApi {
         &self,
         req: AccountBalanceRequest,
     ) -> ApiResult<AccountBalanceResponse> {
-        self.network_validator
-            .validate_network_identifier(*req.network_identifier)?;
+        self.network_validator.validate_network_identifier(*req.network_identifier)?;
         self.account_validator.validate_currencies(req.currencies)?;
         let (block_info, account_info) = self
             .query_helper
@@ -42,9 +41,7 @@ impl AccountApi {
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            vec![amount_from_uccd(
-                account_info.account_amount.microgtu as i64,
-            )],
+            vec![amount_from_uccd(account_info.account_amount.microgtu as i64)],
         ))
     }
 }

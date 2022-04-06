@@ -1,0 +1,59 @@
+name: Fmt and Clippy
+
+# Run 'rustfmt' and 'clippy' linting.
+
+on:
+  push:
+    branches: main
+
+  pull_request:
+    branches: main
+
+  workflow_dispatch: # allow manual trigger
+
+env:
+  RUST_FMT: nightly-2021-06-09-x86_64-unknown-linux-gnu
+  RUST_CLIPPY: 1.53
+
+jobs:
+  fmt:
+    name: lint:fmt
+    # Skip for draft pull requests.
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.RUST_FMT }}
+          override: true
+          components: rustfmt
+      - name: Format
+        run: |
+          cargo fmt -- --color=always --check
+
+  clippy:
+    name: lint:clippy
+    needs: fmt
+    # Skip for draft pull requests.
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ env.RUST_CLIPPY }}
+          override: true
+          target: ${{ env.TARGET }}
+          components: rustfmt, clippy
+      - name: Clippy
+        run: |
+          cargo clippy --color=always --tests --benches -- -Dclippy::all

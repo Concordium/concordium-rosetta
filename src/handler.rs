@@ -1,11 +1,11 @@
-use crate::api::block::BlockApi;
-use crate::api::construction::ConstructionApi;
-use crate::AccountApi;
+use crate::{
+    api::{block::BlockApi, construction::ConstructionApi},
+    AccountApi,
+};
 use rosetta::models::*;
 use serde::Serialize;
 use std::convert::Infallible;
-use warp::reject::Reject;
-use warp::{reject, reply, Rejection, Reply};
+use warp::{reject, reject::Reject, reply, Rejection, Reply};
 
 use crate::api::network::NetworkApi;
 
@@ -91,7 +91,8 @@ pub async fn construction_hash(
     to_json(api.hash(req).await)
 }
 
-// TODO Can lift this function to remove the need for explicitly defining the above functions?
+// TODO Can lift this function to remove the need for explicitly defining the
+// above functions?
 fn to_json(res: Result<impl Serialize, impl Reject>) -> Result<impl Reply, Rejection> {
     match res {
         Ok(val) => Ok(reply::json(&val)),

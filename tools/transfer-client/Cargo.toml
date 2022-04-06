@@ -11,10 +11,6 @@ version = "*"
 path = "../../rosetta"
 version = "*"
 
-[dependencies.sign-transaction-hash]
-path = "../sign-transaction-hash"
-version = "*"
-
 [dependencies]
 anyhow = "1"
 clap = "2"

@@ -162,12 +162,10 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     }
 }
 
-fn key_value_pairs(pairs: &Vec<Option<(String, String)>>) -> Option<Value> {
+fn key_value_pairs(pairs: &[Option<(String, String)>]) -> Option<Value> {
     let mut m = Map::new();
-    for pair in pairs {
-        if let Some((k, v)) = pair {
-            m.insert(k.clone(), Value::String(v.clone()));
-        }
+    for (k, v) in pairs.iter().flatten() {
+        m.insert(k.clone(), Value::String(v.clone()));
     }
     if m.is_empty() {
         None
@@ -186,7 +184,7 @@ pub fn invalid_input_unsupported_field_error(field_name: Option<String>) -> Erro
         message: "invalid input: field is not supported".to_string(),
         description: Some("The provided field is not supported.".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
+        details: key_value_pairs(&[key_value_pair("field", field_name)]),
     }
 }
 
@@ -196,7 +194,7 @@ pub fn invalid_input_missing_field_error(field_name: Option<String>) -> Error {
         message: "invalid input: required field is missing".to_string(),
         description: Some("The required field is not provided.".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("field", field_name)]),
+        details: key_value_pairs(&[key_value_pair("field", field_name)]),
     }
 }
 
@@ -213,7 +211,7 @@ pub fn invalid_input_invalid_value_or_identifier_error(
             "The provided value or identifier is incorrectly typed or formatted.".to_string(),
         ),
         retriable: false,
-        details: key_value_pairs(&vec![
+        details: key_value_pairs(&[
             key_value_pair("name", name),
             key_value_pair("value", value),
             key_value_pair("type", type_),
@@ -228,7 +226,7 @@ pub fn invalid_input_unsupported_value_error(name: Option<String>, value: Option
         message: "invalid input: unsupported value".to_string(),
         description: Some("".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![
+        details: key_value_pairs(&[
             key_value_pair("name", name),
             key_value_pair("value", value),
         ]),
@@ -246,7 +244,7 @@ pub fn invalid_input_inconsistent_value_error(
             "The provided value does not satisfy all consistency requirements.".to_string(),
         ),
         retriable: false,
-        details: key_value_pairs(&vec![
+        details: key_value_pairs(&[
             key_value_pair("field", field_name),
             key_value_pair("message", msg),
         ]),
@@ -259,7 +257,7 @@ pub fn identifier_not_resolved_no_matches_error(identifier_type: Option<String>)
         message: "identifier not resolved: no matches".to_string(),
         description: Some("The provided identifier did not match any objects.".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("type", identifier_type)]),
+        details: key_value_pairs(&[key_value_pair("type", identifier_type)]),
     }
 }
 
@@ -269,7 +267,7 @@ pub fn identifier_not_resolved_multiple_matches_error(identifier_type: Option<St
         message: "identifier not resolved: multiple matches".to_string(),
         description: Some("The provided identifier matched multiple objects.".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![key_value_pair("type", identifier_type)]),
+        details: key_value_pairs(&[key_value_pair("type", identifier_type)]),
     }
 }
 
@@ -282,7 +280,7 @@ pub fn internal_json_encoding_failed_error(
         message: "internal error: JSON encoding failed".to_string(),
         description: Some("JSON encoding failed.".to_string()),
         retriable: false,
-        details: key_value_pairs(&vec![
+        details: key_value_pairs(&[
             key_value_pair("field", field_name),
             key_value_pair("message", err),
         ]),
@@ -295,7 +293,7 @@ pub fn proxy_client_rpc_error(err: Option<String>) -> Error {
         message: "proxy error: node RPC error".to_string(),
         description: Some("Some interaction with the node failed with an 'RPC error'.".to_string()),
         retriable: true,
-        details: key_value_pairs(&vec![key_value_pair("message", err)]),
+        details: key_value_pairs(&[key_value_pair("message", err)]),
     }
 }
 
@@ -307,7 +305,7 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
             "Some interaction with the node failed with a 'query error'.".to_string(),
         ),
         retriable: true,
-        details: key_value_pairs(&vec![key_value_pair("message", err)]),
+        details: key_value_pairs(&[key_value_pair("message", err)]),
     }
 }
 

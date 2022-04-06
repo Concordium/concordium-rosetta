@@ -138,16 +138,16 @@ fn network(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Reje
     warp::path("network").and(
         network_list(api.clone())
             .or(network_options(api.clone()))
-            .or(network_status(api.clone())),
+            .or(network_status(api)),
     )
 }
 
 fn account(api: AccountApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path("account").and(account_balance(api.clone()))
+    warp::path("account").and(account_balance(api))
 }
 
 fn block(api: BlockApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path("block").and(block_(api.clone()).or(block_transaction(api.clone())))
+    warp::path("block").and(block_(api.clone()).or(block_transaction(api)))
 }
 
 fn construction(
@@ -160,7 +160,7 @@ fn construction(
             .or(construction_parse(api.clone()))
             .or(construction_combine(api.clone()))
             .or(construction_submit(api.clone()))
-            .or(construction_hash(api.clone())),
+            .or(construction_hash(api)),
     )
 }
 

@@ -232,7 +232,7 @@ impl ConstructionApi {
         let (operations, memo) = operations_from_transaction(&header, &payload)?;
         let metadata = memo.map(|m| {
             serde_json::to_value(&MemoMetadata {
-                memo: Some(m.clone()),
+                memo: Some(m),
             })
             .unwrap()
         });
@@ -393,12 +393,12 @@ fn parse_operation(op: &Operation) -> ApiResult<ParsedOperation> {
     }
 }
 
-fn parse_operations(ops: &Vec<Operation>) -> ApiResult<Vec<ParsedOperation>> {
+fn parse_operations(ops: &[Operation]) -> ApiResult<Vec<ParsedOperation>> {
     ops.iter().map(parse_operation).collect()
 }
 
-fn parse_transaction(ops: &Vec<ParsedOperation>) -> ApiResult<ParsedTransaction> {
-    match &ops[..] {
+fn parse_transaction(ops: &[ParsedOperation]) -> ApiResult<ParsedTransaction> {
+    match ops {
         [ParsedOperation::Transfer(sender), ParsedOperation::Transfer(receiver)] => {
             parse_transfer_transaction(sender, receiver)
         }
@@ -434,7 +434,7 @@ fn parse_transfer_transaction(
     }))
 }
 
-fn transaction_from_operations(ops: &Vec<Operation>) -> ApiResult<ParsedTransaction> {
+fn transaction_from_operations(ops: &[Operation]) -> ApiResult<ParsedTransaction> {
     parse_transaction(&parse_operations(ops)?)
 }
 

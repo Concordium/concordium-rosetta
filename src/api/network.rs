@@ -120,7 +120,7 @@ impl NetworkApi {
 fn errors() -> Result<Vec<serde_json::Value>, serde_json::Error> {
     error_types()
         .iter()
-        .map(|e| serde_json::to_value(e))
+        .map(serde_json::to_value)
         .collect()
 }
 

@@ -2,10 +2,12 @@ use core::clone::Clone;
 use std::convert::Infallible;
 use warp::{Filter, Rejection, Reply};
 
-use crate::api::block::BlockApi;
-use crate::api::network::NetworkApi;
-use crate::handler_error::handle_rejection;
-use crate::{handler, AccountApi, ConstructionApi};
+use crate::{
+    api::{block::BlockApi, network::NetworkApi},
+    handler,
+    handler_error::handle_rejection,
+    AccountApi, ConstructionApi,
+};
 
 fn network_list(
     api: NetworkApi,
@@ -48,10 +50,7 @@ fn account_balance(
 }
 
 fn block_(api: BlockApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path::end()
-        .and(with_block_api(api))
-        .and(warp::body::json())
-        .and_then(handler::block)
+    warp::path::end().and(with_block_api(api)).and(warp::body::json()).and_then(handler::block)
 }
 
 fn block_transaction(
@@ -135,11 +134,8 @@ fn construction_hash(
 }
 
 fn network(api: NetworkApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::path("network").and(
-        network_list(api.clone())
-            .or(network_options(api.clone()))
-            .or(network_status(api)),
-    )
+    warp::path("network")
+        .and(network_list(api.clone()).or(network_options(api.clone())).or(network_status(api)))
 }
 
 fn account(api: AccountApi) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {

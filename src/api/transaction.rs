@@ -1,11 +1,17 @@
-use crate::api::amount::amount_from_uccd;
-use crate::api::error::{ApiError, ApiResult};
-use concordium_rust_sdk::common::types::{Amount, Timestamp, TransactionTime};
-use concordium_rust_sdk::common::SerdeSerialize;
-use concordium_rust_sdk::constants::EncryptedAmountsCurve;
-use concordium_rust_sdk::encrypted_transfers::types::*;
-use concordium_rust_sdk::id::types::AccountAddress;
-use concordium_rust_sdk::types::*;
+use crate::api::{
+    amount::amount_from_uccd,
+    error::{ApiError, ApiResult},
+};
+use concordium_rust_sdk::{
+    common::{
+        types::{Amount, Timestamp, TransactionTime},
+        SerdeSerialize,
+    },
+    constants::EncryptedAmountsCurve,
+    encrypted_transfers::types::*,
+    id::types::AccountAddress,
+    types::*,
+};
 use rosetta::models::{
     AccountIdentifier, Operation, OperationIdentifier, Transaction, TransactionIdentifier,
 };
@@ -25,10 +31,10 @@ struct ModuleDeployedMetadata {
 #[derive(SerdeSerialize)]
 struct ContractInitializedMetadata {
     module_ref: smart_contracts::ModuleRef,
-    address: ContractAddress,
-    amount: Amount,
-    init_name: smart_contracts::InitName,
-    events: Vec<smart_contracts::ContractEvent>,
+    address:    ContractAddress,
+    amount:     Amount,
+    init_name:  smart_contracts::InitName,
+    events:     Vec<smart_contracts::ContractEvent>,
 }
 
 #[derive(SerdeSerialize)]
@@ -45,12 +51,12 @@ pub struct MemoMetadata {
 
 #[derive(SerdeSerialize)]
 struct BakerAddedMetadata {
-    baker_id: BakerId,
-    account: AccountAddress,
-    sign_key: BakerSignatureVerifyKey,
-    election_key: BakerElectionVerifyKey,
-    aggregation_key: BakerAggregationVerifyKey,
-    stake_uccd: concordium_rust_sdk::common::types::Amount,
+    baker_id:         BakerId,
+    account:          AccountAddress,
+    sign_key:         BakerSignatureVerifyKey,
+    election_key:     BakerElectionVerifyKey,
+    aggregation_key:  BakerAggregationVerifyKey,
+    stake_uccd:       concordium_rust_sdk::common::types::Amount,
     restake_earnings: bool,
 }
 
@@ -61,59 +67,59 @@ struct BakerRemovedMetadata {
 
 #[derive(SerdeSerialize)]
 struct BakerStakeUpdatedMetadata {
-    baker_id: BakerId,
+    baker_id:       BakerId,
     new_stake_uccd: Amount,
-    increased: bool,
+    increased:      bool,
 }
 
 #[derive(SerdeSerialize)]
 struct BakerRestakeEarningsUpdatedMetadata {
-    baker_id: BakerId,
+    baker_id:         BakerId,
     restake_earnings: bool,
 }
 
 #[derive(SerdeSerialize)]
 struct BakerKeysUpdatedMetadata {
-    baker_id: BakerId,
-    account: AccountAddress,
-    sign_key: BakerSignatureVerifyKey,
-    election_key: BakerElectionVerifyKey,
+    baker_id:        BakerId,
+    account:         AccountAddress,
+    sign_key:        BakerSignatureVerifyKey,
+    election_key:    BakerElectionVerifyKey,
     aggregation_key: BakerAggregationVerifyKey,
 }
 
 #[derive(SerdeSerialize)]
 struct EncryptedAmountTransferredSenderMetadata {
     new_encrypted_balance: EncryptedAmount<EncryptedAmountsCurve>,
-    encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
-    up_to_index: EncryptedAmountAggIndex,
+    encrypted_amount:      EncryptedAmount<EncryptedAmountsCurve>,
+    up_to_index:           EncryptedAmountAggIndex,
 }
 #[derive(SerdeSerialize)]
 struct EncryptedAmountTransferredReceiverMetadata {
-    new_index: EncryptedAmountIndex,
+    new_index:        EncryptedAmountIndex,
     encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
 }
 
 #[derive(SerdeSerialize)]
 struct TransferredToEncryptedMetadata {
-    amount: Amount,
+    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
 }
 
 #[derive(SerdeSerialize)]
 struct TransferredToPublicMetadata {
-    address: AccountAddress,
-    amount: Amount,
+    address:              AccountAddress,
+    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
-    encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
-    up_to_index: EncryptedAmountAggIndex,
+    encrypted_amount:     EncryptedAmount<EncryptedAmountsCurve>,
+    up_to_index:          EncryptedAmountAggIndex,
 }
 
 #[derive(SerdeSerialize)]
 struct TransferredWithScheduleMetadata {
     receiver_address: AccountAddress,
-    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map?
+    amounts:          Vec<(Timestamp, Amount)>, // TODO convert to map?
     #[serde(skip_serializing_if = "Option::is_none")]
-    memo: Option<Memo>,
+    memo:             Option<Memo>,
 }
 
 #[derive(SerdeSerialize)]
@@ -124,8 +130,8 @@ struct CredentialKeysUpdatedMetadata {
 #[derive(SerdeSerialize)]
 struct CredentialsUpdatedMetadata {
     removed_credential_ids: Vec<CredentialRegistrationID>,
-    added_credential_ids: Vec<CredentialRegistrationID>,
-    new_threshold: AccountThreshold,
+    added_credential_ids:   Vec<CredentialRegistrationID>,
+    new_threshold:          AccountThreshold,
 }
 
 #[derive(SerdeSerialize)]
@@ -136,14 +142,14 @@ struct DataRegisteredMetadata {
 #[derive(SerdeSerialize)]
 struct AccountCreatedMetadata {
     credential_type: String,
-    address: AccountAddress,
+    address:         AccountAddress,
     registration_id: CredentialRegistrationID,
 }
 
 #[derive(SerdeSerialize)]
 struct ChainUpdateMetadata {
     effective_time: TransactionTime,
-    payload: UpdatePayload,
+    payload:        UpdatePayload,
 }
 
 pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
@@ -189,24 +195,26 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
             let mut ops_with_fee = ops.clone();
             ops_with_fee.push(Operation {
                 operation_identifier: Box::new(OperationIdentifier::new(ops.len() as i64)),
-                related_operations: None,
-                _type: OPERATION_TYPE_FEE.to_string(),
-                status: Some(OPERATION_STATUS_OK.to_string()),
-                account: Some(Box::new(AccountIdentifier::new(details.sender.to_string()))),
-                amount: Some(Box::new(amount_from_uccd(-(details.cost.microgtu as i64)))),
-                coin_change: None,
-                metadata: None,
+                related_operations:   None,
+                _type:                OPERATION_TYPE_FEE.to_string(),
+                status:               Some(OPERATION_STATUS_OK.to_string()),
+                account:              Some(Box::new(AccountIdentifier::new(
+                    details.sender.to_string(),
+                ))),
+                amount:               Some(Box::new(amount_from_uccd(
+                    -(details.cost.microgtu as i64),
+                ))),
+                coin_change:          None,
+                metadata:             None,
             });
             (ops_with_fee, metadata)
         }
-        BlockItemSummaryDetails::AccountCreation(details) => (
-            operations_and_metadata_from_account_creation_details(details),
-            None,
-        ),
-        BlockItemSummaryDetails::Update(details) => (
-            operations_and_metadata_from_chain_update_details(details),
-            None,
-        ),
+        BlockItemSummaryDetails::AccountCreation(details) => {
+            (operations_and_metadata_from_account_creation_details(details), None)
+        }
+        BlockItemSummaryDetails::Update(details) => {
+            (operations_and_metadata_from_chain_update_details(details), None)
+        }
     };
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
@@ -228,13 +236,17 @@ fn operations_and_metadata_from_account_transaction_details(
         } => (
             vec![Operation {
                 operation_identifier: Box::new(OperationIdentifier::new(0)),
-                related_operations: None,
-                _type: transaction_type_to_operation_type(*transaction_type),
-                status: Some(OPERATION_STATUS_FAIL.to_string()),
-                account: Some(Box::new(AccountIdentifier::new(details.sender.to_string()))),
-                amount: Some(Box::new(amount_from_uccd(details.cost.microgtu as i64))),
-                coin_change: None,
-                metadata: Some(
+                related_operations:   None,
+                _type:                transaction_type_to_operation_type(*transaction_type),
+                status:               Some(OPERATION_STATUS_FAIL.to_string()),
+                account:              Some(Box::new(AccountIdentifier::new(
+                    details.sender.to_string(),
+                ))),
+                amount:               Some(Box::new(amount_from_uccd(
+                    details.cost.microgtu as i64,
+                ))),
+                coin_change:          None,
+                metadata:             Some(
                     serde_json::to_value(&TransactionRejectedMetadata {
                         reject_reason: reject_reason.clone(),
                     })
@@ -243,7 +255,9 @@ fn operations_and_metadata_from_account_transaction_details(
             }],
             None,
         ),
-        AccountTransactionEffects::ModuleDeployed { module_ref } => (
+        AccountTransactionEffects::ModuleDeployed {
+            module_ref,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
@@ -253,21 +267,25 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::ContractInitialized { data } => (
+        AccountTransactionEffects::ContractInitialized {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&ContractInitializedMetadata {
                     module_ref: data.origin_ref,
-                    address: data.address,
-                    amount: data.amount,
-                    init_name: data.init_name.clone(),
-                    events: data.events.clone(),
+                    address:    data.address,
+                    amount:     data.amount,
+                    init_name:  data.init_name.clone(),
+                    events:     data.events.clone(),
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::ContractUpdateIssued { .. } => (
+        AccountTransactionEffects::ContractUpdateIssued {
+            ..
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
@@ -275,32 +293,41 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::AccountTransfer { amount, to } => {
-            (simple_transfer_operations(details, amount, to), None)
-        }
-        AccountTransactionEffects::AccountTransferWithMemo { amount, to, memo } => (
+        AccountTransactionEffects::AccountTransfer {
+            amount,
+            to,
+        } => (simple_transfer_operations(details, amount, to), None),
+        AccountTransactionEffects::AccountTransferWithMemo {
+            amount,
+            to,
+            memo,
+        } => (
             simple_transfer_operations(details, amount, to),
             Some(serde_json::to_value(&MemoMetadata {
                 memo: Some(memo.clone()),
             })),
         ),
-        AccountTransactionEffects::BakerAdded { data } => (
+        AccountTransactionEffects::BakerAdded {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&BakerAddedMetadata {
-                    baker_id: data.keys_event.baker_id,
-                    account: data.keys_event.account,
-                    sign_key: data.keys_event.sign_key.clone(),
-                    election_key: data.keys_event.election_key.clone(),
-                    aggregation_key: data.keys_event.aggregation_key.clone(),
-                    stake_uccd: data.stake,
+                    baker_id:         data.keys_event.baker_id,
+                    account:          data.keys_event.account,
+                    sign_key:         data.keys_event.sign_key.clone(),
+                    election_key:     data.keys_event.election_key.clone(),
+                    aggregation_key:  data.keys_event.aggregation_key.clone(),
+                    stake_uccd:       data.stake,
                     restake_earnings: data.restake_earnings,
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::BakerRemoved { baker_id } => (
+        AccountTransactionEffects::BakerRemoved {
+            baker_id,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
@@ -310,14 +337,16 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
-        AccountTransactionEffects::BakerStakeUpdated { data } => (
+        AccountTransactionEffects::BakerStakeUpdated {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 data.map(|d| BakerStakeUpdatedMetadata {
-                    baker_id: d.baker_id,
+                    baker_id:       d.baker_id,
                     new_stake_uccd: d.new_stake,
-                    increased: d.increased,
+                    increased:      d.increased,
                 })
                 .as_ref(),
             )],
@@ -331,29 +360,32 @@ fn operations_and_metadata_from_account_transaction_details(
                 0,
                 details,
                 Some(&BakerRestakeEarningsUpdatedMetadata {
-                    baker_id: *baker_id,
+                    baker_id:         *baker_id,
                     restake_earnings: *restake_earnings,
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::BakerKeysUpdated { data } => (
+        AccountTransactionEffects::BakerKeysUpdated {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&BakerKeysUpdatedMetadata {
-                    baker_id: data.baker_id,
-                    account: data.account,
-                    sign_key: data.sign_key.clone(),
-                    election_key: data.election_key.clone(),
+                    baker_id:        data.baker_id,
+                    account:         data.account,
+                    sign_key:        data.sign_key.clone(),
+                    election_key:    data.election_key.clone(),
                     aggregation_key: data.aggregation_key.clone(),
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::EncryptedAmountTransferred { removed, added } => {
-            (encrypted_transfer_operations(details, removed, added), None)
-        }
+        AccountTransactionEffects::EncryptedAmountTransferred {
+            removed,
+            added,
+        } => (encrypted_transfer_operations(details, removed, added), None),
         AccountTransactionEffects::EncryptedAmountTransferredWithMemo {
             removed,
             added,
@@ -364,56 +396,70 @@ fn operations_and_metadata_from_account_transaction_details(
                 memo: Some(memo.clone()),
             })),
         ),
-        AccountTransactionEffects::TransferredToEncrypted { data } => (
+        AccountTransactionEffects::TransferredToEncrypted {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&TransferredToEncryptedMetadata {
-                    amount: data.amount,
+                    amount:               data.amount,
                     new_encrypted_amount: data.new_amount.clone(),
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::TransferredToPublic { removed, amount } => (
+        AccountTransactionEffects::TransferredToPublic {
+            removed,
+            amount,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&TransferredToPublicMetadata {
-                    address: removed.account,
-                    amount: *amount,
+                    address:              removed.account,
+                    amount:               *amount,
                     new_encrypted_amount: removed.new_amount.clone(),
-                    encrypted_amount: removed.input_amount.clone(),
-                    up_to_index: removed.up_to_index,
+                    encrypted_amount:     removed.input_amount.clone(),
+                    up_to_index:          removed.up_to_index,
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::TransferredWithSchedule { to, amount } => (
+        AccountTransactionEffects::TransferredWithSchedule {
+            to,
+            amount,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&TransferredWithScheduleMetadata {
                     receiver_address: *to,
-                    amounts: amount.clone(),
-                    memo: None,
+                    amounts:          amount.clone(),
+                    memo:             None,
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::TransferredWithScheduleAndMemo { to, amount, memo } => (
+        AccountTransactionEffects::TransferredWithScheduleAndMemo {
+            to,
+            amount,
+            memo,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&TransferredWithScheduleMetadata {
                     receiver_address: *to,
-                    amounts: amount.clone(),
-                    memo: Some(memo.clone()),
+                    amounts:          amount.clone(),
+                    memo:             Some(memo.clone()),
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::CredentialKeysUpdated { cred_id } => (
+        AccountTransactionEffects::CredentialKeysUpdated {
+            cred_id,
+        } => (
             vec![self::normal_account_transaction_operation(
                 0,
                 details,
@@ -433,17 +479,21 @@ fn operations_and_metadata_from_account_transaction_details(
                 details,
                 Some(&CredentialsUpdatedMetadata {
                     removed_credential_ids: removed_cred_ids.clone(),
-                    added_credential_ids: new_cred_ids.clone(),
-                    new_threshold: *new_threshold,
+                    added_credential_ids:   new_cred_ids.clone(),
+                    new_threshold:          *new_threshold,
                 }),
             )],
             None,
         ),
-        AccountTransactionEffects::DataRegistered { data } => (
+        AccountTransactionEffects::DataRegistered {
+            data,
+        } => (
             vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(&DataRegisteredMetadata { data: data.clone() }),
+                Some(&DataRegisteredMetadata {
+                    data: data.clone(),
+                }),
             )],
             None,
         ),
@@ -455,26 +505,26 @@ fn operations_and_metadata_from_account_creation_details(
 ) -> Vec<Operation> {
     vec![Operation {
         operation_identifier: Box::new(OperationIdentifier {
-            index: 0,
+            index:         0,
             network_index: None,
         }),
-        related_operations: None,
-        _type: OPERATION_TYPE_ACCOUNT_CREATION.to_string(),
-        status: Some(OPERATION_STATUS_OK.to_string()),
-        account: Some(Box::new(AccountIdentifier {
-            address: details.address.to_string(),
+        related_operations:   None,
+        _type:                OPERATION_TYPE_ACCOUNT_CREATION.to_string(),
+        status:               Some(OPERATION_STATUS_OK.to_string()),
+        account:              Some(Box::new(AccountIdentifier {
+            address:     details.address.to_string(),
             sub_account: None,
-            metadata: None,
+            metadata:    None,
         })),
-        amount: None,
-        coin_change: None,
-        metadata: Some(
+        amount:               None,
+        coin_change:          None,
+        metadata:             Some(
             serde_json::to_value(&AccountCreatedMetadata {
                 credential_type: match details.credential_type {
                     CredentialType::Initial => "initial".to_string(),
                     CredentialType::Normal => "normal".to_string(),
                 },
-                address: details.address,
+                address:         details.address,
                 registration_id: details.reg_id.clone(),
             })
             .unwrap(),
@@ -485,19 +535,19 @@ fn operations_and_metadata_from_account_creation_details(
 fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) -> Vec<Operation> {
     vec![Operation {
         operation_identifier: Box::new(OperationIdentifier {
-            index: 0,
+            index:         0,
             network_index: None,
         }),
-        related_operations: None,
-        _type: OPERATION_TYPE_CHAIN_UPDATE.to_string(),
-        status: Some(OPERATION_STATUS_OK.to_string()),
-        account: None,
-        amount: None,
-        coin_change: None,
-        metadata: Some(
+        related_operations:   None,
+        _type:                OPERATION_TYPE_CHAIN_UPDATE.to_string(),
+        status:               Some(OPERATION_STATUS_OK.to_string()),
+        account:              None,
+        amount:               None,
+        coin_change:          None,
+        metadata:             Some(
             serde_json::to_value(&ChainUpdateMetadata {
                 effective_time: details.effective_time,
-                payload: details.payload.clone(),
+                payload:        details.payload.clone(),
             })
             .unwrap(),
         ),
@@ -540,8 +590,8 @@ fn encrypted_transfer_operations(
         None,
         Some(&EncryptedAmountTransferredSenderMetadata {
             new_encrypted_balance: removed.new_amount.clone(),
-            encrypted_amount: removed.input_amount.clone(),
-            up_to_index: removed.up_to_index,
+            encrypted_amount:      removed.input_amount.clone(),
+            up_to_index:           removed.up_to_index,
         }),
     );
     let mut receiver_operation = account_transaction_operation(
@@ -550,7 +600,7 @@ fn encrypted_transfer_operations(
         added.receiver.to_string(),
         None,
         Some(&EncryptedAmountTransferredReceiverMetadata {
-            new_index: added.new_index,
+            new_index:        added.new_index,
             encrypted_amount: added.encrypted_amount.clone(),
         }),
     );
@@ -581,17 +631,17 @@ fn account_transaction_operation<T: SerdeSerialize>(
             index,
             network_index: None,
         }),
-        related_operations: None,
-        _type: transaction_type_to_operation_type(details.transaction_type()),
-        status: Some(OPERATION_STATUS_OK.to_string()),
-        account: Some(Box::new(AccountIdentifier {
-            address: account_address,
+        related_operations:   None,
+        _type:                transaction_type_to_operation_type(details.transaction_type()),
+        status:               Some(OPERATION_STATUS_OK.to_string()),
+        account:              Some(Box::new(AccountIdentifier {
+            address:     account_address,
             sub_account: None,
-            metadata: None,
+            metadata:    None,
         })),
-        amount: amount.map(Box::new),
-        coin_change: None,
-        metadata: metadata.map(serde_json::to_value).map(Result::unwrap),
+        amount:               amount.map(Box::new),
+        coin_change:          None,
+        metadata:             metadata.map(serde_json::to_value).map(Result::unwrap),
     }
 }
 

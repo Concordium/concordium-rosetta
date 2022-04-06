@@ -365,23 +365,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "concorium-rosetta-test"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "concordium-rust-sdk",
- "hex",
- "reqwest",
- "rosetta",
- "serde",
- "serde_json",
- "sign-transaction-hash",
- "structopt",
-]
-
-[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2154,15 +2137,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sign-transaction-hash"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "concordium-rust-sdk",
- "serde_json",
-]
-
-[[package]]
 name = "signal-hook-registry"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2572,6 +2546,22 @@ checksum = "97d095ae15e245a057c8e8451bab9b3ee1e1f68e9ba2b4fbc18d0ac5237835f2"
 dependencies = [
  "pin-project",
  "tracing",
+]
+
+[[package]]
+name = "transfer-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "concordium-rust-sdk",
+ "hex",
+ "reqwest",
+ "rosetta",
+ "serde",
+ "serde_json",
+ "structopt",
 ]
 
 [[package]]

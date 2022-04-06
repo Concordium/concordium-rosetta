@@ -55,7 +55,6 @@ impl BlockApi {
         &self,
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
-        // TODO Should verify that index is correct?
         let hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
         let block_summary = self
             .query_helper

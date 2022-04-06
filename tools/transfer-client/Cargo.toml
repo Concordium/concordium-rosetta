@@ -1,5 +1,5 @@
 [package]
-name = "concorium-rosetta-test"
+name = "transfer-client"
 version = "0.1.0"
 edition = "2018"
 
@@ -9,10 +9,6 @@ version = "*"
 
 [dependencies.rosetta]
 path = "../../rosetta"
-version = "*"
-
-[dependencies.sign-transaction-hash]
-path = "../sign-transaction-hash"
 version = "*"
 
 [dependencies]

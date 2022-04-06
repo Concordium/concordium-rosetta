@@ -13,7 +13,7 @@ pipeline {
                       --label build_image="${build_image}" \
                       --build-arg base_image="${base_image}" \
                       --label base_image="${base_image}" \
-                      -t "${image_name}" \
+                      --tag="${image_name}" \
                       .
                 '''.stripIndent()
             }

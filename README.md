@@ -31,7 +31,12 @@ The application accepts the following parameters:
 *Build*
 
 ```shell
-docker build --build-arg=build_image=rust:1.53-slim-buster --build-arg=base_image=debian:buster-slim -t concordium-rosetta --pull .
+docker build \
+  --build-arg=build_image=rust:1.53-slim-buster \
+  --build-arg=base_image=debian:buster-slim \
+  --tag=concordium-rosetta \
+  --pull \
+  .
 ```
 
 *Run*
@@ -81,6 +86,8 @@ All applicable endpoints except for the
 
 - [Block](https://www.rosetta-api.org/docs/BlockApi.html):
   All endpoints (`block`, `transaction`) are implemented according to the specification.
+  For `transaction`, only the `hash` field of the block identifier is used - `index` has to be provided
+  but its value is ignored.
   All blocks contain a synthetic first transaction with pseudo-hash `tokenomics` (think of Bitcoin's "coinbase" transaction)
   containing operations for minting and rewards.
   These operations reference the special internal "baker-" and "finalization reward" accounts with the pseudo-addresses

@@ -53,7 +53,7 @@ jobs:
           toolchain: ${{ env.RUST_CLIPPY }}
           override: true
           target: ${{ env.TARGET }}
-          components: clippy
+          components: rustfmt, clippy
       - name: Clippy
         run: |
           cargo clippy --color=always --tests --benches -- -Dclippy::all

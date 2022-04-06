@@ -5,6 +5,16 @@ pipeline {
         image_name = "${image_repo}:${image_tag}"
     }
     stages {
+        stage('dockerhub-login') {
+            environment {
+                // Defines 'CRED_USR' and 'CRED_PSW'
+                // (see 'https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#handling-credentials').
+                CRED = credentials('jenkins-dockerhub')
+            }
+            steps {
+                sh 'docker login --username "${CRED_USR}" --password "${CRED_PSW}"'
+            }
+        }
         stage('build') {
             steps {
                 sh '''\

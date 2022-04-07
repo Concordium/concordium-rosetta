@@ -1,7 +1,8 @@
 pipeline {
-    agent { label 'jenkins-worker' }
+    agent any
     stages {
-        stage('build-push') {
+        stage('build') {
+            agent { label 'mac' }
             steps {
                 sh '''\
                     # Set up Rust toolchain.
@@ -14,6 +15,19 @@ pipeline {
                     aws s3 cp \
                         ./target/release/concordium-rosetta.exe \
                         "s3://distribution.concordium.software/tools/macos/concordium-rosetta_${version}.exe" \
+                        --grants=read=uri=http://acs.amazonaws.com/groups/global/AllUsers
+                '''.stripIndent()
+                stash includes: './target/release/concordium-rosetta', name: 'target'
+            }
+        }
+        stage('push') {
+            steps {
+                unstash 'target'
+                sh '''\
+                    # Push binary to S3.
+                    aws s3 cp \
+                        ./target/release/concordium-rosetta \
+                        "s3://distribution.concordium.software/tools/macos/concordium-rosetta_${version}" \
                         --grants=read=uri=http://acs.amazonaws.com/groups/global/AllUsers
                 '''.stripIndent()
             }

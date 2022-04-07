@@ -11,7 +11,7 @@ pipeline {
                     # Build binary and run it to get version.
                     version="$(cargo run --release -- --version | awk '{print $2}')"
                 '''.stripIndent()
-                stash includes: './target/release/concordium-rosetta', name: 'target'
+                stash includes: 'target/release/concordium-rosetta', name: 'target'
             }
         }
         stage('push') {

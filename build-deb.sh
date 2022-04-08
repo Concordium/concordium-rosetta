@@ -5,7 +5,7 @@ set -euxo pipefail
 # -- PARAMETERS -- #
 
 # Base image to use for building the binary.
-build_base_image=rust:1.53-slim-buster
+build_base_image="${BUILD_IMAGE}"
 # Directory to use for temporary files.
 build_dir=./tmp/deb
 

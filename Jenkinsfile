@@ -15,7 +15,7 @@ pipeline {
                 sh 'docker login --username "${CRED_USR}" --password "${CRED_PSW}"'
             }
         }
-        stage('build') {
+        stage('build-push-docker') {
             steps {
                 sh '''\
                     docker build \
@@ -25,12 +25,16 @@ pipeline {
                       --label base_image="${base_image}" \
                       --tag="${image_name}" \
                       .
+                    docker push "${image_name}"
                 '''.stripIndent()
             }
         }
-        stage('push') {
+        stage('build-push-debian') {
             steps {
-                sh 'docker push "${image_name}"'
+                sh '''\
+                    BUILD_IMAGE="${build_image}" ./build-deb.sh
+                    aws s3 cp ./concordium-rosetta*.deb s3://distribution.concordium.software/tools/linux/
+                '''.stripIndent()
             }
         }
     }

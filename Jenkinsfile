@@ -32,8 +32,22 @@ pipeline {
         stage('build-push-debian') {
             steps {
                 sh '''\
-                    BUILD_IMAGE="${build_image}" ./build-deb.sh
-                    aws s3 cp ./concordium-rosetta*.deb s3://distribution.concordium.software/tools/linux/
+                    # Building image from "build" stage in the docker file.
+                    # It should be entirely cached.
+                    docker build \
+                        -t build \
+                        --target=build \
+                        --build-arg=build_image="${build_image}" \
+                        --pull \
+                        .
+
+                    # Extract debian package from docker image into './out'.
+                    # The file will have owner 'root' because docker volumes cannot be mounted as anything else
+                    # (see 'https://github.com/moby/moby/issues/2259').
+                    mkdir -p ./out
+                    docker run --rm --volume="$(pwd)/out:/out" build sh -c 'cp /build/concordium-rosetta*.deb /out'
+
+                    aws s3 cp ./out/concordium-rosetta*.deb s3://distribution.concordium.software/tools/linux/
                 '''.stripIndent()
             }
         }

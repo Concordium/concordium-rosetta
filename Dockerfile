@@ -10,10 +10,11 @@ RUN rustup component add rustfmt
 WORKDIR /build
 COPY . .
 RUN cargo build --release
-# Using 'cp' as default entrypoint for copying out build artifacts (useful for builds that target this stage).
-ENTRYPOINT [ "cp" ]
 
-# Copy to slim image.
+# Build Debian package at '/build/concordium-rosetta_<version>.deb'.
+RUN ./build-deb.sh ./target/release/concordium-rosetta
+
+# Copy binary to slim image.
 FROM ${base_image}
 RUN apt-get update && apt-get install -y libssl1.1 && rm -rf /var/lib/apt/lists/*
 COPY --from=build /build/target/release/concordium-rosetta /usr/local/bin/

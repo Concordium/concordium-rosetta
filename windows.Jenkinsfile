@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'windows' }
     stages {
-        stage('build') {
+        stage('build-push') {
             steps {
                 sh '''\
                     # Set up Rust toolchain.

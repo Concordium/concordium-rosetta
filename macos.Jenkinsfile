@@ -25,7 +25,7 @@ pipeline {
                     # Push binary to S3.
                     aws s3 cp \
                         ./out/concordium-rosetta* \
-                        "s3://distribution.concordium.software/tools/macos/" \
+                        s3://distribution.concordium.software/tools/macos/ \
                         --grants=read=uri=http://acs.amazonaws.com/groups/global/AllUsers
                 '''.stripIndent()
             }

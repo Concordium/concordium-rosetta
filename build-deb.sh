@@ -2,40 +2,30 @@
 
 set -euxo pipefail
 
+# Script for packaging a compiled 'concordium-rosetta' Linux binary into a Debian package.
+# The script expects the path of the binary to be passed as an argument. Any following arguments are ignored.
+# A debian package is written to a file named 'concordium-rosetta_<version>.deb' in the current working dir,
+# where <version> is obtained by invoking the binary with arg '--version'.
+
 # -- PARAMETERS -- #
 
-# Base image to use for building the binary.
-build_base_image="${BUILD_IMAGE}"
-# Directory to use for temporary files.
-build_dir=./tmp/deb
+target_file="${1}"
 
 # -- BUILD -- #
 
-if [ -e "${build_dir}" ]; then
-	>&2 echo "Build dir '${build_dir}' must be empty."
-	exit 1
-fi
-
-# Building image from "build" stage in the docker file.
-docker build \
-	-t build-cp \
-	--target=build \
-	--build-arg=build_image="${build_base_image}" \
-	--pull \
-	.
-
-package_dir="${build_dir}"
 # Setup temp build dir.
+build_dir="$(mktemp -d)"
+package_dir="${build_dir}"
 mkdir -p "${package_dir}"
+
+# Copy binary file.
+mkdir -p "${package_dir}/usr/bin"
+cp "${target_file}" "${package_dir}/usr/bin/"
+
 (
 cd "${package_dir}"
 
-# Extract binary 'concordium-rosetta' from docker image into './usr/bin'.
-# The file will have root owner because docker volumes cannot be mounted as non-root
-# (see 'https://github.com/moby/moby/issues/2259').
-mkdir -p ./usr/bin
-docker run --rm --volume="$(pwd)/usr/bin:/out" build-cp /build/target/release/concordium-rosetta /out
-
+# Run binary file to extract version.
 architecture="$(dpkg --print-architecture)"
 version="$(./usr/bin/concordium-rosetta --version | awk '{print $2}')"
 
@@ -55,4 +45,4 @@ EOF
 )
 
 dpkg-deb --build "${package_dir}" .
-rm -rf "${build_dir}" # might fail if running as non-root
+rm -rf "${build_dir}"

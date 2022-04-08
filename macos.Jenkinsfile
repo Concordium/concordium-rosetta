@@ -5,23 +5,27 @@ pipeline {
             agent { label 'mac' }
             steps {
                 sh '''\
-                    # Set up Rust toolchain and build binary.
+                    # Set up Rust toolchain.
                     rustup default 1.53
-                    cargo build --release
+
+                    # Build binary and run it to get version.
+                    version="$(cargo run --release -- --version | awk '{print $2}')"
+
+                    # Extract binary and append version to name.
+                    mkdir out
+                    cp ./target/release/concordium-rosetta ./out/concordium-rosetta_${version}
                 '''.stripIndent()
-                stash includes: 'target/release/concordium-rosetta', name: 'target'
+                stash includes: 'out', name: 'target'
             }
         }
         stage('push') {
             steps {
-                unstash 'target' // transfers './target/release/concordium-rosetta'.
+                unstash 'target' // transfers './out'.
                 sh '''\
-                    # Run binary to get version.
-                    version="$(./target/release/concordium-rosetta --version | awk '{print $2}')"
                     # Push binary to S3.
                     aws s3 cp \
-                        ./target/release/concordium-rosetta \
-                        "s3://distribution.concordium.software/tools/macos/concordium-rosetta_${version}" \
+                        ./out/concordium-rosetta* \
+                        "s3://distribution.concordium.software/tools/macos/" \
                         --grants=read=uri=http://acs.amazonaws.com/groups/global/AllUsers
                 '''.stripIndent()
             }

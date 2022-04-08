@@ -37,7 +37,7 @@ Version: ${version}
 Section: web
 Priority: optional
 Architecture: ${architecture}
-Depends: debhelper, libssl1.1
+Depends: libssl1.1
 Maintainer: Concordium Foundation <developers@concordium.com>
 Description: Rosetta implementation for the Concordium blockchain.
   See 'https://github.com/Concordium/concordium-rosetta/'.

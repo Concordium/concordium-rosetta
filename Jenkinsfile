@@ -47,7 +47,10 @@ pipeline {
                     mkdir -p ./out
                     docker run --rm --volume="$(pwd)/out:/out" build sh -c 'cp /build/concordium-rosetta*.deb /out'
 
-                    aws s3 cp ./out/concordium-rosetta*.deb s3://distribution.concordium.software/tools/linux/
+                    aws s3 cp \
+                        ./out/concordium-rosetta*.deb \
+                        s3://distribution.concordium.software/tools/linux/ \
+                        --grants=read=uri=http://acs.amazonaws.com/groups/global/AllUsers
                 '''.stripIndent()
             }
         }

@@ -12,10 +12,10 @@ pipeline {
                     version="$(cargo run --release -- --version | awk '{print $2}')"
 
                     # Extract binary and append version to name.
-                    mkdir out
+                    mkdir ./out
                     cp ./target/release/concordium-rosetta ./out/concordium-rosetta_${version}
                 '''.stripIndent()
-                stash includes: 'out', name: 'target'
+                stash includes: 'out/', name: 'target'
             }
         }
         stage('push') {

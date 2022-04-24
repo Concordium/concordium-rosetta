@@ -48,7 +48,7 @@ docker run --rm concordium-rosetta
 ## Rosetta
 
 Rosetta is a specification of an HTTP-based API designed by Coinbase
-to provide a common layer of abstraction for interacting with blockchains.
+to provide a common layer of abstraction for interacting with any blockchain.
 
 The Rosetta API is divided into three categories:
 
@@ -61,27 +61,27 @@ There are also mentions of a [Call API](https://www.rosetta-api.org/docs/CallApi
 but it doesn't appear to be a first class member of the spec.
 
 To learn more about the intended behavior and usage of the endpoints,
-see the [official documentation](https://www.rosetta-api.org/docs/welcome.html) or the example section below.
+see the [official documentation](https://www.rosetta-api.org/docs/welcome.html) and the example section below.
 
 ## Implementation status
 
-All required features of the Rosetta specification are implemented.
-I.e. everything that isn't implemented is marked as optional in the spec/docs.
+All required features of the Rosetta specification are implemented:
+Everything that isn't implemented is marked as optional in the spec/docs.
 
 The sections below outline the status for the individual endpoints along with details relevant to integrating Rosetta clients.
 
 ### Data API
 
 All applicable endpoints except for the
-[optional](https://www.rosetta-api.org/docs/all_methods.html) mempool ones supported:
+[optional](https://www.rosetta-api.org/docs/all_methods.html) mempool ones are supported:
 
 - [Network](https://www.rosetta-api.org/docs/NetworkApi.html):
   All endpoints (`list`, `status`, `options`) are implemented according to the specification.
 
 - [Account](https://www.rosetta-api.org/docs/AccountApi.html):
   The `balance` endpoint is implemented according to the specification.
-  The `coins` endpoint is not applicable as Concordium is account-,
-  not [UTXO](https://www.investopedia.com/terms/u/utxo.asp)-based,
+  The `coins` endpoint is not applicable as Concordium is account-based
+  (i.e. doesn't use [UTXO](https://www.investopedia.com/terms/u/utxo.asp)),
   and thus doesn't have this concept of "coins".
 
 - [Block](https://www.rosetta-api.org/docs/BlockApi.html):
@@ -105,10 +105,10 @@ All applicable endpoints are supported to construct and submit transfer transact
   Not applicable as account addresses aren't derivable from public keys.
 
 - [`preprocess`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionpreprocess):
-  Implemented, but doesn't really serve any real purpose as the returned options are already known by the caller.
+  Implemented, but doesn't serve any real purpose as the returned options are already known by the caller.
   The fields `max_fee` and `suggested_fee_multipler` are not supported as the fee of any transaction is deterministic
   and cannot be boosted to expedite the transaction.
-  One can get the fee from the output of `parse` and choose not to proceed if the fee is deemed too large.
+  All one can do is retrieving the fee from the output of `parse` and choose not to proceed if it's deemed too large.
   An error is returned if the operations don't form a valid transfer
   (i.e. a pair of operations of type "transfer" with zero-sum amounts and valid addresses etc.).
 

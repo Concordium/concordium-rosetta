@@ -1,0 +1,6 @@
+{
+  "network_identifier": { "blockchain": "concordium", "network": "mainnet" },
+  "block_identifier": {
+    "index": 1312121
+  }
+}

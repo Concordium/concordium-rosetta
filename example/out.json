@@ -1,0 +1,372 @@
+{
+  "block": {
+    "block_identifier": {
+      "index": 1312121,
+      "hash": "c7242ee1b6c3193eb7b726c0a7292410ad1ad9ed63c6fe70fec7af6e8c59486e"
+    },
+    "parent_block_identifier": {
+      "index": 1312120,
+      "hash": "9038663fbbca3e4aa39b716eecac6924ec72c20958215b5c4e83cc1179cae0f2"
+    },
+    "timestamp": 1636490675000,
+    "transactions": [
+      {
+        "transaction_identifier": {
+          "hash": "tokenomics"
+        },
+        "operations": [
+          {
+            "operation_identifier": {
+              "index": 0
+            },
+            "type": "mint_baking_reward",
+            "status": "ok",
+            "account": {
+              "address": "baking_reward_account"
+            },
+            "amount": {
+              "value": "574924197",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 1
+            },
+            "type": "mint_finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "finalization_reward_account"
+            },
+            "amount": {
+              "value": "33819070",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 2
+            },
+            "type": "mint_platform_development_charge",
+            "status": "ok",
+            "account": {
+              "address": "4LH62AZmugKXFA2xXZhpoNbt2fFhAn8182kdHgxCu8cyiZGo2c"
+            },
+            "amount": {
+              "value": "67638142",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 3
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "3CbvrNVpcHpL7tyT2mhXxQwNWHiPNYEJRgp3CMgEcMyXivms6B"
+            },
+            "amount": {
+              "value": "2637289",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 4
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "3EctbG8WaQkTqZb1NTJPAFnqmuhvW62pQbywvqb9VeyqaFZdzN"
+            },
+            "amount": {
+              "value": "2637835",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 5
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "3XSLuJcXg6xEua6iBPnWacc3iWh93yEDMCqX8FbE3RDSbEnT9P"
+            },
+            "amount": {
+              "value": "10090151",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 6
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "3eUA4NnWufEqTBXR2QtTwjPxHZRGZvoqHaVjybmzZSqbuG32vJ"
+            },
+            "amount": {
+              "value": "4285766",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 7
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "3ofwYFAkgV59BsHqzmiWyRmmKRB5ZzrPfbmx5nup24cE53jNX5"
+            },
+            "amount": {
+              "value": "2638431",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 8
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "47xTHwtFra1d4Mq4DYZuZYJEYrDXY34C4CGkTTzT6eiwjEczuT"
+            },
+            "amount": {
+              "value": "2640217",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 9
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "49SJ6R6T9zo1C5cLVyxbwAuZC3EcDB9a78vSQYm3ZLA2y2eojM"
+            },
+            "amount": {
+              "value": "2638634",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 10
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "4MPJybKC9Kz7kw9KNyLHhuAEt4ZTxLsd3DBDbxtKdUiv4fXqVN"
+            },
+            "amount": {
+              "value": "3613279",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 11
+            },
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "4d13WVDNKVGDUxRUb1PRQAJyTwWSVcjWS7uwZ1oqmDm5icQEPT"
+            },
+            "amount": {
+              "value": "2637469",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 12
+            },
+            "related_operations": [
+              {
+                "index": 3
+              },
+              {
+                "index": 4
+              },
+              {
+                "index": 5
+              },
+              {
+                "index": 6
+              },
+              {
+                "index": 7
+              },
+              {
+                "index": 8
+              },
+              {
+                "index": 9
+              },
+              {
+                "index": 10
+              },
+              {
+                "index": 11
+              }
+            ],
+            "type": "finalization_reward",
+            "status": "ok",
+            "account": {
+              "address": "finalization_reward_account"
+            },
+            "amount": {
+              "value": "-33819071",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 13
+            },
+            "type": "block_reward",
+            "status": "ok",
+            "account": {
+              "address": "3XSLuJcXg6xEua6iBPnWacc3iWh93yEDMCqX8FbE3RDSbEnT9P"
+            },
+            "amount": {
+              "value": "12625",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 14
+            },
+            "type": "block_reward",
+            "status": "ok",
+            "account": {
+              "address": "4LH62AZmugKXFA2xXZhpoNbt2fFhAn8182kdHgxCu8cyiZGo2c"
+            },
+            "amount": {
+              "value": "2806",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          }
+        ]
+      },
+      {
+        "transaction_identifier": {
+          "hash": "52caf15d477a7fef99d51016a476c987bf551def159da69943d02685d3a53732"
+        },
+        "operations": [
+          {
+            "operation_identifier": {
+              "index": 0
+            },
+            "type": "transfer",
+            "status": "ok",
+            "account": {
+              "address": "48dswMnDMA5fMJngqY3PkGHKqmNgvRhTpkSH9gVf69bZECmKhd"
+            },
+            "amount": {
+              "value": "-32897318",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 1
+            },
+            "related_operations": [
+              {
+                "index": 0
+              }
+            ],
+            "type": "transfer",
+            "status": "ok",
+            "account": {
+              "address": "4rc1tjHwkFB5JP39rcEeRqsh1gMJZerjjDpWoqqTY6VHy2WZgj"
+            },
+            "amount": {
+              "value": "32897318",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          },
+          {
+            "operation_identifier": {
+              "index": 2
+            },
+            "type": "fee",
+            "status": "ok",
+            "account": {
+              "address": "48dswMnDMA5fMJngqY3PkGHKqmNgvRhTpkSH9gVf69bZECmKhd"
+            },
+            "amount": {
+              "value": "-28056",
+              "currency": {
+                "symbol": "CCD",
+                "decimals": 6
+              }
+            }
+          }
+        ],
+        "metadata": {
+          "memo": "6131"
+        }
+      }
+    ]
+  }
+}

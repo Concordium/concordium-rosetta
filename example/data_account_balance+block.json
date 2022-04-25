@@ -1,0 +1,9 @@
+{
+  "network_identifier": { "blockchain": "concordium", "network": "mainnet" },
+  "account_identifier": {
+    "address": "4LH62AZmugKXFA2xXZhpoNbt2fFhAn8182kdHgxCu8cyiZGo2c"
+  },
+  "block_identifier": {
+    "hash": "95738938f790e9f984bb5e67fd453f26c2c1b37a78c6ef06d86bee4571ce18d4"
+  }
+}

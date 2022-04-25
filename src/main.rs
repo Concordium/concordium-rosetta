@@ -22,7 +22,7 @@ use rosetta::models::NetworkIdentifier;
 #[clap(
     author = "Concordium Foundation",
     about = "A server implementing the Rosetta API for the Concordium blockchain.",
-    version,
+    version
 )]
 struct Args {
     #[clap(
@@ -37,28 +37,28 @@ struct Args {
         long = "port",
         env = "PORT",
         help = "The port that HTTP requests are to be served on.",
-        default_value = "8080",
+        default_value = "8080"
     )]
     port:       u16,
     #[clap(
         long = "grpc-host",
         env = "GRPC_HOST",
         help = "Hostname or IP of the node's gRPC endpoint.",
-        default_value = "localhost",
+        default_value = "localhost"
     )]
     grpc_host:  String,
     #[clap(
         long = "grpc-port",
         env = "GRPC_PORT",
         help = "Port of the node's gRPC endpoint.",
-        default_value = "10000",
+        default_value = "10000"
     )]
     grpc_port:  u16,
     #[clap(
         long = "grpc-token",
         env = "GRPC_TOKEN",
         help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin",
+        default_value = "rpcadmin"
     )]
     grpc_token: String,
 }

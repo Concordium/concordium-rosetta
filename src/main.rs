@@ -23,6 +23,7 @@ use structopt::StructOpt;
 struct App {
     #[structopt(
         long = "network",
+        env = "CONCORDIUM_ROSETTA_NETWORK",
         help = "The name of the network that the connected node is part of; i.e. 'testnet' or \
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
@@ -30,27 +31,28 @@ struct App {
     network:    String,
     #[structopt(
         long = "port",
+        env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
     port:       u16,
     #[structopt(
         long = "grpc-host",
-        env = "GRPC_HOST",
+        env = "CONCORDIUM_ROSETTA_GRPC_HOST",
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
     grpc_host:  String,
     #[structopt(
         long = "grpc-port",
-        env = "GRPC_PORT",
+        env = "CONCORDIUM_ROSETTA_GRPC_PORT",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
     grpc_port:  u16,
     #[structopt(
         long = "grpc-token",
-        env = "GRPC_TOKEN",
+        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]

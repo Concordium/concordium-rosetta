@@ -12,7 +12,7 @@ through its gRPC interface.
 ### Versions
 
 - Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 3.0.1.
+- Supported Concordium node version: 3.0.x.
 
 ## Build and run
 

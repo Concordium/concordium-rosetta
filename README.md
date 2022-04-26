@@ -32,7 +32,7 @@ The application accepts the following parameters:
 
 ```shell
 docker build \
-  --build-arg=build_image=rust:1.53-slim-buster \
+  --build-arg=build_image=rust:1.54-slim-buster \
   --build-arg=base_image=debian:buster-slim \
   --tag=concordium-rosetta \
   --pull \

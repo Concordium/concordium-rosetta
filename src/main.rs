@@ -13,44 +13,50 @@ use crate::{
     validate::{account::AccountValidator, network::NetworkValidator},
 };
 use anyhow::{Context, Result};
-use clap::AppSettings;
+use clap::Parser;
 use concordium_rust_sdk::endpoints::Client;
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
-struct App {
-    #[structopt(
+#[derive(Parser, Debug)]
+#[clap(
+    author = "Concordium Foundation",
+    about = "A server implementing the Rosetta API for the Concordium blockchain.",
+    version
+)]
+struct Args {
+    #[clap(
         long = "network",
+        env = "CONCORDIUM_ROSETTA_NETWORK",
         help = "The name of the network that the connected node is part of; i.e. 'testnet' or \
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
     network:    String,
-    #[structopt(
+    #[clap(
         long = "port",
+        env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
     port:       u16,
-    #[structopt(
+    #[clap(
         long = "grpc-host",
-        env = "GRPC_HOST",
+        env = "CONCORDIUM_ROSETTA_GRPC_HOST",
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
     grpc_host:  String,
-    #[structopt(
+    #[clap(
         long = "grpc-port",
-        env = "GRPC_PORT",
+        env = "CONCORDIUM_ROSETTA_GRPC_PORT",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
     grpc_port:  u16,
-    #[structopt(
+    #[clap(
         long = "grpc-token",
-        env = "GRPC_TOKEN",
+        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
@@ -60,11 +66,7 @@ struct App {
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse CLI args.
-    let app = {
-        let app = App::clap().global_setting(AppSettings::ColoredHelp);
-        let matches = app.get_matches();
-        App::from_clap(&matches)
-    };
+    let args = Args::parse();
 
     // Initialize logging.
     Builder::from_env(Env::default().default_filter_or("info")).init();
@@ -72,16 +74,16 @@ async fn main() -> Result<()> {
     // Initialize gRPC and client.
     let endpoint = tonic::transport::Endpoint::from_shared(format!(
         "http://{}:{}",
-        app.grpc_host, app.grpc_port
+        args.grpc_host, args.grpc_port
     ))
     .context("invalid host and/or port")?;
     let client =
-        Client::connect(endpoint, app.grpc_token).await.context("cannot connect to node")?;
+        Client::connect(endpoint, args.grpc_token).await.context("cannot connect to node")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {
         blockchain:             "concordium".to_string(),
-        network:                app.network,
+        network:                args.network,
         sub_network_identifier: None,
     });
     let account_validator = AccountValidator {};
@@ -94,7 +96,7 @@ async fn main() -> Result<()> {
 
     // Configure and start web server.
     warp::serve(route::root(network_api, account_api, block_api, construction_api))
-        .run(([0, 0, 0, 0], app.port))
+        .run(([0, 0, 0, 0], args.port))
         .await;
     Ok(())
 }

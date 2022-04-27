@@ -4,6 +4,6 @@
     "generate": "openapi-generator-cli generate --input-spec=./rosetta-specifications/api.yaml --generator-name=rust --output=rosetta --additional-properties=packageName=rosetta"
   },
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.4.25"
+    "@openapitools/openapi-generator-cli": "^2.5.1"
   }
 }

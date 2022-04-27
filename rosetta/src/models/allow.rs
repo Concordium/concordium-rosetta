@@ -16,13 +16,13 @@
 pub struct Allow {
     /// All Operation.Status this implementation supports. Any status that is returned during parsing that is not listed here will cause client validation to error. 
     #[serde(rename = "operation_statuses")]
-    pub operation_statuses: Vec<serde_json::Value>,
+    pub operation_statuses: Vec<crate::models::OperationStatus>,
     /// All Operation.Type this implementation supports. Any type that is returned during parsing that is not listed here will cause client validation to error. 
     #[serde(rename = "operation_types")]
     pub operation_types: Vec<String>,
     /// All Errors that this implementation could return. Any error that is returned during parsing that is not listed here will cause client validation to error. 
     #[serde(rename = "errors")]
-    pub errors: Vec<serde_json::Value>,
+    pub errors: Vec<crate::models::Error>,
     /// Any Rosetta implementation that supports querying the balance of an account at any height in the past should set this to true. 
     #[serde(rename = "historical_balance_lookup")]
     pub historical_balance_lookup: bool,
@@ -34,7 +34,7 @@ pub struct Allow {
     pub call_methods: Vec<String>,
     /// BalanceExemptions is an array of BalanceExemption indicating which account balances could change without a corresponding Operation.  BalanceExemptions should be used sparingly as they may introduce significant complexity for integrators that attempt to reconcile all account balance changes.  If your implementation relies on any BalanceExemptions, you MUST implement historical balance lookup (the ability to query an account balance at any BlockIdentifier). 
     #[serde(rename = "balance_exemptions")]
-    pub balance_exemptions: Vec<serde_json::Value>,
+    pub balance_exemptions: Vec<crate::models::BalanceExemption>,
     /// Any Rosetta implementation that can update an AccountIdentifier's unspent coins based on the contents of the mempool should populate this field as true. If false, requests to `/account/coins` that set `include_mempool` as true will be automatically rejected. 
     #[serde(rename = "mempool_coins")]
     pub mempool_coins: bool,
@@ -42,7 +42,7 @@ pub struct Allow {
 
 impl Allow {
     /// Allow specifies supported Operation status, Operation types, and all possible error statuses. This Allow object is used by clients to validate the correctness of a Rosetta Server implementation. It is expected that these clients will error if they receive some response that contains any of the above information that is not specified here. 
-    pub fn new(operation_statuses: Vec<serde_json::Value>, operation_types: Vec<String>, errors: Vec<serde_json::Value>, historical_balance_lookup: bool, call_methods: Vec<String>, balance_exemptions: Vec<serde_json::Value>, mempool_coins: bool) -> Allow {
+    pub fn new(operation_statuses: Vec<crate::models::OperationStatus>, operation_types: Vec<String>, errors: Vec<crate::models::Error>, historical_balance_lookup: bool, call_methods: Vec<String>, balance_exemptions: Vec<crate::models::BalanceExemption>, mempool_coins: bool) -> Allow {
         Allow {
             operation_statuses,
             operation_types,
@@ -55,5 +55,3 @@ impl Allow {
         }
     }
 }
-
-

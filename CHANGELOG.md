@@ -1,4 +1,4 @@
-# Changelog for concordium-client
+# Changelog
 
 ## 0.1.1
 - fix bug where an error description was empty.

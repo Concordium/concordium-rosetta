@@ -225,7 +225,7 @@ pub fn invalid_input_unsupported_value_error(name: Option<String>, value: Option
     Error {
         code:        1300,
         message:     "invalid input: unsupported value".to_string(),
-        description: Some("".to_string()),
+        description: Some("The provided input value is not supported.".to_string()),
         retriable:   false,
         details:     key_value_pairs(&[
             key_value_pair("name", name),

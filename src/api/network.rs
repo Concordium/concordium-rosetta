@@ -95,7 +95,18 @@ impl NetworkApi {
                 timestamp_start_index:     None, /* not populated as the genesis block has a
                                                   * valid time stamp */
                 call_methods:              vec![], // Call API is not implemented
-                balance_exemptions:        vec![],
+                balance_exemptions:        vec![
+                    BalanceExemption {
+                        sub_account_address: Some(ACCOUNT_BAKING_REWARD.to_string()),
+                        currency: None,
+                        exemption_type: Some(ExemptionType::Dynamic),
+                    },
+                    BalanceExemption {
+                        sub_account_address: Some(ACCOUNT_FINALIZATION_REWARD.to_string()),
+                        currency: None,
+                        exemption_type: Some(ExemptionType::Dynamic),
+                    },
+                ],
                 mempool_coins:             false, // mempool is not available
             }),
         })

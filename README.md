@@ -16,6 +16,19 @@ through its gRPC interface.
 
 ## Build and run
 
+*Prerequisites*
+
+This is a pure [Rust](https://www.rust-lang.org/) project, and at the moment the minimum supported rust version is 1.54.
+The best way to install the toolchain is via [rustup](https://rustup.rs/)
+
+This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
+```shell
+git submodule update --init --recursive
+```
+this must also be done when changing branches.
+
+*Build*
+
 The command `cargo build --release` will place an optimized binary in `./target/release/concordium-rosetta`.
 The application accepts the following parameters:
 
@@ -27,6 +40,14 @@ The application accepts the following parameters:
 - `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
 
 ### Docker
+
+*Prerequisites*
+
+This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
+```shell
+git submodule update --init --recursive
+```
+this must also be done when changing branches.
 
 *Build*
 

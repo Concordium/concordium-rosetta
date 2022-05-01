@@ -1,44 +1,48 @@
 use anyhow::Result;
 use chrono::{Duration, Utc};
-use clap::AppSettings;
+use clap::Parser;
 use concordium_rust_sdk::types::transactions::ExactSizeTransactionSigner;
 use reqwest::blocking::*;
 use reqwest::Url;
 use rosetta::models::*;
 use serde_json::value::Value;
 use std::ops::Add;
-use structopt::StructOpt;
 use transfer_client::*;
 
-#[derive(StructOpt)]
-struct App {
-    #[structopt(
+#[derive(Parser, Debug)]
+#[clap(
+author = "Concordium Foundation",
+about = "Client for sending a transfer transaction using the Rosetta implementation for the Concordium blockchain.",
+version
+)]
+struct Args {
+    #[clap(
         long = "url",
         help = "URL of Rosetta server.",
         default_value = "http://localhost:8080"
     )]
     url: String,
-    #[structopt(
+    #[clap(
         long = "network",
         help = "Network name. Used in network identifier.",
         default_value = "testnet"
     )]
     network: String,
-    #[structopt(long = "sender", help = "Address of the account sending the transfer.")]
+    #[clap(long = "sender", help = "Address of the account sending the transfer.")]
     sender_addr: String,
-    #[structopt(
+    #[clap(
         long = "receiver",
         help = "Address of the account receiving the transfer."
     )]
     receiver_addr: String,
-    #[structopt(long = "amount", help = "Amount to transfer.")]
+    #[clap(long = "amount", help = "Amount to transfer.")]
     amount: i64,
-    #[structopt(
+    #[clap(
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
     keys_file: String,
-    #[structopt(
+    #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transfer transaction."
     )]
@@ -47,26 +51,22 @@ struct App {
 
 fn main() -> Result<()> {
     // Parse CLI args.
-    let app = {
-        let app = App::clap().global_setting(AppSettings::ColoredHelp);
-        let matches = app.get_matches();
-        App::from_clap(&matches)
-    };
+    let args = Args::parse();
 
     // Constants.
     let network_id = NetworkIdentifier {
         blockchain: "concordium".to_string(),
-        network: app.network,
+        network: args.network,
         sub_network_identifier: None,
     };
 
     // Configure HTTP client.
-    let base_url = Url::parse(app.url.as_str())?;
+    let base_url = Url::parse(args.url.as_str())?;
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = load_keys(&app.keys_file)?;
-    let operations = test_transfer_operations(app.sender_addr, app.receiver_addr, app.amount);
+    let sender_keys = load_keys(&args.keys_file)?;
+    let operations = test_transfer_operations(args.sender_addr, args.receiver_addr, args.amount);
 
     // Perform transfer.
     let preprocess_response = call_preprocess(
@@ -86,7 +86,7 @@ fn main() -> Result<()> {
         account_nonce: metadata.account_nonce,
         signature_count: sender_keys.num_keys(),
         expiry_unix_millis: Utc::now().add(Duration::hours(2)).timestamp_millis() as u64,
-        memo: parse_memo(app.memo_hex)?,
+        memo: parse_memo(args.memo_hex)?,
     })?;
     let payloads_response = call_payloads(
         client.clone(),

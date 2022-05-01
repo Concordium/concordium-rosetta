@@ -1,15 +1,12 @@
 use anyhow::{Context, Result};
-use concordium_rust_sdk::common::types::{CredentialIndex, KeyIndex, TransactionSignature};
-use concordium_rust_sdk::id::types::AccountKeys;
-use concordium_rust_sdk::types::Memo;
-use concordium_rust_sdk::types::hashes::TransactionSignHash;
-use concordium_rust_sdk::types::transactions::TransactionSigner;
+use concordium_rust_sdk::{
+    common::types::{CredentialIndex, KeyIndex, TransactionSignature},
+    id::types::AccountKeys,
+    types::{hashes::TransactionSignHash, transactions::TransactionSigner, Memo},
+};
 use rosetta::models::*;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::convert::TryFrom;
-use std::fs;
-use std::str::FromStr;
+use std::{collections::BTreeMap, convert::TryFrom, fs, str::FromStr};
 
 #[derive(Deserialize)]
 pub struct Metadata {
@@ -18,10 +15,10 @@ pub struct Metadata {
 
 #[derive(Serialize)]
 pub struct Payload {
-    pub account_nonce: u64,
-    pub signature_count: u32,
+    pub account_nonce:      u64,
+    pub signature_count:    u32,
     pub expiry_unix_millis: u64,
-    pub memo: Option<Memo>,
+    pub memo:               Option<Memo>,
 }
 
 pub fn parse_memo(memo_hex: Option<String>) -> Result<Option<Memo>> {
@@ -38,7 +35,10 @@ pub fn parse_memo(memo_hex: Option<String>) -> Result<Option<Memo>> {
 
 type SignatureMap = BTreeMap<CredentialIndex, BTreeMap<KeyIndex, Signature>>;
 
-pub fn sign_payloads(payloads: Vec<SigningPayload>, keys: &AccountKeys) -> Result<Vec<SignatureMap>> {
+pub fn sign_payloads(
+    payloads: Vec<SigningPayload>,
+    keys: &AccountKeys,
+) -> Result<Vec<SignatureMap>> {
     payloads.iter().map(|p| sign_payload(p, keys)).collect()
 }
 
@@ -59,18 +59,15 @@ pub fn sign_payload(payload: &SigningPayload, keys: &AccountKeys) -> Result<Sign
                             u8::from(*key_idx),
                             hex::encode(sig)
                         );
-                        (
-                            *key_idx,
-                            Signature {
-                                signing_payload: Box::new(payload.clone()),
-                                public_key: Box::new(PublicKey {
-                                    hex_bytes: public_key_hex,
-                                    curve_type: CurveType::Edwards25519,
-                                }),
-                                signature_type: SignatureType::Ed25519,
-                                hex_bytes: sig_hex,
-                            },
-                        )
+                        (*key_idx, Signature {
+                            signing_payload: Box::new(payload.clone()),
+                            public_key:      Box::new(PublicKey {
+                                hex_bytes:  public_key_hex,
+                                curve_type: CurveType::Edwards25519,
+                            }),
+                            signature_type:  SignatureType::Ed25519,
+                            hex_bytes:       sig_hex,
+                        })
                     })
                     .collect(),
             )

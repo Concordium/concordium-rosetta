@@ -1,8 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+- Respond with non-OK HTTP status codes on error.
+
 ## 0.1.1
-- fix bug where an error description was empty.
+
+- Fix bug where an error description was empty.
 
 ## 0.1.0 
 
-- initial release
+- Initial release.

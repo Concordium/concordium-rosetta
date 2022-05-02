@@ -36,8 +36,7 @@ jobs:
           cargo fmt -- --color=always --check
       - name: Format (transfer-client)
         run: |
-          cargo fmt -- --color=always --check
-        working-directory: ./tools/transfer-client
+          cargo fmt --manifest-path=./tools/transfer-client/Cargo.toml -- --color=always --check
 
   clippy:
     name: lint:clippy
@@ -63,5 +62,4 @@ jobs:
           cargo clippy --color=always --tests --benches -- -Dclippy::all
       - name: Clippy (transfer-client)
         run: |
-          cargo clippy --color=always --tests --benches -- -Dclippy::all
-        working-directory: ./tools/transfer-client
+          cargo clippy --color=always --tests --benches --manifest-path=./tools/transfer-client/Cargo.toml -- -Dclippy::all

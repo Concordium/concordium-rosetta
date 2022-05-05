@@ -1,4 +1,6 @@
-use anyhow::Result;
+use std::thread::sleep;
+use std::time::Duration;
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
@@ -36,14 +38,23 @@ fn main() -> Result<()> {
     // Configure HTTP client.
     let base_url = Url::parse(args.url.as_str())?;
     let client = Client::builder().connection_verbose(true).build()?;
+    let address = args.address;
 
-    // TODO Call consensus status to get last block height (iteratively).
-    call_blocks(client, &base_url, network_id, 0, 1_000_000, args.address)?;
-
-    Ok(())
+    let mut next_from_height = 0;
+    loop {
+        let status = call_rosetta_status(client.clone(), &base_url, network_id.clone())?;
+        let current_block_height = status.current_block_identifier.index;
+        if current_block_height <= next_from_height {
+            eprintln!("Reached the end of the chain. Pausing for 10s...");
+            sleep(Duration::from_secs(10));
+            continue;
+        }
+        traverse_block_range(client.clone(), &base_url, network_id.clone(), next_from_height, current_block_height, address.clone())?;
+        next_from_height = current_block_height + 1;
+    }
 }
 
-fn call_blocks(
+fn traverse_block_range(
     client: Client,
     base_url: &Url,
     network_id: NetworkIdentifier,
@@ -53,9 +64,9 @@ fn call_blocks(
 ) -> Result<()> {
     for block_height in from_block_height..=to_block_height {
         if block_height % 100 == 0 {
-            println!("Querying block at height {}.", block_height);
+            eprintln!("Querying block at height {}...", block_height);
         }
-        let block_result = call_block(client.clone(), base_url, network_id.clone(), block_height)?;
+        let block_result = call_rosetta_block(client.clone(), base_url, network_id.clone(), block_height)?;
         if let Some(block) = block_result.block {
             for tx in block.transactions {
                 for op in tx.operations {
@@ -77,14 +88,31 @@ fn call_blocks(
 
         if let Some(ts) = block_result.other_transactions {
             if !ts.is_empty() {
-                println!("unexpected non-empty 'other_transaction'...");
+                return Err(anyhow!("unexpected non-empty 'other_transaction'"));
             }
         }
     }
     Ok(())
 }
 
-fn call_block(
+fn call_rosetta_status(
+    client: Client,
+    base_url: &Url,
+    network_id: NetworkIdentifier,
+) -> Result<NetworkStatusResponse> {
+    let url = base_url.join("/network/status")?;
+    client
+        .post(url)
+        .json(&NetworkRequest {
+            network_identifier: Box::new(network_id),
+            metadata: None,
+        })
+        .send()?
+        .json()
+        .map_err(reqwest::Error::into)
+}
+
+fn call_rosetta_block(
     client: Client,
     base_url: &Url,
     network_id: NetworkIdentifier,

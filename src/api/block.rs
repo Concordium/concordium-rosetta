@@ -228,9 +228,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     account:              Some(Box::new(AccountIdentifier::new(
                         ACCOUNT_BAKING_REWARD.to_string(),
                     ))),
-                    amount:               Some(Box::new(amount_from_uccd(
-                        -baking_reward_sum,
-                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(-baking_reward_sum))),
                     coin_change:          None,
                     metadata:             None,
                 })

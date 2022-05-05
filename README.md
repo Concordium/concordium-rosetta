@@ -9,23 +9,26 @@ Any TLS connections must be terminated by a reverse proxy before the requests hi
 The server performs all on-chain activity against a [node](https://github.com/Concordium/concordium-node)
 through its gRPC interface.
 
+The project is written in [Rust](https://www.rust-lang.org/) (minimum supported toolchain version is listed below).
+The best way to install the toolchain is via [rustup](https://rustup.rs/).
+
 ### Versions
 
 - Rosetta spec version: 1.4.10.
 - Supported Concordium node version: 3.0.x.
+- Supported Rust toolchain version: 1.54+.
 
 ## Build and run
 
 *Prerequisites*
 
-This is a pure [Rust](https://www.rust-lang.org/) project, and at the moment the minimum supported rust version is 1.54.
-The best way to install the toolchain is via [rustup](https://rustup.rs/)
+The repository uses *recursive* git submodules. Make sure that all submodules are checked out correctly using
 
-This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
 ```shell
 git submodule update --init --recursive
 ```
-this must also be done when changing branches.
+
+**IMPORTANT:** This must be done after the initial clone as well as after switching between branches.
 
 *Build*
 
@@ -41,15 +44,9 @@ The application accepts the following parameters:
 
 ### Docker
 
-*Prerequisites*
-
-This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
-```shell
-git submodule update --init --recursive
-```
-this must also be done when changing branches.
-
 *Build*
+
+**IMPORTANT:** Before building, make sure that submodules are checked out correctly as described in the prerequisites section above.
 
 ```shell
 docker build \

@@ -1,8 +1,5 @@
 use crate::{
-    api::{
-        error::{ApiError, ApiResult},
-        transaction::*,
-    },
+    api::{error::ApiResult, transaction::*},
     handler_error,
     validate::network::NetworkValidator,
     QueryHelper,
@@ -43,8 +40,14 @@ impl NetworkApi {
             }),
             allow:   Box::new(Allow {
                 operation_statuses:        vec![
-                    json!({ "status": OPERATION_STATUS_OK, "successful": true }),
-                    json!({ "status": OPERATION_STATUS_FAIL, "successful": false }),
+                    OperationStatus {
+                        status:     OPERATION_STATUS_OK.to_string(),
+                        successful: true,
+                    },
+                    OperationStatus {
+                        status:     OPERATION_STATUS_FAIL.to_string(),
+                        successful: false,
+                    },
                 ],
                 operation_types:           vec![
                     OPERATION_TYPE_FEE.to_string(),
@@ -73,8 +76,20 @@ impl NetworkApi {
                     OPERATION_TYPE_UPDATE_CREDENTIALS.to_string(),
                     OPERATION_TYPE_REGISTER_DATA.to_string(),
                 ],
-                errors:                    errors()
-                    .map_err(|err| ApiError::JsonEncodingFailed("errors".to_string(), err))?,
+                errors:                    vec![
+                    handler_error::invalid_input_unsupported_field_error(None),
+                    handler_error::invalid_input_missing_field_error(None),
+                    handler_error::invalid_input_invalid_value_or_identifier_error(
+                        None, None, None, None,
+                    ),
+                    handler_error::invalid_input_unsupported_value_error(None, None),
+                    handler_error::invalid_input_inconsistent_value_error(None, None),
+                    handler_error::identifier_not_resolved_no_matches_error(None),
+                    handler_error::identifier_not_resolved_multiple_matches_error(None),
+                    handler_error::proxy_client_rpc_error(None),
+                    handler_error::proxy_client_query_error(None),
+                    handler_error::proxy_transaction_rejected(),
+                ],
                 historical_balance_lookup: true,
                 timestamp_start_index:     None, /* not populated as the genesis block has a
                                                   * valid time stamp */
@@ -116,23 +131,4 @@ impl NetworkApi {
                 .collect(),
         })
     }
-}
-
-fn errors() -> Result<Vec<serde_json::Value>, serde_json::Error> {
-    error_types().iter().map(serde_json::to_value).collect()
-}
-
-fn error_types() -> Vec<Error> {
-    vec![
-        handler_error::invalid_input_unsupported_field_error(None),
-        handler_error::invalid_input_missing_field_error(None),
-        handler_error::invalid_input_invalid_value_or_identifier_error(None, None, None, None),
-        handler_error::invalid_input_unsupported_value_error(None, None),
-        handler_error::invalid_input_inconsistent_value_error(None, None),
-        handler_error::identifier_not_resolved_no_matches_error(None),
-        handler_error::identifier_not_resolved_multiple_matches_error(None),
-        handler_error::proxy_client_rpc_error(None),
-        handler_error::proxy_client_query_error(None),
-        handler_error::proxy_transaction_rejected(),
-    ]
 }

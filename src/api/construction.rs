@@ -54,7 +54,7 @@ struct PayloadRequestMetadata {
 
 struct ParsedTransferOperation {
     account_address: AccountAddress,
-    amount_uccd:     i64,
+    amount_uccd:     i128,
 }
 
 enum ParsedOperation {
@@ -424,7 +424,7 @@ fn parse_transfer_transaction(
     Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
         sender_address:   sender.account_address,
         receiver_address: receiver.account_address,
-        amount_uccd:      receiver.amount_uccd as u64,
+        amount_uccd:      receiver.amount_uccd as u64, // casting from positive i64 to u64
     }))
 }
 
@@ -461,7 +461,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i64,
+            amount.microgtu as i128,
             None,
         ),
         Payload::TransferWithMemo {
@@ -471,7 +471,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i64,
+            amount.microgtu as i128,
             Some(memo.clone()),
         ),
         _ => Err(ApiError::UnsupportedOperationType(transaction_type_to_operation_type(Some(
@@ -483,7 +483,7 @@ fn operations_from_transaction(
 fn operations_from_transfer_transaction(
     sender_addr: &AccountAddress,
     receiver_addr: &AccountAddress,
-    amount_uccd: i64,
+    amount_uccd: i128,
     memo: Option<Memo>,
 ) -> ApiResult<(Vec<Operation>, Option<Memo>)> {
     Ok((

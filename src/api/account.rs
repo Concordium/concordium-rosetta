@@ -41,7 +41,7 @@ impl AccountApi {
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            vec![amount_from_uccd(account_info.account_amount.microgtu as i64)],
+            vec![amount_from_uccd(account_info.account_amount.microgtu as i128)],
         ))
     }
 }

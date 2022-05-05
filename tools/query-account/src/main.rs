@@ -45,7 +45,7 @@ fn main() -> Result<()> {
         let status = call_rosetta_status(client.clone(), &base_url, network_id.clone())?;
         let current_block_height = status.current_block_identifier.index;
         if current_block_height <= next_from_height {
-            eprintln!("Reached the end of the chain. Pausing for 10s...");
+            eprintln!("Reached the end of the chain at block height {}. Pausing for 10s...", current_block_height);
             sleep(Duration::from_secs(10));
             continue;
         }

@@ -32,16 +32,16 @@ impl AccountApi {
     ) -> ApiResult<AccountBalanceResponse> {
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
         self.account_validator.validate_currencies(req.currencies)?;
-        let (block_info, account_info) = self
+        let (block_info, amount) = self
             .query_helper
-            .query_account_info(req.block_identifier, req.account_identifier.deref())
+            .query_account_balance(req.block_identifier, req.account_identifier.deref())
             .await?;
         Ok(AccountBalanceResponse::new(
             BlockIdentifier::new(
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            vec![amount_from_uccd(account_info.account_amount.microgtu as i128)],
+            vec![amount_from_uccd(amount.microgtu as i128)],
         ))
     }
 }

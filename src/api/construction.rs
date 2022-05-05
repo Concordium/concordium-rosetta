@@ -1,8 +1,8 @@
 use crate::{
     api::{
         amount::{amount_from_uccd, uccd_from_amount},
-        error::{ApiError, ApiError::RequiredFieldMissing, ApiResult, InvalidSignatureError},
-        query::account_address_from_identifier,
+        error::{ApiError, ApiResult, InvalidSignatureError},
+        query::{account_address_from_identifier, Address},
         transaction::{
             transaction_type_from_operation_type, transaction_type_to_operation_type, MemoMetadata,
             OPERATION_TYPE_TRANSFER,
@@ -153,7 +153,7 @@ impl ConstructionApi {
             return Err(ApiError::UnsupportedFieldPresent("public_keys".to_string()));
         }
         let metadata = match req.metadata {
-            None => return Err(RequiredFieldMissing("metadata".to_string())),
+            None => return Err(ApiError::RequiredFieldMissing("metadata".to_string())),
             Some(v) => serde_json::from_value::<PayloadRequestMetadata>(v)
                 .map_err(|_| ApiError::InvalidPayloadsMetadata)?,
         };
@@ -376,7 +376,10 @@ fn parse_operation(op: &Operation) -> ApiResult<ParsedOperation> {
             }?;
             let account_address = match op.account.clone() {
                 None => Err(ApiError::RequiredFieldMissing("account".to_string())),
-                Some(a) => account_address_from_identifier(a.deref()),
+                Some(a) => match account_address_from_identifier(a.deref())? {
+                    Address::Account(addr) => Ok(addr),
+                    _ => Err(ApiError::InvalidAccountAddress(a.deref().address.to_string())),
+                },
             }?;
             Ok(ParsedOperation::Transfer(ParsedTransferOperation {
                 account_address,
@@ -433,9 +436,7 @@ fn transaction_from_operations(ops: &[Operation]) -> ApiResult<ParsedTransaction
 }
 
 fn parse_block_item(signed_transaction: &str) -> ApiResult<BlockItem<EncodedPayload>> {
-    Ok(concordium_rust_sdk::types::transactions::BlockItem::AccountTransaction(
-        decode_signed_transaction(signed_transaction)?,
-    ))
+    Ok(BlockItem::AccountTransaction(decode_signed_transaction(signed_transaction)?))
 }
 
 fn decode_unsigned_transaction(unsigned_transaction: &str) -> ApiResult<UnsignedTransaction> {

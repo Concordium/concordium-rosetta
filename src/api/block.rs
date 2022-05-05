@@ -108,7 +108,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         "baking_reward_account".to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_baking_reward.microgtu as i64,
+                        mint_baking_reward.microgtu as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -124,7 +124,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         "finalization_reward_account".to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_finalization_reward.microgtu as i64,
+                        mint_finalization_reward.microgtu as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -141,7 +141,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         foundation_account.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_platform_development_charge.microgtu as i64,
+                        mint_platform_development_charge.microgtu as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -168,7 +168,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microgtu as i64,
+                            baker_reward.microgtu as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -186,7 +186,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             foundation_account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            foundation_charge.microgtu as i64,
+                            foundation_charge.microgtu as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -212,7 +212,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i64,
+                            amount.microgtu as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -229,7 +229,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_BAKING_REWARD.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(baking_reward_sum as i64),
+                        -(baking_reward_sum as i128),
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -257,7 +257,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i64,
+                            amount.microgtu as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -274,7 +274,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_FINALIZATION_REWARD.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(finalization_reward_sum as i64),
+                        -(finalization_reward_sum as i128),
                     ))),
                     coin_change:          None,
                     metadata:             None,

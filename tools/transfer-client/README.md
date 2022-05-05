@@ -23,5 +23,26 @@ The application has the following CLI parameters:
 - `--sender`: Address of the account sending the transfer.
 - `--receiver`: Address of the account receiving the transfer.
 - `--amount`: Amount of µCCD to transfer.
-- `--keys-file`: Path of file containing the signing keys for the sender account.
+- `--keys-file`: Path of JSON file containing the signing keys for the sender account.
 - `--memo-hex`: Optional hex-encoded memo to attach to the transfer transaction.
+
+The expected JSON format of the keys file is
+
+```
+{
+  "keys": {
+    <credential-index>: {
+      "keys": {
+        <key-index>: {
+          "signKey": ...,
+          "verifyKey": ...,
+        },
+        ...
+      },
+      "threshold": <key-threshold>
+    },
+    ...
+  },
+  "threshold": <credential-threshold>
+}
+```

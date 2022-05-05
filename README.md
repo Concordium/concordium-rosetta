@@ -28,7 +28,7 @@ The repository uses *recursive* git submodules. Make sure that all submodules ar
 git submodule update --init --recursive
 ```
 
-**IMPORTANT:** This must be done after the initial clone as well as after switching between branches.
+**IMPORTANT:** This must be done after the initial clone as well as after you've switched between branches.
 
 *Build*
 
@@ -521,6 +521,13 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 9. The hash may be recomputed later (or before) with the `hash` endpoint,
    which is just a dry-run variant of `submit`.
+
+### Failure handling
+
+Rosetta doesn't check things like the sender of a transfer transaction having sufficient funds.
+Instead, the transaction will be sent successfully and applied in a failed state where only the fee is deducted.
+
+TODO...
 
 ## Resources
 

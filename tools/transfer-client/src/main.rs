@@ -1,80 +1,66 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{Duration, Utc};
-use clap::AppSettings;
+use clap::Parser;
 use concordium_rust_sdk::types::transactions::ExactSizeTransactionSigner;
-use reqwest::blocking::*;
-use reqwest::Url;
+use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
 use std::ops::Add;
-use structopt::StructOpt;
 use transfer_client::*;
 
-#[derive(StructOpt)]
-struct App {
-    #[structopt(
-        long = "url",
-        help = "URL of Rosetta server.",
-        default_value = "http://localhost:8080"
-    )]
-    url: String,
-    #[structopt(
+#[derive(Parser, Debug)]
+#[clap(
+    author = "Concordium Foundation",
+    about = "Client for sending a transfer transaction using the Rosetta implementation for the \
+             Concordium blockchain.",
+    version
+)]
+struct Args {
+    #[clap(long = "url", help = "URL of Rosetta server.", default_value = "http://localhost:8080")]
+    url:           String,
+    #[clap(
         long = "network",
         help = "Network name. Used in network identifier.",
         default_value = "testnet"
     )]
-    network: String,
-    #[structopt(long = "sender", help = "Address of the account sending the transfer.")]
-    sender_addr: String,
-    #[structopt(
-        long = "receiver",
-        help = "Address of the account receiving the transfer."
-    )]
+    network:       String,
+    #[clap(long = "sender", help = "Address of the account sending the transfer.")]
+    sender_addr:   String,
+    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_addr: String,
-    #[structopt(long = "amount", help = "Amount to transfer.")]
-    amount: i64,
-    #[structopt(
+    #[clap(long = "amount", help = "Amount to transfer.")]
+    amount:        i64,
+    #[clap(
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
-    keys_file: String,
-    #[structopt(
-        long = "memo-hex",
-        help = "Hex-encoded memo to attach to the transfer transaction."
-    )]
-    memo_hex: Option<String>,
+    keys_file:     String,
+    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
+    memo_hex:      Option<String>,
 }
 
 fn main() -> Result<()> {
     // Parse CLI args.
-    let app = {
-        let app = App::clap().global_setting(AppSettings::ColoredHelp);
-        let matches = app.get_matches();
-        App::from_clap(&matches)
-    };
+    let args = Args::parse();
 
     // Constants.
     let network_id = NetworkIdentifier {
-        blockchain: "concordium".to_string(),
-        network: app.network,
+        blockchain:             "concordium".to_string(),
+        network:                args.network,
         sub_network_identifier: None,
     };
 
     // Configure HTTP client.
-    let base_url = Url::parse(app.url.as_str())?;
+    let base_url = Url::parse(args.url.as_str())?;
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = load_keys(&app.keys_file)?;
-    let operations = test_transfer_operations(app.sender_addr, app.receiver_addr, app.amount);
+    let sender_keys = load_keys(&args.keys_file)?;
+    let operations = test_transfer_operations(args.sender_addr, args.receiver_addr, args.amount);
 
     // Perform transfer.
-    let preprocess_response = call_preprocess(
-        client.clone(),
-        &base_url,
-        network_id.clone(),
-        operations.clone(),
-    )?;
+    let preprocess_response =
+        call_preprocess(client.clone(), &base_url, network_id.clone(), operations.clone())?;
     let metadata_response = call_metadata(
         client.clone(),
         &base_url,
@@ -83,10 +69,10 @@ fn main() -> Result<()> {
     )?;
     let metadata = serde_json::from_value::<Metadata>(metadata_response.metadata)?;
     let payload_metadata = serde_json::to_value(&Payload {
-        account_nonce: metadata.account_nonce,
-        signature_count: sender_keys.num_keys(),
+        account_nonce:      metadata.account_nonce,
+        signature_count:    sender_keys.num_keys(),
         expiry_unix_millis: Utc::now().add(Duration::hours(2)).timestamp_millis() as u64,
-        memo: parse_memo(app.memo_hex)?,
+        memo:               parse_memo(args.memo_hex)?,
     })?;
     let payloads_response = call_payloads(
         client.clone(),
@@ -95,10 +81,7 @@ fn main() -> Result<()> {
         operations.clone(),
         payload_metadata,
     )?;
-    println!(
-        "unsigned transaction: {}",
-        &payloads_response.unsigned_transaction,
-    );
+    println!("unsigned transaction: {}", &payloads_response.unsigned_transaction,);
     let parse_unsigned_response = call_parse(
         client.clone(),
         &base_url,
@@ -112,7 +95,7 @@ fn main() -> Result<()> {
     );
 
     if parse_unsigned_response.operations != operations {
-        return Err(anyhow::Error::msg("failed comparison of unsigned parse"));
+        return Err(anyhow!("failed comparison of unsigned parse"));
     }
 
     let sigs =
@@ -139,19 +122,12 @@ fn main() -> Result<()> {
     );
 
     if parse_signed_response.operations != operations {
-        return Err(anyhow::Error::msg("failed comparison of signed parse"));
+        return Err(anyhow!("failed comparison of signed parse"));
     }
 
-    let submit_response = call_submit(
-        client.clone(),
-        &base_url,
-        network_id.clone(),
-        combine_response.signed_transaction,
-    )?;
-    println!(
-        "submit done: hash={}",
-        submit_response.transaction_identifier.hash
-    );
+    let submit_response =
+        call_submit(client, &base_url, network_id, combine_response.signed_transaction)?;
+    println!("submit done: hash={}", submit_response.transaction_identifier.hash);
     Ok(())
 }
 
@@ -286,52 +262,52 @@ fn test_transfer_operations(
     amount: i64,
 ) -> Vec<Operation> {
     let currency = Box::new(Currency {
-        symbol: "CCD".to_string(),
+        symbol:   "CCD".to_string(),
         decimals: 6,
         metadata: None,
     });
     vec![
         Operation {
             operation_identifier: Box::new(OperationIdentifier {
-                index: 0,
+                index:         0,
                 network_index: None,
             }),
-            related_operations: None,
-            _type: "transfer".to_string(),
-            status: None,
-            account: Some(Box::new(AccountIdentifier {
-                address: sender_addr,
+            related_operations:   None,
+            _type:                "transfer".to_string(),
+            status:               None,
+            account:              Some(Box::new(AccountIdentifier {
+                address:     sender_addr,
                 sub_account: None,
-                metadata: None,
+                metadata:    None,
             })),
-            amount: Some(Box::new(Amount {
-                value: (-amount).to_string(),
+            amount:               Some(Box::new(Amount {
+                value:    (-amount).to_string(),
                 currency: currency.clone(),
                 metadata: None,
             })),
-            coin_change: None,
-            metadata: None,
+            coin_change:          None,
+            metadata:             None,
         },
         Operation {
             operation_identifier: Box::new(OperationIdentifier {
-                index: 1,
+                index:         1,
                 network_index: None,
             }),
-            related_operations: None,
-            _type: "transfer".to_string(),
-            status: None,
-            account: Some(Box::new(AccountIdentifier {
-                address: receiver_addr,
+            related_operations:   None,
+            _type:                "transfer".to_string(),
+            status:               None,
+            account:              Some(Box::new(AccountIdentifier {
+                address:     receiver_addr,
                 sub_account: None,
-                metadata: None,
+                metadata:    None,
             })),
-            amount: Some(Box::new(Amount {
+            amount:               Some(Box::new(Amount {
                 value: amount.to_string(),
-                currency: currency.clone(),
+                currency,
                 metadata: None,
             })),
-            coin_change: None,
-            metadata: None,
+            coin_change:          None,
+            metadata:             None,
         },
     ]
 }

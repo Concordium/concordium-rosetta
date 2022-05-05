@@ -202,7 +202,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
                     details.sender.to_string(),
                 ))),
                 amount:               Some(Box::new(amount_from_uccd(
-                    -(details.cost.microgtu as i64),
+                    -(details.cost.microgtu as i128),
                 ))),
                 coin_change:          None,
                 metadata:             None,
@@ -243,7 +243,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     details.sender.to_string(),
                 ))),
                 amount:               Some(Box::new(amount_from_uccd(
-                    details.cost.microgtu as i64,
+                    details.cost.microgtu as i128,
                 ))),
                 coin_change:          None,
                 metadata:             Some(
@@ -563,14 +563,14 @@ fn simple_transfer_operations(
         0,
         details,
         details.sender.to_string(),
-        Some(amount_from_uccd(-(amount.microgtu as i64))),
+        Some(amount_from_uccd(-(amount.microgtu as i128))),
         None,
     );
     let mut receiver_operation = account_transaction_operation::<Value>(
         1,
         details,
         to.to_string(),
-        Some(amount_from_uccd(amount.microgtu as i64)),
+        Some(amount_from_uccd(amount.microgtu as i128)),
         None,
     );
     receiver_operation.related_operations =
@@ -615,7 +615,7 @@ fn normal_account_transaction_operation<T: SerdeSerialize>(
     metadata: Option<&T>,
 ) -> Operation {
     let account_address = details.sender.to_string();
-    let amount = amount_from_uccd(details.cost.microgtu as i64);
+    let amount = amount_from_uccd(details.cost.microgtu as i128);
     account_transaction_operation(index, details, account_address, Some(amount), metadata)
 }
 

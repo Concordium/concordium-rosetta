@@ -109,6 +109,8 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
+/// Helper type for providing a way to represent reward accounts in addition to
+/// ordinary ones.
 pub enum Address {
     Account(AccountAddress),
     BakingRewardAccount,
@@ -123,14 +125,12 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Addr
 }
 
 pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
-    if addr == ACCOUNT_BAKING_REWARD {
-        return Ok(Address::BakingRewardAccount);
-    }
-    if addr == ACCOUNT_FINALIZATION_REWARD {
-        return Ok(Address::FinalizationRewardAccount);
-    }
-    match AccountAddress::from_str(addr) {
-        Ok(a) => Ok(Address::Account(a)),
-        Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+    match addr {
+        ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
+        ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
+        _ => match AccountAddress::from_str(addr) {
+            Ok(a) => Ok(Address::Account(a)),
+            Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+        },
     }
 }

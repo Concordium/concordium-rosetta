@@ -197,10 +197,10 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 baker_rewards,
                 ..
             } => {
-                let mut baking_reward_sum: u64 = 0;
+                let mut baking_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in baker_rewards {
-                    baking_reward_sum += amount.microgtu;
+                    baking_reward_sum += amount.microgtu as i128;
                     let id = OperationIdentifier::new(next_index(&mut index_offset));
                     operation_identifiers.push(id.clone());
                     res.push(Operation {
@@ -229,7 +229,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_BAKING_REWARD.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(baking_reward_sum as i128),
+                        -baking_reward_sum,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -239,10 +239,10 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 finalization_rewards,
                 ..
             } => {
-                let mut finalization_reward_sum: u64 = 0;
+                let mut finalization_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in finalization_rewards {
-                    finalization_reward_sum += amount.microgtu;
+                    finalization_reward_sum += amount.microgtu as i128;
                     let id = OperationIdentifier {
                         index:         next_index(&mut index_offset),
                         network_index: None,
@@ -274,7 +274,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_FINALIZATION_REWARD.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(finalization_reward_sum as i128),
+                        -finalization_reward_sum,
                     ))),
                     coin_change:          None,
                     metadata:             None,

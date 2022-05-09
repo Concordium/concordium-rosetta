@@ -207,7 +207,7 @@ No prefixes such as "0x" may be added.
 ### Operations
 
 Rosetta represents transactions as a list of operations,
-each of which indicate that the balance of some account has changed for some reason.
+each of which usually indicate that the balance of some account has changed for some reason.
 
 Transactions with memo are represented as the same operation types as the ones without memo.
 The memo is simply included as metadata if the transaction contains one.
@@ -216,6 +216,12 @@ Transaction types are otherwise represented by operation types named after the t
 For consistency, operation type names are styled with snake_case.
 
 The Construction API only supports operations of type `transfer`.
+
+### Errors
+
+All success responses are returned with an HTTP 200 message.
+Errors are returned with an appropriate 4xx code if they're the result of by client input.
+Errors propagated from the SDK are given a 5xx code.
 
 ## Examples
 
@@ -227,7 +233,7 @@ The transfer may optionally include a memo.
 
 ### Example
 
-Transfer 1000 µCCD along with a memo from account
+Transfer 1000 µCCD along with a memo from testnet account
 `3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi` to `4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS`
 
 The command for doing this using the client is
@@ -524,12 +530,12 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 ### Failure handling
 
-Rosetta doesn't check most things that would make a transaction invalid;
+Rosetta doesn't check most causes of transactions being invalid;
 i.e. things like nonexistent accounts, bad signatures, and insufficient funds.
 As long as the transaction is "well-formed", Rosetta will accept the transaction and return its hash
 without complaints.
 
-The exception to this is if the sender account doesn't exist.
+An exception to this is if the sender account doesn't exist.
 Then the nonce lookup will fail and result in an error.
 
 Depending on the situation, a submitted invalid transaction may or may not ever get included in a block.

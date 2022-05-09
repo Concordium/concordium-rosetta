@@ -220,7 +220,7 @@ The Construction API only supports operations of type `transfer`.
 ### Errors
 
 All success responses are returned with an HTTP 200 message.
-Errors are returned with an appropriate 4xx code if they're the result of by client input.
+Errors are returned with an appropriate 4xx code if they're the result of the client input.
 Errors propagated from the SDK are given a 5xx code.
 
 ## Examples

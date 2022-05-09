@@ -149,6 +149,7 @@ fn call_preprocess(
             suggested_fee_multiplier: None,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }
@@ -169,6 +170,7 @@ fn call_metadata(
             public_keys: None,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }
@@ -191,6 +193,7 @@ fn call_payloads(
             public_keys: None,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }
@@ -212,6 +215,7 @@ fn call_parse(
             transaction,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }
@@ -233,6 +237,7 @@ fn call_combine(
             signatures,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }
@@ -252,6 +257,7 @@ fn call_submit(
             signed_transaction,
         })
         .send()?
+        .error_for_status()?
         .json()
         .map_err(reqwest::Error::into)
 }

@@ -22,7 +22,7 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 *Prerequisites*
 
-The repository uses *recursive* git submodules. Make sure that all submodules are checked out correctly using
+The repository uses *nested* git submodules. Make sure that all submodules are checked out correctly using
 
 ```shell
 git submodule update --init --recursive
@@ -537,7 +537,7 @@ Generally speaking, if the transaction is signed correctly and the sender is abl
 then the transaction will be applied in a failed state. Otherwise it is silently rejected.
 
 For example, if the wrong keys are provided, then the transaction will silently disappear.
-If, on the other hand, the receiver doesn't exist or the sender has insufficient funds,
+If the receiver doesn't exist or the sender has insufficient funds,
 then the only outcome of the transaction is an error message (and the deduction of a fee).
 
 The bottom line is that the only way to confirm that a transaction is successfully applied

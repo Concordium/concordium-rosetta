@@ -66,5 +66,5 @@ $ utils decrypt --in concordium-backup.concordiumwallet | \
 
 The keys are now stored in clear text in the file `sender.keys`.
 
-Of course, keys holding actual value should never be stored in clear text on the disk.
-This is only intended to be used for testing. Appropriate changes should be made to the tool to handle encrypted keys.
+This is only intended to be used for testing.
+Keys holding actual value should always be stored securely.

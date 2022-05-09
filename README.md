@@ -126,7 +126,7 @@ All applicable endpoints are supported to construct and submit transfer transact
   Implemented, but doesn't serve any real purpose as the returned options are already known by the caller.
   The fields `max_fee` and `suggested_fee_multipler` are not supported as the fee of any transaction is deterministic
   and cannot be boosted to expedite the transaction.
-  All one can do is retrieving the fee from the output of `parse` and choose not to proceed if it's deemed too large.
+  All one can do is retrieve the fee from the output of `parse` and choose not to proceed if it's deemed too large.
   An error is returned if the operations don't form a valid transfer
   (i.e. a pair of operations of type "transfer" with zero-sum amounts and valid addresses etc.).
 

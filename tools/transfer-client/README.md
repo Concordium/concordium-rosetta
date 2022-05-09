@@ -46,3 +46,25 @@ The expected JSON format of the keys file is
   "threshold": <credential-threshold>
 }
 ```
+
+## Extracting keys from Mobile Wallet
+
+The tool expects account keys to be provided in plain text.
+The mobile wallet only allows keys to be exported with password protected encryption.
+To use keys exported from a wallet, they therefore first need to be decrypted and extracted as follows:
+
+First [create an export](https://developer.concordium.software/en/mainnet/net/mobile-wallet/export-import-mw.html)
+in the app and transfer the export file `concordium-backup.concordiumwallet` to your PC.
+
+Then decrypt the export using [utils](https://developer.concordium.software/en/mainnet/net/references/developer-tools.html#decrypt-encrypted-output)
+and extract the keys using [jq](https://stedolan.github.io/jq/), e.g.:
+```shell
+$ utils decrypt --in concordium-backup.concordiumwallet | \
+   jq '.value.identities[0].accounts[0].accountKeys' > sender.keys
+# enter password
+```
+
+The keys are now stored in clear text in the file `sender.keys`.
+
+Of course, keys holding actual value should never be stored in clear text on the disk.
+This is only intended to be used for testing. Appropriate changes should be made to the tool to handle encrypted keys.

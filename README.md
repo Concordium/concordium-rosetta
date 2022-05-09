@@ -46,7 +46,7 @@ The application accepts the following parameters:
 
 *Build*
 
-**IMPORTANT:** Before building, make sure that submodules are checked out correctly as described in the prerequisites section above.
+**IMPORTANT:** Before building, make sure that submodules are checked out correctly as described above.
 
 ```shell
 docker build \

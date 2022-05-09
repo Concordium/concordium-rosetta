@@ -58,6 +58,7 @@ in the app and transfer the export file `concordium-backup.concordiumwallet` to 
 
 Then decrypt the export using [utils](https://developer.concordium.software/en/mainnet/net/references/developer-tools.html#decrypt-encrypted-output)
 and extract the key portion using [jq](https://stedolan.github.io/jq/), e.g.:
+
 ```shell
 $ utils decrypt --in concordium-backup.concordiumwallet | \
    jq '.value.identities[0].accounts[0].accountKeys' > sender.keys
@@ -66,5 +67,4 @@ $ utils decrypt --in concordium-backup.concordiumwallet | \
 
 The keys are now stored in clear text in the file `sender.keys`.
 
-This is only intended to be used for testing.
-Keys holding actual value should always be stored securely.
+This is only intended to be used for testing - keys holding actual value should always be stored securely.

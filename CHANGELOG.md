@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+- Respond with non-OK HTTP status codes on error.
+
 ## 0.2.0
 
 - Add support for querying balance of reward accounts.

@@ -10,7 +10,7 @@ The server performs all on-chain activity against a [node](https://github.com/Co
 through its gRPC interface.
 
 The project is written in [Rust](https://www.rust-lang.org/) (minimum supported toolchain version is listed below).
-The best way to install the toolchain is via [rustup](https://rustup.rs/).
+A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 ### Versions
 
@@ -524,8 +524,8 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 ### Failure handling
 
-Rosetta doesn't check most things that would make a transaction invalid; things like
-nonexistent accounts, bad signatures, and insufficient funds.
+Rosetta doesn't check most things that would make a transaction invalid;
+i.e. things like nonexistent accounts, bad signatures, and insufficient funds.
 As long as the transaction is "well-formed", Rosetta will accept the transaction and return its hash
 without complaints.
 
@@ -534,7 +534,7 @@ Then the nonce lookup will fail and result in an error.
 
 Depending on the situation, a submitted invalid transaction may or may not ever get included in a block.
 Generally speaking, if the transaction is signed correctly and the sender is able to pay a fee,
-the transaction will be applied in a failed state. Otherwise it is silently rejected.
+then the transaction will be applied in a failed state. Otherwise it is silently rejected.
 
 For example, if the wrong keys are provided, then the transaction will silently disappear.
 If, on the other hand, the receiver doesn't exist or the sender has insufficient funds,

@@ -524,10 +524,25 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 ### Failure handling
 
-Rosetta doesn't check things like the sender of a transfer transaction having sufficient funds.
-Instead, the transaction will be sent successfully and applied in a failed state where only the fee is deducted.
+Rosetta doesn't check most things that would make a transaction invalid; things like
+nonexistent accounts, bad signatures, and insufficient funds.
+As long as the transaction is "well-formed", Rosetta will accept the transaction and return its hash
+without complaints.
 
-TODO...
+The exception to this is if the sender account doesn't exist.
+Then the nonce lookup will fail and result in an error.
+
+Depending on the situation, a submitted invalid transaction may or may not ever get included in a block.
+Generally speaking, if the transaction is signed correctly and the sender is able to pay a fee,
+the transaction will be applied in a failed state. Otherwise it is silently rejected.
+
+For example, if the wrong keys are provided, then the transaction will silently disappear.
+If, on the other hand, the receiver doesn't exist or the sender has insufficient funds,
+then the only outcome of the transaction is an error message (and the deduction of a fee).
+
+The bottom line is that the only way to confirm that a transaction is successfully applied
+is to check the hash against the chain.
+Also, the block containing the transaction has to be finalized for the transaction to be as well.
 
 ## Resources
 

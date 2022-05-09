@@ -9,23 +9,26 @@ Any TLS connections must be terminated by a reverse proxy before the requests hi
 The server performs all on-chain activity against a [node](https://github.com/Concordium/concordium-node)
 through its gRPC interface.
 
+The project is written in [Rust](https://www.rust-lang.org/) (minimum supported toolchain version is listed below).
+A great way to install the toolchain is via [rustup](https://rustup.rs/).
+
 ### Versions
 
 - Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 3.0.1.
+- Supported Concordium node version: 3.0.x.
+- Supported Rust toolchain version: 1.54+.
 
 ## Build and run
 
 *Prerequisites*
 
-This is a pure [Rust](https://www.rust-lang.org/) project, and at the moment the minimum supported rust version is 1.54.
-The best way to install the toolchain is via [rustup](https://rustup.rs/)
+The repository uses *nested* git submodules. Make sure that all submodules are checked out correctly using
 
-This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
 ```shell
 git submodule update --init --recursive
 ```
-this must also be done when changing branches.
+
+**IMPORTANT:** This must be done after the initial clone as well as after you've switched between branches.
 
 *Build*
 
@@ -41,15 +44,9 @@ The application accepts the following parameters:
 
 ### Docker
 
-*Prerequisites*
-
-This repository uses **recursive** git submodules. **Before building make sure that those are checked out**
-```shell
-git submodule update --init --recursive
-```
-this must also be done when changing branches.
-
 *Build*
+
+**IMPORTANT:** Before building, make sure that submodules are checked out correctly as described above.
 
 ```shell
 docker build \
@@ -69,7 +66,7 @@ docker run --rm concordium-rosetta
 ## Rosetta
 
 Rosetta is a specification of an HTTP-based API designed by Coinbase
-to provide a common layer of abstraction for interacting with blockchains.
+to provide a common layer of abstraction for interacting with any blockchain.
 
 The Rosetta API is divided into three categories:
 
@@ -82,27 +79,27 @@ There are also mentions of a [Call API](https://www.rosetta-api.org/docs/CallApi
 but it doesn't appear to be a first class member of the spec.
 
 To learn more about the intended behavior and usage of the endpoints,
-see the [official documentation](https://www.rosetta-api.org/docs/welcome.html) or the example section below.
+see the [official documentation](https://www.rosetta-api.org/docs/welcome.html) and the example section below.
 
 ## Implementation status
 
-All required features of the Rosetta specification are implemented.
-I.e. everything that isn't implemented is marked as optional in the spec/docs.
+All required features of the Rosetta specification are implemented:
+Everything that isn't implemented is marked as optional in the spec/docs.
 
 The sections below outline the status for the individual endpoints along with details relevant to integrating Rosetta clients.
 
 ### Data API
 
 All applicable endpoints except for the
-[optional](https://www.rosetta-api.org/docs/all_methods.html) mempool ones supported:
+[optional](https://www.rosetta-api.org/docs/all_methods.html) mempool ones are supported:
 
 - [Network](https://www.rosetta-api.org/docs/NetworkApi.html):
   All endpoints (`list`, `status`, `options`) are implemented according to the specification.
 
 - [Account](https://www.rosetta-api.org/docs/AccountApi.html):
   The `balance` endpoint is implemented according to the specification.
-  The `coins` endpoint is not applicable as Concordium is account-,
-  not [UTXO](https://www.investopedia.com/terms/u/utxo.asp)-based,
+  The `coins` endpoint is not applicable as Concordium is account-based
+  (i.e. doesn't use [UTXO](https://www.investopedia.com/terms/u/utxo.asp)),
   and thus doesn't have this concept of "coins".
 
 - [Block](https://www.rosetta-api.org/docs/BlockApi.html):
@@ -126,10 +123,10 @@ All applicable endpoints are supported to construct and submit transfer transact
   Not applicable as account addresses aren't derivable from public keys.
 
 - [`preprocess`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionpreprocess):
-  Implemented, but doesn't really serve any real purpose as the returned options are already known by the caller.
+  Implemented, but doesn't serve any real purpose as the returned options are already known by the caller.
   The fields `max_fee` and `suggested_fee_multipler` are not supported as the fee of any transaction is deterministic
   and cannot be boosted to expedite the transaction.
-  One can get the fee from the output of `parse` and choose not to proceed if the fee is deemed too large.
+  All one can do is retrieve the fee from the output of `parse` and choose not to proceed if it's deemed too large.
   An error is returned if the operations don't form a valid transfer
   (i.e. a pair of operations of type "transfer" with zero-sum amounts and valid addresses etc.).
 
@@ -524,6 +521,28 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 9. The hash may be recomputed later (or before) with the `hash` endpoint,
    which is just a dry-run variant of `submit`.
+
+### Failure handling
+
+Rosetta doesn't check most things that would make a transaction invalid;
+i.e. things like nonexistent accounts, bad signatures, and insufficient funds.
+As long as the transaction is "well-formed", Rosetta will accept the transaction and return its hash
+without complaints.
+
+The exception to this is if the sender account doesn't exist.
+Then the nonce lookup will fail and result in an error.
+
+Depending on the situation, a submitted invalid transaction may or may not ever get included in a block.
+Generally speaking, if the transaction is signed correctly and the sender is able to pay a fee,
+then the transaction will be applied in a failed state. Otherwise it is silently rejected.
+
+For example, if the wrong keys are provided, then the transaction will silently disappear.
+If the receiver doesn't exist or the sender has insufficient funds,
+then the only outcome of the transaction is an error message (and the deduction of a fee).
+
+The bottom line is that the only way to confirm that a transaction is successfully applied
+is to check the hash against the chain.
+Also, the block containing the transaction has to be finalized for the transaction to be as well.
 
 ## Resources
 

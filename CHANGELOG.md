@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Log every request to the server.
+
 ## 0.3.0
 
 - Respond with non-OK HTTP status codes on error.

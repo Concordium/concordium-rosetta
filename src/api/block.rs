@@ -59,7 +59,7 @@ impl BlockApi {
             .get_block_summary(&hash) // TODO should probably use the "raw" variant
             .await?;
         match block_summary
-            .transaction_summaries
+            .transaction_summaries()
             .iter()
             .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
         {
@@ -77,7 +77,7 @@ fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
         self::tokenomics_transaction_operations(&block_summary),
     );
     let mut res = vec![tokenomics_transaction];
-    res.extend(block_summary.transaction_summaries.iter().map(self::map_transaction));
+    res.extend(block_summary.transaction_summaries().iter().map(self::map_transaction));
     res
 }
 
@@ -89,7 +89,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
         res
     };
     let mut res = vec![];
-    for e in &block_summary.special_events {
+    for e in block_summary.special_events() {
         match e {
             SpecialTransactionOutcome::Mint {
                 mint_baking_reward,
@@ -108,7 +108,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         "baking_reward_account".to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_baking_reward.microgtu as i128,
+                        mint_baking_reward.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -124,7 +124,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         "finalization_reward_account".to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_finalization_reward.microgtu as i128,
+                        mint_finalization_reward.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -141,7 +141,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         foundation_account.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_platform_development_charge.microgtu as i128,
+                        mint_platform_development_charge.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -156,7 +156,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
             } => {
                 // Could add transaction fees going into GAS account and then extract block
                 // rewards, but it seems unnecessary?
-                if baker_reward.microgtu != 0 {
+                if baker_reward.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -168,13 +168,13 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microgtu as i128,
+                            baker_reward.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if foundation_charge.microgtu != 0 {
+                if foundation_charge.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -186,7 +186,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             foundation_account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            foundation_charge.microgtu as i128,
+                            foundation_charge.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -200,7 +200,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 let mut baking_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in baker_rewards {
-                    baking_reward_sum += amount.microgtu as i128;
+                    baking_reward_sum += amount.microccd as i128;
                     let id = OperationIdentifier::new(next_index(&mut index_offset));
                     operation_identifiers.push(id.clone());
                     res.push(Operation {
@@ -212,7 +212,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i128,
+                            amount.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -240,7 +240,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 let mut finalization_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in finalization_rewards {
-                    finalization_reward_sum += amount.microgtu as i128;
+                    finalization_reward_sum += amount.microccd as i128;
                     let id = OperationIdentifier {
                         index:         next_index(&mut index_offset),
                         network_index: None,
@@ -255,7 +255,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i128,
+                            amount.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -278,6 +278,31 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     metadata:             None,
                 })
             }
+            SpecialTransactionOutcome::PaydayFoundationReward {
+                foundation_account,
+                development_charge,
+            } => (),
+            SpecialTransactionOutcome::PaydayAccountReward {
+                account,
+                transaction_fees,
+                baker_reward,
+                finalization_reward,
+            } => (),
+            SpecialTransactionOutcome::BlockAccrueReward {
+                transaction_fees,
+                old_gas_account,
+                new_gas_account,
+                baker_reward,
+                passive_reward,
+                foundation_charge,
+                baker_id,
+            } => (),
+            SpecialTransactionOutcome::PaydayPoolReward {
+                pool_owner,
+                transaction_fees,
+                baker_reward,
+                finalization_reward,
+            } => (),
         }
     }
     res

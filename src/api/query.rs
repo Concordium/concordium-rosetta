@@ -6,7 +6,7 @@ use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight},
+    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, RewardsOverview},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
@@ -36,14 +36,26 @@ impl QueryHelper {
                 self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
             }
             Address::BakingRewardAccount => {
-                self.client.clone().get_reward_status(&block_hash).await?.baking_reward_account
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.baking_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.baking_reward_account,
+                }
             }
             Address::FinalizationRewardAccount => {
-                self.client
-                    .clone()
-                    .get_reward_status(&block_hash)
-                    .await?
-                    .finalization_reward_account
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.finalization_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.finalization_reward_account,
+                }
             }
         };
         Ok((block_info, amount))

@@ -88,6 +88,36 @@ struct BakerKeysUpdatedMetadata {
 }
 
 #[derive(SerdeSerialize)]
+struct BakerSetOpenStatusMetadata {
+    baker_id:        BakerId,
+    open_status: String,
+}
+
+#[derive(SerdeSerialize)]
+struct BakerSetMetadataUrlMetadata {
+    baker_id:        BakerId,
+    metadata_url: String,
+}
+
+#[derive(SerdeSerialize)]
+struct BakerSetTransactionFeeCommissionMetadata {
+    baker_id:        BakerId,
+    transaction_fee_commission: String,
+}
+
+#[derive(SerdeSerialize)]
+struct BakerSetBakingRewardCommissionMetadata {
+    baker_id:        BakerId,
+    baking_reward_commission: String,
+}
+
+#[derive(SerdeSerialize)]
+struct BakerSetFinalizationRewardCommissionMetadata {
+    baker_id:        BakerId,
+    finalization_reward_commission: String,
+}
+
+#[derive(SerdeSerialize)]
 struct EncryptedAmountTransferredSenderMetadata {
     new_encrypted_balance: EncryptedAmount<EncryptedAmountsCurve>,
     encrypted_amount:      EncryptedAmount<EncryptedAmountsCurve>,
@@ -185,6 +215,12 @@ pub const OPERATION_TYPE_UPDATE_BAKER_STAKE: &str = "update_baker_stake";
 pub const OPERATION_TYPE_UPDATE_CONTRACT: &str = "update_contract";
 pub const OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS: &str = "update_credential_keys";
 pub const OPERATION_TYPE_UPDATE_CREDENTIALS: &str = "update_credentials";
+pub const OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD: &str = "payday_foundation_reward";
+pub const OPERATION_TYPE_PAYDAY_ACCOUNT_REWARD: &str = "payday_account_reward";
+pub const OPERATION_TYPE_BLOCK_ACCRUE_REWARD: &str = "block_accrue_reward";
+pub const OPERATION_TYPE_PAYDAY_POOL_REWARD: &str = "payday_pool_reward";
+pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
+pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
@@ -202,7 +238,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
                     details.sender.to_string(),
                 ))),
                 amount:               Some(Box::new(amount_from_uccd(
-                    -(details.cost.microgtu as i128),
+                    -(details.cost.microccd as i128),
                 ))),
                 coin_change:          None,
                 metadata:             None,
@@ -229,6 +265,8 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
 fn operations_and_metadata_from_account_transaction_details(
     details: &AccountTransactionDetails,
 ) -> (Vec<Operation>, Option<Result<Value, Error>>) {
+    let sender = details.sender;
+    let cost = details.cost;
     match &details.effects {
         AccountTransactionEffects::None {
             transaction_type,
@@ -239,12 +277,8 @@ fn operations_and_metadata_from_account_transaction_details(
                 related_operations:   None,
                 _type:                transaction_type_to_operation_type(*transaction_type),
                 status:               Some(OPERATION_STATUS_FAIL.to_string()),
-                account:              Some(Box::new(AccountIdentifier::new(
-                    details.sender.to_string(),
-                ))),
-                amount:               Some(Box::new(amount_from_uccd(
-                    details.cost.microgtu as i128,
-                ))),
+                account:              Some(Box::new(AccountIdentifier::new(sender.to_string()))),
+                amount:               Some(Box::new(amount_from_uccd(cost.microccd as i128))),
                 coin_change:          None,
                 metadata:             Some(
                     serde_json::to_value(&TransactionRejectedMetadata {
@@ -497,8 +531,292 @@ fn operations_and_metadata_from_account_transaction_details(
             )],
             None,
         ),
+        AccountTransactionEffects::BakerConfigured {
+            data: events,
+        } => {
+            (events.iter().map(|event| {
+                match event {
+                    BakerEvent::BakerAdded {
+                        data,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerAddedMetadata {
+                            baker_id: data.keys_event.baker_id,
+                            account: data.keys_event.account,
+                            sign_key: data.keys_event.sign_key.clone(),
+                            election_key: data.keys_event.election_key.clone(),
+                            aggregation_key: data.keys_event.aggregation_key.clone(),
+                            stake_uccd: data.stake,
+                            restake_earnings: data.restake_earnings,
+                        }),
+                    ),
+                    BakerEvent::BakerRemoved {
+                        baker_id,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerRemovedMetadata {
+                            baker_id: *baker_id,
+                        }),
+                    ),
+                    BakerEvent::BakerStakeIncreased {
+                        baker_id,
+                        new_stake,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        data.map(|d| BakerStakeUpdatedMetadata {
+                            baker_id: d.baker_id,
+                            new_stake_uccd: d.new_stake,
+                            increased: true,
+                        })
+                            .as_ref(),
+                    ),
+                    BakerEvent::BakerStakeDecreased {
+                        baker_id,
+                        new_stake,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        data.map(|d| BakerStakeUpdatedMetadata {
+                            baker_id: d.baker_id,
+                            new_stake_uccd: d.new_stake,
+                            increased: false,
+                        })
+                            .as_ref(),
+                    ),
+                    BakerEvent::BakerRestakeEarningsUpdated {
+                        baker_id,
+                        restake_earnings,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerRestakeEarningsUpdatedMetadata {
+                            baker_id: *baker_id,
+                            restake_earnings: *restake_earnings,
+                        }),
+                    ),
+                    BakerEvent::BakerKeysUpdated {
+                        data,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerKeysUpdatedMetadata {
+                            baker_id: data.baker_id,
+                            account: data.account,
+                            sign_key: data.sign_key.clone(),
+                            election_key: data.election_key.clone(),
+                            aggregation_key: data.aggregation_key.clone(),
+                        }),
+                    ),
+                    BakerEvent::BakerSetOpenStatus {
+                        baker_id, open_status,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerSetOpenStatusMetadata {
+                            baker_id: *baker_id,
+                            open_status: match open_status {
+                                OpenStatus::OpenForAll => "open_for_all".to_string(),
+                                OpenStatus::ClosedForNew => "closed_for_new".to_string(),
+                                OpenStatus::ClosedForAll => "closed_for_all".to_string(),
+                            },
+                        }),
+                    ),
+                    BakerEvent::BakerSetMetadataURL {
+                        baker_id, metadata_url,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerSetMetadataUrlMetadata {
+                            baker_id: *baker_id,
+                            metadata_url: metadata_url.to_string(),
+                        }),
+                    ),
+                    BakerEvent::BakerSetTransactionFeeCommission {
+                        baker_id, transaction_fee_commission,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerSetTransactionFeeCommissionMetadata {
+                            baker_id: *baker_id,
+                            transaction_fee_commission: transaction_fee_commission.to_string(),
+                        }),
+                    ),
+                    BakerEvent::BakerSetBakingRewardCommission {
+                        baker_id, baking_reward_commission,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerSetBakingRewardCommissionMetadata {
+                            baker_id: *baker_id,
+                            baking_reward_commission: baking_reward_commission.to_string(),
+                        }),
+                    ),
+                    BakerEvent::BakerSetFinalizationRewardCommission {
+                        baker_id, finalization_reward_commission,
+                    } => normal_account_transaction_operation(
+                        0,
+                        details,
+                        Some(&BakerSetFinalizationRewardCommissionMetadata {
+                            baker_id: *baker_id,
+                            finalization_reward_commission: finalization_reward_commission.to_string(),
+                        }),
+                    ),
+                }
+            }).collect(), None)
+        }
+        AccountTransactionEffects::DelegationConfigured { data: events } => {
+            (events.iter().map(
+                |event| {
+                    // TODO ...
+                    match event {
+                        DelegationEvent::DelegationStakeIncreased { .. } => {}
+                        DelegationEvent::DelegationStakeDecreased { .. } => {}
+                        DelegationEvent::DelegationSetRestakeEarnings { .. } => {}
+                        DelegationEvent::DelegationSetDelegationTarget { .. } => {}
+                        DelegationEvent::DelegationAdded { .. } => {}
+                        DelegationEvent::DelegationRemoved { .. } => {}
+                    }
+                }
+            ).collect(), None)
+        }
+        //     match events[0].clone() {
+        //         BakerEvent::BakerAdded {
+        //             data,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerAdded {
+        //                     data,
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerRemoved {
+        //             baker_id,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerRemoved {
+        //                     baker_id,
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerStakeIncreased {
+        //             baker_id,
+        //             new_stake,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerStakeUpdated {
+        //                     data: Some(BakerStakeUpdatedData {
+        //                         baker_id,
+        //                         new_stake,
+        //                         increased: true,
+        //                     }),
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerStakeDecreased {
+        //             baker_id,
+        //             new_stake,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerStakeUpdated {
+        //                     data: Some(BakerStakeUpdatedData {
+        //                         baker_id,
+        //                         new_stake,
+        //                         increased: false,
+        //                     }),
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerRestakeEarningsUpdated {
+        //             baker_id,
+        //             restake_earnings,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerRestakeEarningsUpdated {
+        //                     baker_id,
+        //                     restake_earnings,
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerKeysUpdated {
+        //             data,
+        //         } => operations_and_metadata_from_account_transaction_details(
+        //             &AccountTransactionDetails {
+        //                 cost:    details.cost,
+        //                 sender:  details.sender,
+        //                 effects: AccountTransactionEffects::BakerKeysUpdated {
+        //                     data,
+        //                 },
+        //             },
+        //         ),
+        //         BakerEvent::BakerSetOpenStatus {
+        //             baker_id, open_status,
+        //         } => (
+        //             vec![normal_account_transaction_operation(
+        //                 0,
+        //                 details,
+        //                 Some(&BakerSetOpenStatusMetadata {
+        //                     baker_id:         data.keys_event.baker_id,
+        //                     open_status: match open_status {
+        //                         OpenStatus::OpenForAll => "open_for_all".to_string(),
+        //                         OpenStatus::ClosedForNew => "closed_for_new".to_string(),
+        //                         OpenStatus::ClosedForAll => "closed_for_all".to_string(),
+        //                     },
+        //                 }),
+        //             )],
+        //             None,
+        //         ),
+        //         BakerEvent::BakerSetMetadataURL {
+        //             baker_id, metadata_url,
+        //         } => (
+        //             vec![normal_account_transaction_operation(
+        //                 0,
+        //                 details,
+        //                 Some(&BakerSetMetadataUrlMetadata {
+        //                     baker_id,
+        //                     metadata_url: metadata_url.to_string(),
+        //                 }),
+        //             )],
+        //             None,
+        //         ),
+        //         BakerEvent::BakerSetTransactionFeeCommission {
+        //             baker_id, transaction_fee_commission,
+        //         } => {}
+        //         BakerEvent::BakerSetBakingRewardCommission {
+        //             baker_id, baking_reward_commission,
+        //         } => {}
+        //         BakerEvent::BakerSetFinalizationRewardCommission {
+        //             baker_id, finalization_reward_commission,
+        //         } => {}
+        //     }
+        //     (
+        //         vec![normal_account_transaction_operation(
+        //             0,
+        //             details,
+        //             Some(&DataRegisteredMetadata {
+        //                 data: event.clone(),
+        //             }),
+        //         )],
+        //         None,
+        //     )
+        // }
+        // AccountTransactionEffects::DelegationConfigured {
+        //     data,
+        // } => {}
     }
-}
+    }
 
 fn operations_and_metadata_from_account_creation_details(
     details: &AccountCreationDetails,
@@ -563,14 +881,14 @@ fn simple_transfer_operations(
         0,
         details,
         details.sender.to_string(),
-        Some(amount_from_uccd(-(amount.microgtu as i128))),
+        Some(amount_from_uccd(-(amount.microccd as i128))),
         None,
     );
     let mut receiver_operation = account_transaction_operation::<Value>(
         1,
         details,
         to.to_string(),
-        Some(amount_from_uccd(amount.microgtu as i128)),
+        Some(amount_from_uccd(amount.microccd as i128)),
         None,
     );
     receiver_operation.related_operations =
@@ -615,7 +933,7 @@ fn normal_account_transaction_operation<T: SerdeSerialize>(
     metadata: Option<&T>,
 ) -> Operation {
     let account_address = details.sender.to_string();
-    let amount = amount_from_uccd(details.cost.microgtu as i128);
+    let amount = amount_from_uccd(details.cost.microccd as i128);
     account_transaction_operation(index, details, account_address, Some(amount), metadata)
 }
 
@@ -694,6 +1012,8 @@ pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> Str
             TransactionType::UpdateBakerStake => OPERATION_TYPE_UPDATE_BAKER_STAKE,
             TransactionType::UpdateCredentialKeys => OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS,
             TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,
+            TransactionType::ConfigureBaker => OPERATION_TYPE_CONFIGURE_BAKER,
+            TransactionType::ConfigureDelegation => OPERATION_TYPE_CONFIGURE_DELEGATION,
         },
     };
     res.to_string()

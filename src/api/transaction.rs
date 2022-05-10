@@ -494,7 +494,7 @@ fn operations_and_metadata_from_account_transaction_details(
         AccountTransactionEffects::CredentialKeysUpdated {
             cred_id,
         } => (
-            vec![self::normal_account_transaction_operation(
+            vec![normal_account_transaction_operation(
                 0,
                 details,
                 Some(&CredentialKeysUpdatedMetadata {
@@ -567,8 +567,8 @@ fn operations_and_metadata_from_account_transaction_details(
                         0,
                         details,
                         data.map(|d| BakerStakeUpdatedMetadata {
-                            baker_id: d.baker_id,
-                            new_stake_uccd: d.new_stake,
+                            baker_id: *baker_id,
+                            new_stake_uccd: *new_stake,
                             increased: true,
                         })
                             .as_ref(),
@@ -580,8 +580,8 @@ fn operations_and_metadata_from_account_transaction_details(
                         0,
                         details,
                         data.map(|d| BakerStakeUpdatedMetadata {
-                            baker_id: d.baker_id,
-                            new_stake_uccd: d.new_stake,
+                            baker_id: *baker_id,
+                            new_stake_uccd: *new_stake,
                             increased: false,
                         })
                             .as_ref(),
@@ -672,12 +672,24 @@ fn operations_and_metadata_from_account_transaction_details(
                 |event| {
                     // TODO ...
                     match event {
-                        DelegationEvent::DelegationStakeIncreased { .. } => {}
-                        DelegationEvent::DelegationStakeDecreased { .. } => {}
-                        DelegationEvent::DelegationSetRestakeEarnings { .. } => {}
-                        DelegationEvent::DelegationSetDelegationTarget { .. } => {}
-                        DelegationEvent::DelegationAdded { .. } => {}
-                        DelegationEvent::DelegationRemoved { .. } => {}
+                        DelegationEvent::DelegationStakeIncreased { delegator_id, new_stake } => {
+
+                        }
+                        DelegationEvent::DelegationStakeDecreased { delegator_id, new_stake } => {
+
+                        }
+                        DelegationEvent::DelegationSetRestakeEarnings { delegator_id, restake_earnings } => {
+
+                        }
+                        DelegationEvent::DelegationSetDelegationTarget { delegator_id, delegation_target } => {
+
+                        }
+                        DelegationEvent::DelegationAdded { delegator_id } => {
+
+                        }
+                        DelegationEvent::DelegationRemoved { delegator_id } => {
+
+                        }
                     }
                 }
             ).collect(), None)

@@ -173,6 +173,7 @@ pub fn root(
                 .or(block(block_api))
                 .or(construction(construction_api)),
         )
+        .with(warp::log("rosetta::request"))
         .recover(handle_rejection)
 }
 

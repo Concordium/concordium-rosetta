@@ -81,7 +81,7 @@ fn main() -> Result<()> {
         operations.clone(),
         payload_metadata,
     )?;
-    println!("unsigned transaction: {}", &payloads_response.unsigned_transaction,);
+    println!("unsigned transaction: {}", &payloads_response.unsigned_transaction);
     let parse_unsigned_response = call_parse(
         client.clone(),
         &base_url,

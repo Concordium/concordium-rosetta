@@ -45,7 +45,9 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
             log::info!("request failed with error \"{}\"", err.to_string());
             Ok(match err {
                 ApiError::UnsupportedFieldPresent(field_name) => reply::with_status(
-                    reply::json(&invalid_input_unsupported_field_error(Some(field_name.to_string()))),
+                    reply::json(&invalid_input_unsupported_field_error(Some(
+                        field_name.to_string(),
+                    ))),
                     StatusCode::BAD_REQUEST,
                 ),
                 ApiError::SubAccountNotImplemented => reply::with_status(
@@ -73,7 +75,8 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                         None,
                         None,
                         Some(
-                            "only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'".to_string(),
+                            "only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'"
+                                .to_string(),
                         ),
                     )),
                     StatusCode::BAD_REQUEST,
@@ -208,7 +211,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     StatusCode::INTERNAL_SERVER_ERROR,
                 ),
             })
-        },
+        }
     }
 }
 

@@ -81,7 +81,7 @@ pub fn sign_hash(keys: &AccountKeys, hash: &str) -> Result<TransactionSignature>
     Ok(keys.sign_transaction_hash(&tx_hash))
 }
 
-pub fn load_keys(path: &String) -> Result<AccountKeys> {
+pub fn load_keys(path: &str) -> Result<AccountKeys> {
     let data = fs::read_to_string(path).context("cannot read file")?;
     serde_json::from_str(&data).context("cannot parse keys read from file")
 }

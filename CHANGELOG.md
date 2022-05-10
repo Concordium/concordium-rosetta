@@ -1,8 +1,13 @@
 # Changelog
 
-## 0.2.0
+## 0.3.0
 
 - Respond with non-OK HTTP status codes on error.
+
+## 0.2.0
+
+- Add support for querying balance of reward accounts.
+- Ensure that all amount casts are sound.
 
 ## 0.1.1
 

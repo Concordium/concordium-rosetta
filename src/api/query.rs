@@ -1,8 +1,12 @@
-use crate::api::error::{ApiError, ApiResult, InvalidBlockIdentifierError};
+use crate::api::{
+    error::{ApiError, ApiResult, InvalidBlockIdentifierError},
+    transaction::{ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD},
+};
 use concordium_rust_sdk::{
+    common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, AccountInfo},
+    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
@@ -19,15 +23,30 @@ impl QueryHelper {
         }
     }
 
-    pub async fn query_account_info(
+    pub async fn query_account_balance(
         &self,
         block_identifier: Option<Box<PartialBlockIdentifier>>,
         account_identifier: &AccountIdentifier,
-    ) -> ApiResult<(BlockInfo, AccountInfo)> {
+    ) -> ApiResult<(BlockInfo, Amount)> {
         let block_info = self.query_block_info(block_identifier).await?;
         let block_hash = block_info.block_hash;
         let address = account_address_from_identifier(account_identifier)?;
-        Ok((block_info, self.client.clone().get_account_info(address, &block_hash).await?))
+        let amount = match address {
+            Address::Account(addr) => {
+                self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
+            }
+            Address::BakingRewardAccount => {
+                self.client.clone().get_reward_status(&block_hash).await?.baking_reward_account
+            }
+            Address::FinalizationRewardAccount => {
+                self.client
+                    .clone()
+                    .get_reward_status(&block_hash)
+                    .await?
+                    .finalization_reward_account
+            }
+        };
+        Ok((block_info, amount))
     }
 
     pub async fn query_block_info(
@@ -90,13 +109,28 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
-pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<AccountAddress> {
+/// Helper type for providing a way to represent reward accounts in addition to
+/// ordinary ones.
+pub enum Address {
+    Account(AccountAddress),
+    BakingRewardAccount,
+    FinalizationRewardAccount,
+}
+
+pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Address> {
     match id.sub_account {
         None => account_address_from_string(&id.address),
         Some(_) => Err(ApiError::SubAccountNotImplemented),
     }
 }
 
-pub fn account_address_from_string(addr: &str) -> ApiResult<AccountAddress> {
-    AccountAddress::from_str(addr).map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))
+pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
+    match addr {
+        ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
+        ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
+        _ => match AccountAddress::from_str(addr) {
+            Ok(a) => Ok(Address::Account(a)),
+            Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+        },
+    }
 }

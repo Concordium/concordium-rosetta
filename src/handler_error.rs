@@ -41,171 +41,174 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     //                10200: transaction rejected
     match rej.find::<ApiError>() {
         None => Err(rej),
-        Some(err) => Ok(match err {
-            ApiError::UnsupportedFieldPresent(field_name) => reply::with_status(
-                reply::json(&invalid_input_unsupported_field_error(Some(field_name.to_string()))),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::SubAccountNotImplemented => reply::with_status(
-                reply::json(&invalid_input_unsupported_field_error(Some(
-                    "sub_account".to_string(),
-                ))),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::RequiredFieldMissing(name) => reply::with_status(
-                reply::json(&invalid_input_missing_field_error(Some(name.to_string()))),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidAccountAddress(addr) => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("account address".to_string()),
-                    None,
-                    Some(addr.clone()),
-                    Some("invalid format".to_string()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidCurrency => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("currency".to_string()),
-                    None,
-                    None,
-                    Some(
-                        "only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'".to_string(),
-                    ),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidAmount(amount) => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("amount".to_string()),
-                    None,
-                    Some(amount.clone()),
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidBlockIdentifier(err) => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("block identifier".to_string()),
-                    None,
-                    None,
-                    Some(err.to_string()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidSignature(sig, err) => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("signature".to_string()),
-                    None,
-                    Some(sig.clone()),
-                    Some(err.to_string()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidEncodedPayload => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("encoded transaction payload".to_string()),
-                    None,
-                    None,
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidUnsignedTransaction => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("unsigned transaction".to_string()),
-                    None,
-                    None,
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidSignedTransaction => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("signed transaction".to_string()),
-                    None,
-                    None,
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidConstructionOptions => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("construction options".to_string()),
-                    None,
-                    None,
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InvalidPayloadsMetadata => reply::with_status(
-                reply::json(&invalid_input_invalid_value_or_identifier_error(
-                    Some("payloads metadata".to_string()),
-                    None,
-                    None,
-                    None,
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::UnsupportedOperationType(name) => reply::with_status(
-                reply::json(&invalid_input_unsupported_value_error(
-                    Some("operation type".to_string()),
-                    Some(name.clone()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::InconsistentOperations(err) => reply::with_status(
-                reply::json(&invalid_input_inconsistent_value_error(
-                    Some("operations".to_string()),
-                    Some(err.clone()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::UnsupportedNetworkIdentifier => reply::with_status(
-                reply::json(&identifier_not_resolved_no_matches_error(Some(
-                    "network_identifier".to_string(),
-                ))),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::NoBlocksMatched => reply::with_status(
-                reply::json(&identifier_not_resolved_no_matches_error(Some(
-                    "block_identifier".to_string(),
-                ))),
-                StatusCode::NOT_FOUND,
-            ),
-            ApiError::NoTransactionsMatched => reply::with_status(
-                reply::json(&identifier_not_resolved_no_matches_error(Some(
-                    "transaction_identifier".to_string(),
-                ))),
-                StatusCode::NOT_FOUND,
-            ),
-            ApiError::MultipleBlocksMatched => reply::with_status(
-                reply::json(&identifier_not_resolved_multiple_matches_error(Some(
-                    "block_identifier".to_string(),
-                ))),
-                StatusCode::NOT_FOUND,
-            ),
-            ApiError::JsonEncodingFailed(field_name, err) => reply::with_status(
-                reply::json(&internal_json_encoding_failed_error(
-                    Some(field_name.clone()),
-                    Some(err.to_string()),
-                )),
-                StatusCode::BAD_REQUEST,
-            ),
-            ApiError::ClientRpcError(err) => reply::with_status(
-                reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ),
-            ApiError::ClientQueryError(err) => reply::with_status(
-                reply::json(&proxy_client_query_error(Some(err.to_string()))),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ),
-            ApiError::TransactionNotAccepted => reply::with_status(
-                reply::json(&proxy_transaction_rejected()),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ),
-        }),
+        Some(err) => {
+            log::info!("request failed with error \"{}\"", err.to_string());
+            Ok(match err {
+                ApiError::UnsupportedFieldPresent(field_name) => reply::with_status(
+                    reply::json(&invalid_input_unsupported_field_error(Some(field_name.to_string()))),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::SubAccountNotImplemented => reply::with_status(
+                    reply::json(&invalid_input_unsupported_field_error(Some(
+                        "sub_account".to_string(),
+                    ))),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::RequiredFieldMissing(name) => reply::with_status(
+                    reply::json(&invalid_input_missing_field_error(Some(name.to_string()))),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidAccountAddress(addr) => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("account address".to_string()),
+                        None,
+                        Some(addr.clone()),
+                        Some("invalid format".to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidCurrency => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("currency".to_string()),
+                        None,
+                        None,
+                        Some(
+                            "only supported value is '{\"symbol\":\"CCD\",\"decimals\":6}'".to_string(),
+                        ),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidAmount(amount) => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("amount".to_string()),
+                        None,
+                        Some(amount.clone()),
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidBlockIdentifier(err) => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("block identifier".to_string()),
+                        None,
+                        None,
+                        Some(err.to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidSignature(sig, err) => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("signature".to_string()),
+                        None,
+                        Some(sig.clone()),
+                        Some(err.to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidEncodedPayload => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("encoded transaction payload".to_string()),
+                        None,
+                        None,
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidUnsignedTransaction => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("unsigned transaction".to_string()),
+                        None,
+                        None,
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidSignedTransaction => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("signed transaction".to_string()),
+                        None,
+                        None,
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidConstructionOptions => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("construction options".to_string()),
+                        None,
+                        None,
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InvalidPayloadsMetadata => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("payloads metadata".to_string()),
+                        None,
+                        None,
+                        None,
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::UnsupportedOperationType(name) => reply::with_status(
+                    reply::json(&invalid_input_unsupported_value_error(
+                        Some("operation type".to_string()),
+                        Some(name.clone()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::InconsistentOperations(err) => reply::with_status(
+                    reply::json(&invalid_input_inconsistent_value_error(
+                        Some("operations".to_string()),
+                        Some(err.clone()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::UnsupportedNetworkIdentifier => reply::with_status(
+                    reply::json(&identifier_not_resolved_no_matches_error(Some(
+                        "network_identifier".to_string(),
+                    ))),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::NoBlocksMatched => reply::with_status(
+                    reply::json(&identifier_not_resolved_no_matches_error(Some(
+                        "block_identifier".to_string(),
+                    ))),
+                    StatusCode::NOT_FOUND,
+                ),
+                ApiError::NoTransactionsMatched => reply::with_status(
+                    reply::json(&identifier_not_resolved_no_matches_error(Some(
+                        "transaction_identifier".to_string(),
+                    ))),
+                    StatusCode::NOT_FOUND,
+                ),
+                ApiError::MultipleBlocksMatched => reply::with_status(
+                    reply::json(&identifier_not_resolved_multiple_matches_error(Some(
+                        "block_identifier".to_string(),
+                    ))),
+                    StatusCode::NOT_FOUND,
+                ),
+                ApiError::JsonEncodingFailed(field_name, err) => reply::with_status(
+                    reply::json(&internal_json_encoding_failed_error(
+                        Some(field_name.clone()),
+                        Some(err.to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
+                ApiError::ClientRpcError(err) => reply::with_status(
+                    reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ),
+                ApiError::ClientQueryError(err) => reply::with_status(
+                    reply::json(&proxy_client_query_error(Some(err.to_string()))),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ),
+                ApiError::TransactionNotAccepted => reply::with_status(
+                    reply::json(&proxy_transaction_rejected()),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ),
+            })
+        },
     }
 }
 

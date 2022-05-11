@@ -206,10 +206,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     reply::json(&proxy_client_query_error(Some(err.to_string()))),
                     StatusCode::INTERNAL_SERVER_ERROR,
                 ),
-                ApiError::TransactionNotAccepted => reply::with_status(
-                    reply::json(&proxy_transaction_rejected()),
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ),
             })
         }
     }

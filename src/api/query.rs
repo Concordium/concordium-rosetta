@@ -42,7 +42,10 @@ impl QueryHelper {
                     } => data.baking_reward_account,
                     RewardsOverview::V1 {
                         common,
-                        ..
+                        foundation_transaction_rewards,
+                        next_payday_time,
+                        next_payday_mint_rate,
+                        total_staked_capital,
                     } => common.baking_reward_account,
                 }
             }

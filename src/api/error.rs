@@ -82,8 +82,6 @@ pub enum ApiError {
     MultipleBlocksMatched,
 
     // Internal errors.
-    #[error("transaction not accepted by node")]
-    TransactionNotAccepted,
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
 

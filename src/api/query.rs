@@ -1,6 +1,6 @@
 use crate::api::{
     error::{ApiError, ApiResult, InvalidBlockIdentifierError},
-    transaction::{ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD},
+    transaction::{ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD, POOL_PASSIVE},
 };
 use concordium_rust_sdk::{
     common::types::Amount,
@@ -10,6 +10,8 @@ use concordium_rust_sdk::{
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
+use concordium_rust_sdk::types::{BakerId, PoolStatus};
+use crate::api::transaction::ACCOUNT_ACCRUED_POOL_PREFIX;
 
 #[derive(Clone)]
 pub struct QueryHelper {
@@ -42,10 +44,7 @@ impl QueryHelper {
                     } => data.baking_reward_account,
                     RewardsOverview::V1 {
                         common,
-                        foundation_transaction_rewards,
-                        next_payday_time,
-                        next_payday_mint_rate,
-                        total_staked_capital,
+                        ..
                     } => common.baking_reward_account,
                 }
             }
@@ -58,6 +57,12 @@ impl QueryHelper {
                         common,
                         ..
                     } => common.finalization_reward_account,
+                }
+            }
+            Address::PoolAccrueAccount(baker_id) => {
+                match self.client.clone().get_pool_status(baker_id, &block_hash).await? {
+                    PoolStatus::BakerPool { all_pool_total_capital, .. } => all_pool_total_capital,
+                    PoolStatus::PassiveDelegation { all_pool_total_capital, .. } => all_pool_total_capital,
                 }
             }
         };
@@ -124,12 +129,17 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
-/// Helper type for providing a way to represent reward accounts in addition to
+/// Helper type for providing a way to represent virtual reward/accrue accounts in addition to
 /// ordinary ones.
 pub enum Address {
+    /// Real, ordinary account.
     Account(AccountAddress),
+    /// Virtual baking reward account.
     BakingRewardAccount,
+    /// Virtual finalization reward account.
     FinalizationRewardAccount,
+    /// Virtual pool accrue account. Baker ID of None denotes the passive pool's accrue account.
+    PoolAccrueAccount(Option<BakerId>),
 }
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Address> {
@@ -143,9 +153,23 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
         ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
         ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
-        _ => match AccountAddress::from_str(addr) {
-            Ok(a) => Ok(Address::Account(a)),
-            Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+        _ => {
+            match addr.strip_prefix(ACCOUNT_ACCRUED_POOL_PREFIX) {
+                Some(pool) => {
+                    if pool == POOL_PASSIVE {
+                        Ok(Address::PoolAccrueAccount(None))
+                    } else {
+                        let baker_id = pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
+                        Ok(Address::PoolAccrueAccount(Some(baker_id)))
+                    }
+                }
+                None => {
+                    match AccountAddress::from_str(addr) {
+                        Ok(a) => Ok(Address::Account(a)),
+                        Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+                    }
+                },
+            }
         },
     }
 }

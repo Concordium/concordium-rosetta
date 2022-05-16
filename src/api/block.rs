@@ -175,8 +175,7 @@ async fn tokenomics_transaction_operations(
                 old_gas_account,
                 new_gas_account,
             } => {
-                // Could add transaction fees going into GAS account and then extract block
-                // rewards, but it seems unnecessary?
+                // TODO Add gas account operations.
                 if baker_reward.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
@@ -335,7 +334,7 @@ async fn tokenomics_transaction_operations(
                     coin_change:          None,
                     metadata:             None,
                 });
-            },
+            }
             SpecialTransactionOutcome::PaydayAccountReward {
                 account,
                 transaction_fees,
@@ -347,7 +346,11 @@ async fn tokenomics_transaction_operations(
                     // but currently isn't.
                     let account_info = client.get_account_info(account, block_hash).await?;
                     let pool_account_address = match account_info.account_stake {
-                        None => return Err(ApiError::InconsistentState("account is not staked".to_string())),
+                        None => {
+                            return Err(ApiError::AccountNotDelegator(
+                                account_info.account_address.clone(),
+                            ))
+                        }
                         Some(staking_info) => {
                             format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX, match staking_info {
                                 AccountStakingInfo::Baker {
@@ -472,20 +475,20 @@ async fn tokenomics_transaction_operations(
             }
             SpecialTransactionOutcome::BlockAccrueReward {
                 transaction_fees,
-                old_gas_account,
-                new_gas_account,
                 baker_reward,
                 passive_reward,
                 foundation_charge,
                 baker_id,
+                ..
             } => {
+                // TODO Add gas account operations.
                 if foundation_charge.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
                             ACCOUNT_ACCRUED_FOUNDATION.to_string(),
@@ -503,13 +506,34 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
-                        account:              Some(Box::new(AccountIdentifier::new(
-                            "TODO-correct-delegation-account".to_string(),
-                        ))),
+                        account:              Some(Box::new(AccountIdentifier::new(format!(
+                            "{}{}",
+                            ACCOUNT_ACCRUED_POOL_PREFIX,
+                            baker_id.to_string()
+                        )))),
                         amount:               Some(Box::new(amount_from_uccd(
                             transaction_fees.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+                if passive_reward.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(format!(
+                            "{}{}",
+                            ACCOUNT_ACCRUED_POOL_PREFIX, POOL_PASSIVE
+                        )))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            passive_reward.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -521,10 +545,10 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_FINALIZATION_REWARD.to_string(),
+                            ACCOUNT_BAKING_REWARD.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             transaction_fees.microccd as i128,

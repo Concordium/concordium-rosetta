@@ -302,22 +302,40 @@ async fn tokenomics_transaction_operations(
             SpecialTransactionOutcome::PaydayFoundationReward {
                 foundation_account,
                 development_charge,
-            } => res.push(Operation {
-                operation_identifier: Box::new(OperationIdentifier::new(next_index(
-                    &mut index_offset,
-                ))),
-                related_operations:   None,
-                _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
-                status:               Some(OPERATION_STATUS_OK.to_string()),
-                account:              Some(Box::new(AccountIdentifier::new(
-                    foundation_account.to_string(),
-                ))),
-                amount:               Some(Box::new(amount_from_uccd(
-                    development_charge.microccd as i128,
-                ))),
-                coin_change:          None,
-                metadata:             None,
-            }),
+            } => {
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        foundation_account.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        development_charge.microccd as i128,
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        ACCOUNT_ACCRUED_FOUNDATION.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        -(development_charge.microccd as i128),
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+            },
             SpecialTransactionOutcome::PaydayAccountReward {
                 account,
                 transaction_fees,
@@ -329,27 +347,23 @@ async fn tokenomics_transaction_operations(
                     // but currently isn't.
                     let account_info = client.get_account_info(account, block_hash).await?;
                     let pool_account_address = match account_info.account_stake {
-                        None => "".to_string(),
+                        None => return Err(ApiError::InconsistentState("account is not staked".to_string())),
                         Some(staking_info) => {
-                            format!(
-                                "{}{}",
-                                ACCOUNT_ACCRUED_POOL_PREFIX,
-                                (match staking_info {
-                                    AccountStakingInfo::Baker {
-                                        baker_info,
-                                        ..
-                                    } => baker_info.baker_id.to_string(),
-                                    AccountStakingInfo::Delegated {
-                                        delegation_target,
-                                        ..
-                                    } => match delegation_target {
-                                        DelegationTarget::Passive => POOL_PASSIVE.to_string(),
-                                        DelegationTarget::Baker {
-                                            baker_id,
-                                        } => baker_id.to_string(),
-                                    },
-                                })
-                            )
+                            format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX, match staking_info {
+                                AccountStakingInfo::Baker {
+                                    baker_info,
+                                    ..
+                                } => baker_info.baker_id.to_string(),
+                                AccountStakingInfo::Delegated {
+                                    delegation_target,
+                                    ..
+                                } => match delegation_target {
+                                    DelegationTarget::Passive => POOL_PASSIVE.to_string(),
+                                    DelegationTarget::Baker {
+                                        baker_id,
+                                    } => baker_id.to_string(),
+                                },
+                            })
                         }
                     };
                     res.push(Operation {

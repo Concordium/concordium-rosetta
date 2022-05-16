@@ -35,6 +35,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     //                       * block identifier
     //  9000 -  9999: internal error
     //                 9000: JSON encoding failed
+    //                 9900: Inconsistent state
     // 10000 - 19999: proxy error
     //                10000: client RPC error
     //                10100: client query error
@@ -198,6 +199,10 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InconsistentState(err) => reply::with_status(
+                    reply::json(&internal_inconsistent_state(Some(err.clone())) ),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ),
                 ApiError::ClientRpcError(err) => reply::with_status(
                     reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -336,6 +341,20 @@ pub fn internal_json_encoding_failed_error(
     }
 }
 
+pub fn internal_inconsistent_state(
+    err: Option<String>,
+) -> Error {
+    Error {
+        code:        9900,
+        message:     "internal error: inconsistent state".to_string(),
+        description: Some("Internal state is inconsistent.".to_string()),
+        retriable:   false,
+        details:     key_value_pairs(&[
+            key_value_pair("message", err),
+        ]),
+    }
+}
+
 pub fn proxy_client_rpc_error(err: Option<String>) -> Error {
     Error {
         code:        10000,
@@ -355,15 +374,5 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
         ),
         retriable:   true,
         details:     key_value_pairs(&[key_value_pair("message", err)]),
-    }
-}
-
-pub fn proxy_transaction_rejected() -> Error {
-    Error {
-        code:        10200,
-        message:     "proxy error: node rejected transaction".to_string(),
-        description: Some("The submitted transaction was rejected by the node.".to_string()),
-        retriable:   false,
-        details:     None,
     }
 }

@@ -85,6 +85,9 @@ pub enum ApiError {
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
 
+    #[error("inconsistent state: {0}")]
+    InconsistentState(String),
+
     // Proxy errors.
     #[error("client RPC error")]
     ClientRpcError(RPCError),

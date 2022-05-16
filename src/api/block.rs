@@ -41,7 +41,7 @@ impl BlockApi {
                     block_info.block_parent.to_string(),
                 ),
                 block_info.block_slot_time.timestamp_millis(),
-                self::block_transactions(block_summary),
+                block_transactions(block_summary),
             ))),
             other_transactions: None, // currently just expanding all transactions inline
         })

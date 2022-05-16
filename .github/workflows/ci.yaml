@@ -34,6 +34,9 @@ jobs:
       - name: Format
         run: |
           cargo fmt -- --color=always --check
+      - name: Format (query-account)
+        run: |
+          cargo fmt --manifest-path=./tools/query-account/Cargo.toml -- --color=always --check
       - name: Format (transfer-client)
         run: |
           cargo fmt --manifest-path=./tools/transfer-client/Cargo.toml -- --color=always --check
@@ -60,6 +63,9 @@ jobs:
       - name: Clippy
         run: |
           cargo clippy --color=always --tests --benches -- -Dclippy::all
+      - name: Clippy (query-account)
+        run: |
+          cargo clippy --color=always --tests --benches --manifest-path=./tools/query-account/Cargo.toml -- -Dclippy::all
       - name: Clippy (transfer-client)
         run: |
           cargo clippy --color=always --tests --benches --manifest-path=./tools/transfer-client/Cargo.toml -- -Dclippy::all

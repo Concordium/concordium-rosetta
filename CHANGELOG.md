@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Bump Node SDK to support protocol version P4...
+
 ## 0.3.1
 
 - Log every request to the server.

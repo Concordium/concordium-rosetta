@@ -1,9 +1,8 @@
-use std::thread::sleep;
-use std::time::Duration;
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
+use std::{thread::sleep, time::Duration};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -45,11 +44,21 @@ fn main() -> Result<()> {
         let status = call_rosetta_status(client.clone(), &base_url, network_id.clone())?;
         let current_block_height = status.current_block_identifier.index;
         if current_block_height <= next_from_height {
-            eprintln!("Reached the end of the chain at block height {}. Pausing for 10s...", current_block_height);
+            eprintln!(
+                "Reached the end of the chain at block height {}. Pausing for 10s...",
+                current_block_height
+            );
             sleep(Duration::from_secs(10));
             continue;
         }
-        traverse_block_range(client.clone(), &base_url, network_id.clone(), next_from_height, current_block_height, address.clone())?;
+        traverse_block_range(
+            client.clone(),
+            &base_url,
+            network_id.clone(),
+            next_from_height,
+            current_block_height,
+            address.clone(),
+        )?;
         next_from_height = current_block_height + 1;
     }
 }
@@ -66,7 +75,8 @@ fn traverse_block_range(
         if block_height % 100 == 0 {
             eprintln!("Querying block at height {}...", block_height);
         }
-        let block_result = call_rosetta_block(client.clone(), base_url, network_id.clone(), block_height)?;
+        let block_result =
+            call_rosetta_block(client.clone(), base_url, network_id.clone(), block_height)?;
         if let Some(block) = block_result.block {
             for tx in block.transactions {
                 for op in tx.operations {
@@ -105,7 +115,7 @@ fn call_rosetta_status(
         .post(url)
         .json(&NetworkRequest {
             network_identifier: Box::new(network_id),
-            metadata: None,
+            metadata:           None,
         })
         .send()?
         .json()

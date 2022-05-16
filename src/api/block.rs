@@ -10,7 +10,7 @@ use crate::{
 use concordium_rust_sdk::{
     endpoints::Client,
     types::{
-        hashes::BlockHash, AccountStakingInfo, BakerPoolInfo, BlockSummary, DelegationTarget,
+        hashes::BlockHash, AccountStakingInfo, BlockSummary, DelegationTarget,
         SpecialTransactionOutcome,
     },
 };
@@ -51,7 +51,7 @@ impl BlockApi {
                     block_summary,
                     &block_info.block_hash,
                     self.query_helper.client.clone().borrow_mut(),
-                ),
+                ).await?,
             ))),
             other_transactions: None, // currently just expanding all transactions inline
         })
@@ -79,27 +79,27 @@ impl BlockApi {
     }
 }
 
-fn block_transactions(
+async fn block_transactions(
     block_summary: BlockSummary,
     block_hash: &BlockHash,
     client: &mut Client,
-) -> Vec<Transaction> {
+) -> ApiResult<Vec<Transaction>> {
     // Synthetic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
-        tokenomics_transaction_operations(&block_summary, block_hash, client),
+        tokenomics_transaction_operations(&block_summary, block_hash, client).await?,
     );
     let mut res = vec![tokenomics_transaction];
     res.extend(block_summary.transaction_summaries().iter().map(map_transaction));
-    res
+    Ok(res)
 }
 
-fn tokenomics_transaction_operations(
+async fn tokenomics_transaction_operations(
     block_summary: &BlockSummary,
     block_hash: &BlockHash,
     client: &mut Client,
-) -> Vec<Operation> {
+) -> ApiResult<Vec<Operation>> {
     let mut index_offset: i64 = 0;
     let next_index = |offset: &mut i64| {
         let res = *offset;
@@ -330,8 +330,8 @@ fn tokenomics_transaction_operations(
                     let pool_account_address = match account_info.account_stake {
                         None => "".to_string(),
                         Some(staking_info) => {
-                            ACCOUNT_ACCRUED_POOL_PREFIX
-                                + (match staking_info {
+                            format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX,
+                                  (match staking_info {
                                     AccountStakingInfo::Baker {
                                         baker_info,
                                         ..
@@ -340,12 +340,12 @@ fn tokenomics_transaction_operations(
                                         delegation_target,
                                         ..
                                     } => match delegation_target {
-                                        DelegationTarget::Passive => POOL_PASSIVE,
+                                        DelegationTarget::Passive => POOL_PASSIVE.to_string(),
                                         DelegationTarget::Baker {
                                             baker_id,
                                         } => baker_id.to_string(),
                                     },
-                                })
+                                }))
                         }
                     };
                     res.push(Operation {
@@ -374,7 +374,7 @@ fn tokenomics_transaction_operations(
                             .to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            "TODO-correct-accrued-pool-account".to_string(),
+                            pool_account_address,
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             -(transaction_fees.microccd as i128),
@@ -417,7 +417,7 @@ fn tokenomics_transaction_operations(
                         metadata:             None,
                     });
                 }
-                if finalization_reward != 0 {
+                if finalization_reward.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -524,5 +524,5 @@ fn tokenomics_transaction_operations(
             } => (),
         }
     }
-    res
+    Ok(res)
 }

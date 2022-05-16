@@ -338,7 +338,7 @@ dependencies = [
 
 [[package]]
 name = "concordium-rust-sdk"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "aggregate_sig",
  "anyhow",

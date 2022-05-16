@@ -51,7 +51,8 @@ impl BlockApi {
                     block_summary,
                     &block_info.block_hash,
                     self.query_helper.client.clone().borrow_mut(),
-                ).await?,
+                )
+                .await?,
             ))),
             other_transactions: None, // currently just expanding all transactions inline
         })
@@ -330,8 +331,10 @@ async fn tokenomics_transaction_operations(
                     let pool_account_address = match account_info.account_stake {
                         None => "".to_string(),
                         Some(staking_info) => {
-                            format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX,
-                                  (match staking_info {
+                            format!(
+                                "{}{}",
+                                ACCOUNT_ACCRUED_POOL_PREFIX,
+                                (match staking_info {
                                     AccountStakingInfo::Baker {
                                         baker_info,
                                         ..
@@ -345,7 +348,8 @@ async fn tokenomics_transaction_operations(
                                             baker_id,
                                         } => baker_id.to_string(),
                                     },
-                                }))
+                                })
+                            )
                         }
                     };
                     res.push(Operation {

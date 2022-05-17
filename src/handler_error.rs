@@ -35,7 +35,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     //                       * block identifier
     //  9000 -  9999: internal error
     //                 9000: JSON encoding failed
-    //                 9900: Inconsistent state
     // 10000 - 19999: proxy error
     //                10000: client RPC error
     //                10100: client query error
@@ -199,14 +198,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
-                ApiError::AccountNotDelegator(addr) => reply::with_status(
-                    reply::json(&internal_inconsistent_state(
-                        Some("account".to_string()),
-                        Some(addr.to_string()),
-                        Some("account is not a baker or delegator".to_string()),
-                    )),
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ),
                 ApiError::ClientRpcError(err) => reply::with_status(
                     reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -340,24 +331,6 @@ pub fn internal_json_encoding_failed_error(
         retriable:   false,
         details:     key_value_pairs(&[
             key_value_pair("field", field_name),
-            key_value_pair("message", err),
-        ]),
-    }
-}
-
-pub fn internal_inconsistent_state(
-    type_: Option<String>,
-    value: Option<String>,
-    err: Option<String>,
-) -> Error {
-    Error {
-        code:        9900,
-        message:     "internal error: inconsistent state".to_string(),
-        description: Some("An internal assumption has been violated.".to_string()),
-        retriable:   false,
-        details:     key_value_pairs(&[
-            key_value_pair("type", type_),
-            key_value_pair("value", value),
             key_value_pair("message", err),
         ]),
     }

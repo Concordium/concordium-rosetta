@@ -211,10 +211,10 @@ struct ChainUpdateMetadata {
     payload:        UpdatePayload,
 }
 
-pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
-pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
-pub const ACCOUNT_ACCRUED_FOUNDATION: &str = "accrued_foundation_account";
-pub const ACCOUNT_ACCRUED_POOL_PREFIX: &str = "accrued_pool_account:";
+pub const ACCOUNT_REWARD_BAKING: &str = "baking_reward_account";
+pub const ACCOUNT_REWARD_FINALIZATION: &str = "finalization_reward_account";
+pub const ACCOUNT_ACCRUE_FOUNDATION: &str = "foundation_accrue_account";
+pub const ACCOUNT_ACCRUE_POOL_PREFIX: &str = "pool_accrue_account:";
 pub const POOL_PASSIVE: &str = "passive";
 
 pub const OPERATION_STATUS_OK: &str = "ok";
@@ -249,10 +249,9 @@ pub const OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS: &str = "update_credential_keys"
 pub const OPERATION_TYPE_UPDATE_CREDENTIALS: &str = "update_credentials";
 pub const OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD: &str = "payday_foundation_reward";
 pub const OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD: &str = "payday_transaction_fees_reward";
-pub const OPERATION_TYPE_PAYDAY_BAKER_REWARD: &str = "payday_baker_reward";
+pub const OPERATION_TYPE_PAYDAY_BAKING_REWARD: &str = "payday_baking_reward";
 pub const OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD: &str = "payday_finalization_reward";
 pub const OPERATION_TYPE_BLOCK_ACCRUE_REWARD: &str = "block_accrue_reward";
-pub const OPERATION_TYPE_PAYDAY_POOL_REWARD: &str = "payday_pool_reward";
 pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
 pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 
@@ -299,8 +298,6 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
 fn operations_and_metadata_from_account_transaction_details(
     details: &AccountTransactionDetails,
 ) -> (Vec<Operation>, Option<Result<Value, Error>>) {
-    let sender = details.sender;
-    let cost = details.cost;
     match &details.effects {
         AccountTransactionEffects::None {
             transaction_type,
@@ -311,8 +308,12 @@ fn operations_and_metadata_from_account_transaction_details(
                 related_operations:   None,
                 _type:                transaction_type_to_operation_type(*transaction_type),
                 status:               Some(OPERATION_STATUS_FAIL.to_string()),
-                account:              Some(Box::new(AccountIdentifier::new(sender.to_string()))),
-                amount:               Some(Box::new(amount_from_uccd(cost.microccd as i128))),
+                account:              Some(Box::new(AccountIdentifier::new(
+                    details.sender.to_string(),
+                ))),
+                amount:               Some(Box::new(amount_from_uccd(
+                    details.cost.microccd as i128,
+                ))),
                 coin_change:          None,
                 metadata:             Some(
                     serde_json::to_value(&TransactionRejectedMetadata {
@@ -778,146 +779,14 @@ fn operations_and_metadata_from_account_transaction_details(
                                 DelegationTarget::Passive => "passive".to_string(),
                                 DelegationTarget::Baker {
                                     baker_id,
-                                } => format!("baker: {}", baker_id.id),
+                                } => format!("baker:{}", baker_id.id),
                             },
                         }),
                     ),
                 })
                 .collect(),
             None,
-        ), /*     match events[0].clone() {
-            *         BakerEvent::BakerAdded {
-            *             data,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerAdded {
-            *                     data,
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerRemoved {
-            *             baker_id,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerRemoved {
-            *                     baker_id,
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerStakeIncreased {
-            *             baker_id,
-            *             new_stake,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerStakeUpdated {
-            *                     data: Some(BakerStakeUpdatedData {
-            *                         baker_id,
-            *                         new_stake,
-            *                         increased: true,
-            *                     }),
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerStakeDecreased {
-            *             baker_id,
-            *             new_stake,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerStakeUpdated {
-            *                     data: Some(BakerStakeUpdatedData {
-            *                         baker_id,
-            *                         new_stake,
-            *                         increased: false,
-            *                     }),
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerRestakeEarningsUpdated {
-            *             baker_id,
-            *             restake_earnings,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerRestakeEarningsUpdated {
-            *                     baker_id,
-            *                     restake_earnings,
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerKeysUpdated {
-            *             data,
-            *         } => operations_and_metadata_from_account_transaction_details(
-            *             &AccountTransactionDetails {
-            *                 cost:    details.cost,
-            *                 sender:  details.sender,
-            *                 effects: AccountTransactionEffects::BakerKeysUpdated {
-            *                     data,
-            *                 },
-            *             },
-            *         ),
-            *         BakerEvent::BakerSetOpenStatus {
-            *             baker_id, open_status,
-            *         } => (
-            *             vec![normal_account_transaction_operation(
-            *                 0,
-            *                 details,
-            *                 Some(&BakerSetOpenStatusMetadata {
-            *                     baker_id:         data.keys_event.baker_id,
-            *                     open_status: match open_status {
-            *                         OpenStatus::OpenForAll => "open_for_all".to_string(),
-            *                         OpenStatus::ClosedForNew => "closed_for_new".to_string(),
-            *                         OpenStatus::ClosedForAll => "closed_for_all".to_string(),
-            *                     },
-            *                 }),
-            *             )],
-            *             None,
-            *         ),
-            *         BakerEvent::BakerSetMetadataURL {
-            *             baker_id, metadata_url,
-            *         } => (
-            *             vec![normal_account_transaction_operation(
-            *                 0,
-            *                 details,
-            *                 Some(&BakerSetMetadataUrlMetadata {
-            *                     baker_id,
-            *                     metadata_url: metadata_url.to_string(),
-            *                 }),
-            *             )],
-            *             None,
-            *         ),
-            *         BakerEvent::BakerSetTransactionFeeCommission {
-            *             baker_id, transaction_fee_commission,
-            *         } => {}
-            *         BakerEvent::BakerSetBakingRewardCommission {
-            *             baker_id, baking_reward_commission,
-            *         } => {}
-            *         BakerEvent::BakerSetFinalizationRewardCommission {
-            *             baker_id, finalization_reward_commission,
-            *         } => {}
-            *     }
-            *     (
-            *         vec![normal_account_transaction_operation(
-            *             0,
-            *             details,
-            *             Some(&DataRegisteredMetadata {
-            *                 data: event.clone(),
-            *             }),
-            *         )],
-            *         None,
-            *     )
-            * }
-            * AccountTransactionEffects::DelegationConfigured {
-            *     data,
-            * } => {} */
+        ),
     }
 }
 

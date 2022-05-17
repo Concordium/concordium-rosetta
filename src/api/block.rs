@@ -7,15 +7,9 @@ use crate::{
     },
     NetworkValidator,
 };
-use concordium_rust_sdk::{
-    endpoints::Client,
-    types::{
-        hashes::BlockHash, AccountStakingInfo, BlockSummary, DelegationTarget,
-        SpecialTransactionOutcome,
-    },
-};
+use concordium_rust_sdk::types::{BlockSummary, SpecialTransactionOutcome};
 use rosetta::models::*;
-use std::{borrow::BorrowMut, cmp::max};
+use std::cmp::max;
 
 #[derive(Clone)]
 pub struct BlockApi {
@@ -47,12 +41,7 @@ impl BlockApi {
                     block_info.block_parent.to_string(),
                 ),
                 block_info.block_slot_time.timestamp_millis(),
-                block_transactions(
-                    block_summary,
-                    &block_info.block_hash,
-                    self.query_helper.client.clone().borrow_mut(),
-                )
-                .await?,
+                block_transactions(block_summary).await?,
             ))),
             other_transactions: None, // currently just expanding all transactions inline
         })
@@ -80,16 +69,12 @@ impl BlockApi {
     }
 }
 
-async fn block_transactions(
-    block_summary: BlockSummary,
-    block_hash: &BlockHash,
-    client: &mut Client,
-) -> ApiResult<Vec<Transaction>> {
+async fn block_transactions(block_summary: BlockSummary) -> ApiResult<Vec<Transaction>> {
     // Synthetic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
-        tokenomics_transaction_operations(&block_summary, block_hash, client).await?,
+        tokenomics_transaction_operations(&block_summary).await?,
     );
     let mut res = vec![tokenomics_transaction];
     res.extend(block_summary.transaction_summaries().iter().map(map_transaction));
@@ -98,8 +83,6 @@ async fn block_transactions(
 
 async fn tokenomics_transaction_operations(
     block_summary: &BlockSummary,
-    block_hash: &BlockHash,
-    client: &mut Client,
 ) -> ApiResult<Vec<Operation>> {
     let mut index_offset: i64 = 0;
     let next_index = |offset: &mut i64| {
@@ -108,6 +91,7 @@ async fn tokenomics_transaction_operations(
         res
     };
     let mut res = vec![];
+    let mut current_pool_owner = None;
     for e in block_summary.special_events() {
         match e {
             SpecialTransactionOutcome::Mint {
@@ -124,7 +108,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_BAKING_REWARD.to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_baking_reward.microccd as i128,
@@ -140,7 +124,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_finalization_reward.microccd as i128,
@@ -244,7 +228,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_BAKING_REWARD.to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(-baking_reward_sum))),
                     coin_change:          None,
@@ -287,7 +271,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         -finalization_reward_sum,
@@ -296,42 +280,13 @@ async fn tokenomics_transaction_operations(
                     metadata:             None,
                 })
             }
-            SpecialTransactionOutcome::PaydayFoundationReward {
-                foundation_account,
-                development_charge,
+            SpecialTransactionOutcome::PaydayPoolReward {
+                pool_owner,
+                ..
             } => {
-                res.push(Operation {
-                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
-                        &mut index_offset,
-                    ))),
-                    related_operations:   None,
-                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
-                    status:               Some(OPERATION_STATUS_OK.to_string()),
-                    account:              Some(Box::new(AccountIdentifier::new(
-                        foundation_account.to_string(),
-                    ))),
-                    amount:               Some(Box::new(amount_from_uccd(
-                        development_charge.microccd as i128,
-                    ))),
-                    coin_change:          None,
-                    metadata:             None,
-                });
-                res.push(Operation {
-                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
-                        &mut index_offset,
-                    ))),
-                    related_operations:   None,
-                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
-                    status:               Some(OPERATION_STATUS_OK.to_string()),
-                    account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_ACCRUED_FOUNDATION.to_string(),
-                    ))),
-                    amount:               Some(Box::new(amount_from_uccd(
-                        -(development_charge.microccd as i128),
-                    ))),
-                    coin_change:          None,
-                    metadata:             None,
-                });
+                // The events are ordered such that PaydayPoolReward events are followed
+                // by PaydayAccountReward events for the accounts in the given pool.
+                current_pool_owner = *pool_owner;
             }
             SpecialTransactionOutcome::PaydayAccountReward {
                 account,
@@ -340,33 +295,11 @@ async fn tokenomics_transaction_operations(
                 finalization_reward,
             } => {
                 if transaction_fees.microccd != 0 {
-                    // Query delegation pool of account. Would ideally be included in the outcome
-                    // but currently isn't.
-                    let account_info = client.get_account_info(account, block_hash).await?;
-                    let pool_account_address = match account_info.account_stake {
-                        None => {
-                            return Err(ApiError::AccountNotDelegator(
-                                account_info.account_address.clone(),
-                            ))
-                        }
-                        Some(staking_info) => {
-                            format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX, match staking_info {
-                                AccountStakingInfo::Baker {
-                                    baker_info,
-                                    ..
-                                } => baker_info.baker_id.to_string(),
-                                AccountStakingInfo::Delegated {
-                                    delegation_target,
-                                    ..
-                                } => match delegation_target {
-                                    DelegationTarget::Passive => POOL_PASSIVE.to_string(),
-                                    DelegationTarget::Baker {
-                                        baker_id,
-                                    } => baker_id.to_string(),
-                                },
-                            })
-                        }
-                    };
+                    let pool_account_address =
+                        format!("{}{}", ACCOUNT_ACCRUE_POOL_PREFIX, match current_pool_owner {
+                            None => POOL_PASSIVE.to_string(),
+                            Some(id) => id.to_string(),
+                        });
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -408,7 +341,7 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
                             account.to_string(),
@@ -424,10 +357,10 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_BAKING_REWARD.to_string(),
+                            ACCOUNT_REWARD_BAKING.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             -(baker_reward.microccd as i128),
@@ -461,7 +394,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_FINALIZATION_REWARD.to_string(),
+                            ACCOUNT_REWARD_FINALIZATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             -(finalization_reward.microccd as i128),
@@ -470,6 +403,43 @@ async fn tokenomics_transaction_operations(
                         metadata:             None,
                     });
                 }
+            }
+            SpecialTransactionOutcome::PaydayFoundationReward {
+                foundation_account,
+                development_charge,
+            } => {
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        foundation_account.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        development_charge.microccd as i128,
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        -(development_charge.microccd as i128),
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
             }
             SpecialTransactionOutcome::BlockAccrueReward {
                 transaction_fees,
@@ -489,7 +459,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_ACCRUED_FOUNDATION.to_string(),
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             foundation_charge.microccd as i128,
@@ -508,7 +478,7 @@ async fn tokenomics_transaction_operations(
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(format!(
                             "{}{}",
-                            ACCOUNT_ACCRUED_POOL_PREFIX,
+                            ACCOUNT_ACCRUE_POOL_PREFIX,
                             baker_id.to_string()
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
@@ -528,7 +498,7 @@ async fn tokenomics_transaction_operations(
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(format!(
                             "{}{}",
-                            ACCOUNT_ACCRUED_POOL_PREFIX, POOL_PASSIVE
+                            ACCOUNT_ACCRUE_POOL_PREFIX, POOL_PASSIVE
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
                             passive_reward.microccd as i128,
@@ -546,7 +516,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_BAKING_REWARD.to_string(),
+                            ACCOUNT_REWARD_BAKING.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             baker_reward.microccd as i128,
@@ -556,14 +526,6 @@ async fn tokenomics_transaction_operations(
                     });
                 }
             }
-            SpecialTransactionOutcome::PaydayPoolReward {
-                pool_owner,
-                transaction_fees,
-                baker_reward,
-                finalization_reward,
-            } => {
-
-            },
         }
     }
     Ok(res)

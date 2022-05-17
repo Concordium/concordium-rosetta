@@ -341,7 +341,7 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
                             account.to_string(),
@@ -357,7 +357,7 @@ async fn tokenomics_transaction_operations(
                             &mut index_offset,
                         ))),
                         related_operations:   None,
-                        _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
                             ACCOUNT_REWARD_BAKING.to_string(),

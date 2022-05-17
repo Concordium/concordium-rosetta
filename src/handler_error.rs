@@ -35,7 +35,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     //                       * block identifier
     //  9000 -  9999: internal error
     //                 9000: JSON encoding failed
-    //                 9900: Inconsistent state
     // 10000 - 19999: proxy error
     //                10000: client RPC error
     //                10100: client query error

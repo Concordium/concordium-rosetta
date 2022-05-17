@@ -142,8 +142,8 @@ pub enum Address {
     BakingRewardAccount,
     /// Virtual finalization reward account.
     FinalizationRewardAccount,
-    /// Virtual pool accrue account. Baker ID of None denotes the passive pool's
-    /// accrue account.
+    /// Virtual pool accrue account. Baker ID of None denotes the accrue account
+    /// of the passive pool.
     PoolAccrueAccount(Option<BakerId>),
 }
 

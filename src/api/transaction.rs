@@ -211,10 +211,10 @@ struct ChainUpdateMetadata {
     payload:        UpdatePayload,
 }
 
-pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
-pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
-pub const ACCOUNT_ACCRUED_FOUNDATION: &str = "accrued_foundation_account";
-pub const ACCOUNT_ACCRUED_POOL_PREFIX: &str = "accrued_pool_account:";
+pub const ACCOUNT_REWARD_BAKING: &str = "baking_reward_account";
+pub const ACCOUNT_REWARD_FINALIZATION: &str = "finalization_reward_account";
+pub const ACCOUNT_ACCRUE_FOUNDATION: &str = "foundation_accrue_account";
+pub const ACCOUNT_ACCRUE_POOL_PREFIX: &str = "pool_accrue_account:";
 pub const POOL_PASSIVE: &str = "passive";
 
 pub const OPERATION_STATUS_OK: &str = "ok";

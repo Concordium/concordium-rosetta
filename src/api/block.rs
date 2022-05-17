@@ -108,7 +108,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_BAKING_REWARD.to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_baking_reward.microccd as i128,
@@ -124,7 +124,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_finalization_reward.microccd as i128,
@@ -228,7 +228,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_BAKING_REWARD.to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(-baking_reward_sum))),
                     coin_change:          None,
@@ -271,7 +271,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         -finalization_reward_sum,
@@ -296,7 +296,7 @@ async fn tokenomics_transaction_operations(
             } => {
                 if transaction_fees.microccd != 0 {
                     let pool_account_address =
-                        format!("{}{}", ACCOUNT_ACCRUED_POOL_PREFIX, match current_pool_owner {
+                        format!("{}{}", ACCOUNT_ACCRUE_POOL_PREFIX, match current_pool_owner {
                             None => POOL_PASSIVE.to_string(),
                             Some(id) => id.to_string(),
                         });
@@ -360,7 +360,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_PAYDAY_BAKER_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_BAKING_REWARD.to_string(),
+                            ACCOUNT_REWARD_BAKING.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             -(baker_reward.microccd as i128),
@@ -394,7 +394,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_FINALIZATION_REWARD.to_string(),
+                            ACCOUNT_REWARD_FINALIZATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             -(finalization_reward.microccd as i128),
@@ -432,7 +432,7 @@ async fn tokenomics_transaction_operations(
                     _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_ACCRUED_FOUNDATION.to_string(),
+                        ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         -(development_charge.microccd as i128),
@@ -459,7 +459,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_ACCRUED_FOUNDATION.to_string(),
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             foundation_charge.microccd as i128,
@@ -478,7 +478,7 @@ async fn tokenomics_transaction_operations(
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(format!(
                             "{}{}",
-                            ACCOUNT_ACCRUED_POOL_PREFIX,
+                            ACCOUNT_ACCRUE_POOL_PREFIX,
                             baker_id.to_string()
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
@@ -498,7 +498,7 @@ async fn tokenomics_transaction_operations(
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(format!(
                             "{}{}",
-                            ACCOUNT_ACCRUED_POOL_PREFIX, POOL_PASSIVE
+                            ACCOUNT_ACCRUE_POOL_PREFIX, POOL_PASSIVE
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
                             passive_reward.microccd as i128,
@@ -516,7 +516,7 @@ async fn tokenomics_transaction_operations(
                         _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_BAKING_REWARD.to_string(),
+                            ACCOUNT_REWARD_BAKING.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             baker_reward.microccd as i128,

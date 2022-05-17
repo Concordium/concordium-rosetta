@@ -1,18 +1,12 @@
 use crate::api::{
     error::{ApiError, ApiResult, InvalidBlockIdentifierError},
-    transaction::{
-        ACCOUNT_ACCRUED_POOL_PREFIX, ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD,
-        POOL_PASSIVE,
-    },
+    transaction::*,
 };
 use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{
-        hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, BakerId, PoolStatus,
-        RewardsOverview,
-    },
+    types::{hashes::BlockHash, queries::BlockInfo, *},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
@@ -162,9 +156,9 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Addr
 
 pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
-        ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
-        ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
-        _ => match addr.strip_prefix(ACCOUNT_ACCRUED_POOL_PREFIX) {
+        ACCOUNT_REWARD_BAKING => Ok(Address::BakingRewardAccount),
+        ACCOUNT_REWARD_FINALIZATION => Ok(Address::FinalizationRewardAccount),
+        _ => match addr.strip_prefix(ACCOUNT_ACCRUE_POOL_PREFIX) {
             Some(pool) => {
                 if pool == POOL_PASSIVE {
                     Ok(Address::PoolAccrueAccount(None))

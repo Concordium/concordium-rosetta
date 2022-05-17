@@ -1,17 +1,21 @@
 use crate::api::{
     error::{ApiError, ApiResult, InvalidBlockIdentifierError},
-    transaction::{ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD, POOL_PASSIVE},
+    transaction::{
+        ACCOUNT_ACCRUED_POOL_PREFIX, ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD,
+        POOL_PASSIVE,
+    },
 };
 use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, RewardsOverview},
+    types::{
+        hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, BakerId, PoolStatus,
+        RewardsOverview,
+    },
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
-use concordium_rust_sdk::types::{BakerId, PoolStatus};
-use crate::api::transaction::ACCOUNT_ACCRUED_POOL_PREFIX;
 
 #[derive(Clone)]
 pub struct QueryHelper {
@@ -61,8 +65,14 @@ impl QueryHelper {
             }
             Address::PoolAccrueAccount(baker_id) => {
                 match self.client.clone().get_pool_status(baker_id, &block_hash).await? {
-                    PoolStatus::BakerPool { all_pool_total_capital, .. } => all_pool_total_capital,
-                    PoolStatus::PassiveDelegation { all_pool_total_capital, .. } => all_pool_total_capital,
+                    PoolStatus::BakerPool {
+                        all_pool_total_capital,
+                        ..
+                    } => all_pool_total_capital,
+                    PoolStatus::PassiveDelegation {
+                        all_pool_total_capital,
+                        ..
+                    } => all_pool_total_capital,
                 }
             }
         };
@@ -129,8 +139,8 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
-/// Helper type for providing a way to represent virtual reward/accrue accounts in addition to
-/// ordinary ones.
+/// Helper type for providing a way to represent virtual reward/accrue accounts
+/// in addition to ordinary ones.
 pub enum Address {
     /// Real, ordinary account.
     Account(AccountAddress),
@@ -138,7 +148,8 @@ pub enum Address {
     BakingRewardAccount,
     /// Virtual finalization reward account.
     FinalizationRewardAccount,
-    /// Virtual pool accrue account. Baker ID of None denotes the passive pool's accrue account.
+    /// Virtual pool accrue account. Baker ID of None denotes the passive pool's
+    /// accrue account.
     PoolAccrueAccount(Option<BakerId>),
 }
 
@@ -153,23 +164,21 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
         ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
         ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
-        _ => {
-            match addr.strip_prefix(ACCOUNT_ACCRUED_POOL_PREFIX) {
-                Some(pool) => {
-                    if pool == POOL_PASSIVE {
-                        Ok(Address::PoolAccrueAccount(None))
-                    } else {
-                        let baker_id = pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
-                        Ok(Address::PoolAccrueAccount(Some(baker_id)))
-                    }
+        _ => match addr.strip_prefix(ACCOUNT_ACCRUED_POOL_PREFIX) {
+            Some(pool) => {
+                if pool == POOL_PASSIVE {
+                    Ok(Address::PoolAccrueAccount(None))
+                } else {
+                    let baker_id = pool
+                        .parse()
+                        .map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
+                    Ok(Address::PoolAccrueAccount(Some(baker_id)))
                 }
-                None => {
-                    match AccountAddress::from_str(addr) {
-                        Ok(a) => Ok(Address::Account(a)),
-                        Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
-                    }
-                },
             }
+            None => match AccountAddress::from_str(addr) {
+                Ok(a) => Ok(Address::Account(a)),
+                Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+            },
         },
     }
 }

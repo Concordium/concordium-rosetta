@@ -1,7 +1,4 @@
-use concordium_rust_sdk::{
-    endpoints::{QueryError, RPCError},
-    id::types::AccountAddress,
-};
+use concordium_rust_sdk::endpoints::{QueryError, RPCError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -87,9 +84,6 @@ pub enum ApiError {
     // Internal errors.
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
-
-    #[error("account '{0}' is not a delegator")]
-    AccountNotDelegator(AccountAddress),
 
     // Proxy errors.
     #[error("client RPC error")]

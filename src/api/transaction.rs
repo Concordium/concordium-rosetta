@@ -252,7 +252,6 @@ pub const OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD: &str = "payday_transact
 pub const OPERATION_TYPE_PAYDAY_BAKER_REWARD: &str = "payday_baker_reward";
 pub const OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD: &str = "payday_finalization_reward";
 pub const OPERATION_TYPE_BLOCK_ACCRUE_REWARD: &str = "block_accrue_reward";
-pub const OPERATION_TYPE_PAYDAY_POOL_REWARD: &str = "payday_pool_reward";
 pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
 pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 

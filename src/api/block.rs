@@ -171,9 +171,7 @@ async fn tokenomics_transaction_operations(
                 baker,
                 foundation_charge,
                 foundation_account,
-                transaction_fees,
-                old_gas_account,
-                new_gas_account,
+                ..
             } => {
                 // TODO Add gas account operations.
                 if baker_reward.microccd != 0 {
@@ -215,7 +213,7 @@ async fn tokenomics_transaction_operations(
             }
             SpecialTransactionOutcome::BakingRewards {
                 baker_rewards,
-                remainder,
+                ..
             } => {
                 let mut baking_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
@@ -551,7 +549,7 @@ async fn tokenomics_transaction_operations(
                             ACCOUNT_BAKING_REWARD.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            transaction_fees.microccd as i128,
+                            baker_reward.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -563,7 +561,9 @@ async fn tokenomics_transaction_operations(
                 transaction_fees,
                 baker_reward,
                 finalization_reward,
-            } => (),
+            } => {
+
+            },
         }
     }
     Ok(res)

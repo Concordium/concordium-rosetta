@@ -47,7 +47,7 @@ struct Args {
     sender_address:   AccountAddress,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_address: AccountAddress,
-    #[clap(long = "amount", help = "Amount to transfer.")]
+    #[clap(long = "amount", help = "Amount of CCD to transfer.")]
     amount:        Amount,
     #[clap(
         long = "keys-file",
@@ -55,7 +55,7 @@ struct Args {
     )]
     sender_keys_file:     String,
     #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
-    memo_hex:      Option<Vec<u8>>,
+    memo_hex:      Option<String>,
 }
 
 #[tokio::main]
@@ -100,7 +100,7 @@ async fn main() -> Result<()> {
         Some(memo) => Payload::TransferWithMemo {
             to_address,
             amount,
-            memo: Memo::try_from(memo)?,
+            memo: Memo::try_from(hex::decode(memo)?)?,
         },
     };
     let pre_tx = construct::make_transaction(
@@ -114,13 +114,16 @@ async fn main() -> Result<()> {
         payload,
     );
     let signed_tx = pre_tx.sign(&sender_keys);
+    let block_item = BlockItem::AccountTransaction(signed_tx);
     let success = client
         .clone()
-        .send_transaction(DEFAULT_NETWORK_ID, &BlockItem::AccountTransaction(signed_tx))
+        .send_transaction(DEFAULT_NETWORK_ID, &block_item)
         .await
         .context("cannot send transaction to node")?;
     if !success {
         return Err(anyhow!("node rejected transaction"));
     }
+
+    println!("Sent transaction '{}'", block_item.hash());
     Ok(())
 }

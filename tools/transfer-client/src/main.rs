@@ -28,7 +28,7 @@ struct Args {
     sender_addr:   String,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_addr: String,
-    #[clap(long = "amount", help = "Amount to transfer.")]
+    #[clap(long = "amount", help = "Amount of μCCD to transfer.")]
     amount:        i64,
     #[clap(
         long = "keys-file",

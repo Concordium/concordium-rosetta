@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Upgrade Rosetta spec to v1.4.12.
+
 ## 0.3.1
 
 - Log every request to the server.

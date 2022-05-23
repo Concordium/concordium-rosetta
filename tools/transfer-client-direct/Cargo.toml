@@ -10,7 +10,7 @@ version = "*"
 [dependencies]
 anyhow = "1"
 clap = { version = "3.1", features = ["derive"] }
-chrono = { version = "0.4" }
+chrono = "0.4"
 hex = "0.4"
 tokio = "1.8"
 tonic = "0.5"

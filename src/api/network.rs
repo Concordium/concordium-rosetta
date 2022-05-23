@@ -96,6 +96,8 @@ impl NetworkApi {
                 call_methods:              vec![], // Call API is not implemented
                 balance_exemptions:        vec![],
                 mempool_coins:             false, // mempool is not available
+                block_hash_case:           Some(Case::Null), // case insensitive
+                transaction_hash_case:     Some(Case::Null), // case insensitive
             }),
         })
     }

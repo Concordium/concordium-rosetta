@@ -5,7 +5,7 @@ use concordium_rust_sdk::types::transactions::ExactSizeTransactionSigner;
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
-use std::ops::Add;
+use std::{ops::Add, path::PathBuf};
 use transfer_client::*;
 
 #[derive(Parser, Debug)]
@@ -28,13 +28,13 @@ struct Args {
     sender_addr:   String,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_addr: String,
-    #[clap(long = "amount", help = "Amount to transfer.")]
+    #[clap(long = "amount", help = "Amount of μCCD to transfer.")]
     amount:        i64,
     #[clap(
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
-    keys_file:     String,
+    keys_file:     PathBuf,
     #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
     memo_hex:      Option<String>,
 }

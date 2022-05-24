@@ -227,16 +227,10 @@ Errors propagated from the SDK are given a 5xx code.
 
 ### Construction API
 
-The tool [`tools/transfer-client`](tools/transfer-client) project is a simple client
-that uses the Rosetta implementation to make a CCD transfer from one account to another.
-The transfer may optionally include a memo.
+Transfer 1000 µCCD along with a memo from testnet accounts
+`3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi` to `4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS`.
 
-### Example
-
-Transfer 1000 µCCD along with a memo from testnet account
-`3rsc7HNLVKnFz9vmKkAaEMVpNkFA4hZxJpZinCtUTJbBh58yYi` to `4Gaw3Y44fyGzaNbG69eZyr1Q5fByMvSuQ5pKRW7xRmDzajKtMS`
-
-The command for doing this using the client is
+The command for doing this (with memo) using the [`transfer-client`](#transfer-client) tool is
 
 ```shell
 transfer-client \
@@ -528,7 +522,7 @@ The request/response flow of the command is a sequence of calls to the Construct
 9. The hash may be recomputed later (or before) with the `hash` endpoint,
    which is just a dry-run variant of `submit`.
 
-### Failure handling
+## Failure handling
 
 Rosetta doesn't check most causes of transactions being invalid;
 i.e. things like nonexistent accounts, bad signatures, and insufficient funds.
@@ -549,6 +543,24 @@ then the only outcome of the transaction is an error message (and the deduction 
 The bottom line is that the only way to confirm that a transaction is successfully applied
 is to check the hash against the chain.
 Also, the block containing the transaction has to be finalized for the transaction to be as well.
+
+## Tools
+
+### Transfer client
+
+The [`transfer-client`](tools/transfer-client) tool (used in [example](#Example) above) is a simple client
+that uses the Rosetta implementation to make a CCD transfer from one account to another.
+The transfer may optionally include a memo.
+
+For comparison, a similar tool [`transfer-client-direct`](tools/transfer-client-direct) does the same thing
+except that it uses the SDK directly instead of going through a Rosetta server.
+
+### Query account
+
+The [`query-account`](tools/query-account) tool traverses the chain,
+looking for transactions related to a given account.
+
+The intent is to provide a way for testers to exercise the Data API.
 
 ## Resources
 

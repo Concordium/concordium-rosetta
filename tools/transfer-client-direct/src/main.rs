@@ -13,7 +13,7 @@ use concordium_rust_sdk::{
         Memo,
     },
 };
-use std::{convert::TryFrom, fs, ops::Add};
+use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -51,7 +51,7 @@ struct Args {
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
-    sender_keys_file: String,
+    sender_keys_file: PathBuf,
     #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
     memo_hex:         Option<String>,
 }

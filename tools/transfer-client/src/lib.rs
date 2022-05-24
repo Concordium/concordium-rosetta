@@ -6,13 +6,7 @@ use concordium_rust_sdk::{
 };
 use rosetta::models::*;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeMap,
-    convert::TryFrom,
-    fs,
-    path::Path,
-    str::FromStr,
-};
+use std::{collections::BTreeMap, convert::TryFrom, fs, path::Path, str::FromStr};
 
 #[derive(Deserialize)]
 pub struct Metadata {

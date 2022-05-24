@@ -17,6 +17,7 @@ use clap::Parser;
 use concordium_rust_sdk::endpoints::Client;
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
+use tonic::transport::Endpoint;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -41,24 +42,17 @@ struct Args {
     )]
     port:       u16,
     #[clap(
-        long = "grpc-host",
-        env = "CONCORDIUM_ROSETTA_GRPC_HOST",
-        help = "Hostname or IP of the node's gRPC endpoint.",
-        default_value = "localhost"
+        long = "node",
+        env = "CONCORDIUM_ROSETTA_GRPC_NODE",
+        help = "Endpoint (<hostname or IP>:<port>) of the node's gRPC endpoint.",
+        default_value = "localhost:8080"
     )]
-    grpc_host:  String,
+    node:  Endpoint,
     #[clap(
-        long = "grpc-port",
-        env = "CONCORDIUM_ROSETTA_GRPC_PORT",
-        help = "Port of the node's gRPC endpoint.",
-        default_value = "10000"
-    )]
-    grpc_port:  u16,
-    #[clap(
-        long = "grpc-token",
-        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
-        help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin"
+    long = "grpc-token",
+    env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
+    help = "Access token of the node's gRPC endpoint.",
+    default_value = "rpcadmin"
     )]
     grpc_token: String,
 }
@@ -72,13 +66,8 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // Initialize gRPC and client.
-    let endpoint = tonic::transport::Endpoint::from_shared(format!(
-        "http://{}:{}",
-        args.grpc_host, args.grpc_port
-    ))
-    .context("invalid host and/or port")?;
     let client =
-        Client::connect(endpoint, args.grpc_token).await.context("cannot connect to node")?;
+        Client::connect(args.node, args.grpc_token).await.context("cannot connect to node")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

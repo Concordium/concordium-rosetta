@@ -14,6 +14,7 @@ use concordium_rust_sdk::{
     },
 };
 use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
+use tonic::transport::Endpoint;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -24,17 +25,11 @@ use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
 )]
 struct Args {
     #[clap(
-        long = "grpc-host",
-        help = "Hostname or IP of the node's gRPC endpoint.",
-        default_value = "localhost"
+        long = "node",
+        help = "Endpoint (<hostname or IP>:<port>) of the node's gRPC endpoint.",
+        default_value = "localhost:8080"
     )]
-    grpc_host:        String,
-    #[clap(
-        long = "grpc-port",
-        help = "Port of the node's gRPC endpoint.",
-        default_value = "10000"
-    )]
-    grpc_port:        u16,
+    node:             Endpoint,
     #[clap(
         long = "grpc-token",
         help = "Access token of the node's gRPC endpoint.",
@@ -61,8 +56,7 @@ async fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
     let sender_keys_file = args.sender_keys_file;
-    let grpc_host = args.grpc_host;
-    let grpc_port = args.grpc_port;
+    let grpc_endpoint = args.node;
     let grpc_token = args.grpc_token;
     let to_address = args.receiver_address;
     let from_address = args.sender_address;
@@ -76,10 +70,8 @@ async fn main() -> Result<()> {
         serde_json::from_str(&sender_keys_json).context("cannot parse keys loaded from file")?;
 
     // Configure client.
-    let endpoint =
-        tonic::transport::Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))
-            .context("invalid host and/or port")?;
-    let client = Client::connect(endpoint, grpc_token).await.context("cannot connect to node")?;
+    let client =
+        Client::connect(grpc_endpoint, grpc_token).await.context("cannot connect to node")?;
 
     // Configure and send transfer.
     let consensus_status =

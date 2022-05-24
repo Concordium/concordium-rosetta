@@ -12,5 +12,9 @@ Name | Type | Description | Notes
 **call_methods** | **Vec<String>** | All methods that are supported by the /call endpoint. Communicating which parameters should be provided to /call is the responsibility of the implementer (this is en lieu of defining an entire type system and requiring the implementer to define that in Allow).  | 
 **balance_exemptions** | [**Vec<crate::models::BalanceExemption>**](BalanceExemption.md) | BalanceExemptions is an array of BalanceExemption indicating which account balances could change without a corresponding Operation.  BalanceExemptions should be used sparingly as they may introduce significant complexity for integrators that attempt to reconcile all account balance changes.  If your implementation relies on any BalanceExemptions, you MUST implement historical balance lookup (the ability to query an account balance at any BlockIdentifier).  | 
 **mempool_coins** | **bool** | Any Rosetta implementation that can update an AccountIdentifier's unspent coins based on the contents of the mempool should populate this field as true. If false, requests to `/account/coins` that set `include_mempool` as true will be automatically rejected.  | 
+**block_hash_case** | Option<[**crate::models::Case**](Case.md)> |  | [optional]
+**transaction_hash_case** | Option<[**crate::models::Case**](Case.md)> |  | [optional]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

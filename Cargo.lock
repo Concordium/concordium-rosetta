@@ -357,7 +357,7 @@ dependencies = [
 
 [[package]]
 name = "concordium-rosetta"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -2102,7 +2102,7 @@ dependencies = [
 
 [[package]]
 name = "rosetta"
-version = "1.4.10"
+version = "1.4.12"
 dependencies = [
  "reqwest",
  "serde",

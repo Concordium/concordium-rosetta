@@ -1,6 +1,6 @@
 [package]
 name = "rosetta"
-version = "1.4.10"
+version = "1.4.12"
 authors = ["OpenAPI Generator team and contributors"]
 edition = "2018"
 

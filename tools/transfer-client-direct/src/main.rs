@@ -8,14 +8,12 @@ use concordium_rust_sdk::{
     id::types::{AccountAddress, AccountKeys},
     types::{
         transactions::{
-            construct, construct::GivenEnergy, cost, ExactSizeTransactionSigner, Payload,
+            construct, construct::GivenEnergy, cost, BlockItem, ExactSizeTransactionSigner, Payload,
         },
+        Memo,
     },
 };
-use std::{fs, ops::Add};
-use std::convert::TryFrom;
-use concordium_rust_sdk::types::Memo;
-use concordium_rust_sdk::types::transactions::BlockItem;
+use std::{convert::TryFrom, fs, ops::Add};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -30,32 +28,32 @@ struct Args {
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:     String,
+    grpc_host:        String,
     #[clap(
         long = "grpc-port",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
-    grpc_port:     u16,
+    grpc_port:        u16,
     #[clap(
         long = "grpc-token",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
-    grpc_token:    String,
+    grpc_token:       String,
     #[clap(long = "sender", help = "Address of the account sending the transfer.")]
     sender_address:   AccountAddress,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_address: AccountAddress,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:        Amount,
+    amount:           Amount,
     #[clap(
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
-    sender_keys_file:     String,
+    sender_keys_file: String,
     #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
-    memo_hex:      Option<String>,
+    memo_hex:         Option<String>,
 }
 
 #[tokio::main]
@@ -72,25 +70,25 @@ async fn main() -> Result<()> {
     let memo = args.memo_hex;
 
     // Load sender keys.
-    let sender_keys_json = fs::read_to_string(&sender_keys_file).context("cannot read keys file")?;
-    let sender_keys : AccountKeys =
+    let sender_keys_json =
+        fs::read_to_string(&sender_keys_file).context("cannot read keys file")?;
+    let sender_keys: AccountKeys =
         serde_json::from_str(&sender_keys_json).context("cannot parse keys loaded from file")?;
-    
+
     // Configure client.
-    let endpoint = tonic::transport::Endpoint::from_shared(format!(
-        "http://{}:{}",
-        grpc_host, grpc_port
-    ))
-    .context("invalid host and/or port")?;
-    let client =
-        Client::connect(endpoint, grpc_token).await.context("cannot connect to node")?;
+    let endpoint =
+        tonic::transport::Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))
+            .context("invalid host and/or port")?;
+    let client = Client::connect(endpoint, grpc_token).await.context("cannot connect to node")?;
 
     // Configure and send transfer.
-    let consensus_status = client.clone().get_consensus_status().await.context("cannot resolve latest block")?;
+    let consensus_status =
+        client.clone().get_consensus_status().await.context("cannot resolve latest block")?;
     let sender_info = client
         .clone()
         .get_account_info(from_address, &consensus_status.last_finalized_block)
-        .await.context("cannot resolve next nonce of sender account")?;
+        .await
+        .context("cannot resolve next nonce of sender account")?;
 
     let payload = match memo {
         None => Payload::Transfer {
@@ -106,7 +104,7 @@ async fn main() -> Result<()> {
     let pre_tx = construct::make_transaction(
         from_address,
         sender_info.account_nonce,
-        TransactionTime::from_seconds(Utc::now().add(Duration::hours(2)).timestamp_millis() as u64), // TODO Make configurable.
+        TransactionTime::from_seconds(Utc::now().add(Duration::hours(2)).timestamp_millis() as u64), /* TODO Make configurable. */
         GivenEnergy::Add {
             num_sigs: sender_keys.num_keys(),
             energy:   cost::SIMPLE_TRANSFER,

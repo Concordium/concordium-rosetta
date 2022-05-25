@@ -17,6 +17,7 @@ use clap::Parser;
 use concordium_rust_sdk::endpoints::Client;
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
+use tonic::transport::Endpoint;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -32,35 +33,28 @@ struct Args {
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
-    network:    String,
+    network:            String,
     #[clap(
         long = "port",
         env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
-    port:       u16,
+    port:               u16,
     #[clap(
-        long = "grpc-host",
-        env = "CONCORDIUM_ROSETTA_GRPC_HOST",
-        help = "Hostname or IP of the node's gRPC endpoint.",
-        default_value = "localhost"
+        long = "node",
+        env = "CONCORDIUM_ROSETTA_NODE",
+        help = "Endpoint (<hostname or IP>:<port>) of the node's gRPC endpoint.",
+        default_value = "localhost:8080"
     )]
-    grpc_host:  String,
+    node_grpc_endpoint: Endpoint,
     #[clap(
-        long = "grpc-port",
-        env = "CONCORDIUM_ROSETTA_GRPC_PORT",
-        help = "Port of the node's gRPC endpoint.",
-        default_value = "10000"
-    )]
-    grpc_port:  u16,
-    #[clap(
-        long = "grpc-token",
-        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
+        long = "node-token",
+        env = "CONCORDIUM_ROSETTA_NODE_TOKEN",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
-    grpc_token: String,
+    node_grpc_token:    String,
 }
 
 #[tokio::main]
@@ -72,13 +66,9 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // Initialize gRPC and client.
-    let endpoint = tonic::transport::Endpoint::from_shared(format!(
-        "http://{}:{}",
-        args.grpc_host, args.grpc_port
-    ))
-    .context("invalid host and/or port")?;
-    let client =
-        Client::connect(endpoint, args.grpc_token).await.context("cannot connect to node")?;
+    let client = Client::connect(args.node_grpc_endpoint, args.node_grpc_token)
+        .await
+        .context("cannot connect to node")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

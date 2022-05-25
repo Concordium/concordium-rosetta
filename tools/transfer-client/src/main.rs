@@ -1,11 +1,11 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
-use concordium_rust_sdk::types::transactions::ExactSizeTransactionSigner;
+use concordium_rust_sdk::types::{transactions::ExactSizeTransactionSigner, Memo};
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
-use std::{ops::Add, path::PathBuf};
+use std::{convert::TryFrom, ops::Add, path::PathBuf};
 use transfer_client::*;
 
 #[derive(Parser, Debug)]
@@ -35,28 +35,57 @@ struct Args {
         help = "Path of file containing the signing keys for the sender account."
     )]
     keys_file:     PathBuf,
-    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
+    #[clap(
+        long = "memo-hex",
+        help = "Hex-encoded memo to attach to the transaction.",
+        group = "memo"
+    )]
     memo_hex:      Option<String>,
+    #[clap(
+        long = "memo-string",
+        help = "Memo string to attach (CBOR-encoded) to the transaction.",
+        group = "memo"
+    )]
+    memo_str:      Option<String>,
 }
 
 fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
 
-    // Constants.
-    let network_id = NetworkIdentifier {
-        blockchain:             "concordium".to_string(),
-        network:                args.network,
-        sub_network_identifier: None,
+    let url = args.url;
+    let network = args.network;
+    let keys_file = args.keys_file;
+
+    let memo_bytes = match (args.memo_hex, args.memo_str) {
+        (None, None) => None,
+        (Some(hex), None) => Some(hex::decode(hex)?),
+        (None, Some(str)) => {
+            let mut buf = Vec::new();
+            serde_cbor::to_writer(&mut buf, &serde_cbor::Value::Text(str))?;
+            Some(buf)
+        }
+        (Some(_), Some(_)) => unreachable!(),
     };
+    let memo = memo_bytes.map(Memo::try_from).transpose()?;
+    // let memo = match memo_bytes {
+    //     None => None,
+    //     Some(m) => Some(Memo::try_from(m)?),
+    // };
+
+    // Constants.
+    let network_id = NetworkIdentifier::new("concordium".to_string(), network);
 
     // Configure HTTP client.
-    let base_url = Url::parse(args.url.as_str())?;
+    let base_url = Url::parse(url.as_str())?;
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = load_keys(&args.keys_file)?;
-    let operations = test_transfer_operations(args.sender_addr, args.receiver_addr, args.amount);
+    let sender_keys = load_keys(&keys_file)?;
+    let sender_addr = args.sender_addr;
+    let receiver_addr = args.receiver_addr;
+    let amount = args.amount;
+    let operations = test_transfer_operations(sender_addr, receiver_addr, amount);
 
     // Perform transfer.
     let preprocess_response =
@@ -67,12 +96,13 @@ fn main() -> Result<()> {
         network_id.clone(),
         preprocess_response.options, // options from preprocess response must be passed directly
     )?;
+
     let metadata = serde_json::from_value::<Metadata>(metadata_response.metadata)?;
     let payload_metadata = serde_json::to_value(&Payload {
-        account_nonce:      metadata.account_nonce,
-        signature_count:    sender_keys.num_keys(),
+        account_nonce: metadata.account_nonce,
+        signature_count: sender_keys.num_keys(),
         expiry_unix_millis: Utc::now().add(Duration::hours(2)).timestamp_millis() as u64,
-        memo:               parse_memo(args.memo_hex)?,
+        memo,
     })?;
     let payloads_response = call_payloads(
         client.clone(),

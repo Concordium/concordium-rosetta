@@ -52,9 +52,17 @@ struct Args {
         help = "Path of file containing the signing keys for the sender account."
     )]
     sender_keys_file: PathBuf,
-    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transaction.", group = "memo")]
+    #[clap(
+        long = "memo-hex",
+        help = "Hex-encoded memo to attach to the transaction.",
+        group = "memo"
+    )]
     memo_hex:         Option<String>,
-    #[clap(long = "memo-string", help = "Memo string to attach to the transaction (CBOR-encoded).", group = "memo")]
+    #[clap(
+        long = "memo-string",
+        help = "Memo string to attach (CBOR-encoded) to the transaction.",
+        group = "memo"
+    )]
     memo_str:         Option<String>,
 }
 
@@ -69,20 +77,21 @@ async fn main() -> Result<()> {
     let to_address = args.receiver_address;
     let from_address = args.sender_address;
     let amount = args.amount;
-    let memo_hex = match (args.memo_hex, args.memo_str) {
-        (Some(_), Some(_)) => return Err(anyhow!("The arguments 'memo-hex' and 'memo-string' are mutually exclusive")),
-        (Some(hex), None) => Some(hex),
+    let memo_bytes = match (args.memo_hex, args.memo_str) {
+        (None, None) => None,
+        (Some(hex), None) => Some(hex::decode(hex)?),
         (None, Some(str)) => {
-            let mut buf: Vec<u8> = Vec::new();
+            let mut buf = Vec::new();
             serde_cbor::to_writer(&mut buf, &serde_cbor::Value::Text(str))?;
-            Some(buf.to_string())
-        },
-        (None, None) => unreachable!(),
+            Some(buf)
+        }
+        (Some(_), Some(_)) => unreachable!(),
     };
-    if let Some(h) = memo_hex {
-        println!("memo_hex: {}", h);
-    }
-    return Ok(());
+    let memo = memo_bytes.map(Memo::try_from).transpose()?;
+    // let memo = match memo_bytes {
+    //     None => None,
+    //     Some(m) => Some(Memo::try_from(m)?),
+    // };
 
     // Load sender keys.
     let sender_keys_json =
@@ -105,15 +114,15 @@ async fn main() -> Result<()> {
         .await
         .context("cannot resolve next nonce of sender account")?;
 
-    let payload = match memo_hex {
+    let payload = match memo {
         None => Payload::Transfer {
             to_address,
             amount,
         },
-        Some(memo) => Payload::TransferWithMemo {
+        Some(m) => Payload::TransferWithMemo {
             to_address,
             amount,
-            memo: Memo::try_from(hex::decode(memo)?)?,
+            memo: m,
         },
     };
     let pre_tx = construct::make_transaction(

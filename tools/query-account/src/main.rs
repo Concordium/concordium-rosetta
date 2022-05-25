@@ -26,18 +26,16 @@ struct Args {
 fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
+    let url = args.url;
+    let network = args.network;
+    let address = args.address;
 
     // Constants.
-    let network_id = NetworkIdentifier {
-        blockchain:             "concordium".to_string(),
-        network:                args.network,
-        sub_network_identifier: None,
-    };
+    let network_id = NetworkIdentifier::new("concordium".to_string(), network);
 
     // Configure HTTP client.
-    let base_url = Url::parse(args.url.as_str())?;
+    let base_url = Url::parse(url.as_str())?;
     let client = Client::builder().connection_verbose(true).build()?;
-    let address = args.address;
 
     let mut next_from_height = 0;
     loop {

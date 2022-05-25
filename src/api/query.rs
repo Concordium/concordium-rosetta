@@ -61,7 +61,11 @@ impl QueryHelper {
                 match self.client.clone().get_reward_status(&block_hash).await? {
                     RewardsOverview::V0 {
                         ..
-                    } => return Err(ApiError::InvalidAccountAddress(ACCOUNT_ACCRUE_FOUNDATION.to_string())),
+                    } => {
+                        return Err(ApiError::InvalidAccountAddress(
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                        ))
+                    }
                     RewardsOverview::V1 {
                         foundation_transaction_rewards,
                         ..

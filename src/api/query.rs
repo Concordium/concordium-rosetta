@@ -57,6 +57,17 @@ impl QueryHelper {
                     } => common.finalization_reward_account,
                 }
             }
+            Address::FoundationAccrueAccount => {
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        ..
+                    } => return Err(ApiError::InvalidAccountAddress(ACCOUNT_ACCRUE_FOUNDATION.to_string())),
+                    RewardsOverview::V1 {
+                        foundation_transaction_rewards,
+                        ..
+                    } => foundation_transaction_rewards,
+                }
+            }
             Address::PoolAccrueAccount(baker_id) => {
                 match self.client.clone().get_pool_status(baker_id, &block_hash).await? {
                     PoolStatus::BakerPool {
@@ -142,6 +153,8 @@ pub enum Address {
     BakingRewardAccount,
     /// Virtual finalization reward account.
     FinalizationRewardAccount,
+    /// Virtual foundation accrue account.
+    FoundationAccrueAccount,
     /// Virtual pool accrue account. Baker ID of None denotes the accrue account
     /// of the passive pool.
     PoolAccrueAccount(Option<BakerId>),
@@ -161,18 +174,21 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
         _ => match addr.strip_prefix(ACCOUNT_ACCRUE_POOL_PREFIX) {
             Some(pool) => {
                 if pool == POOL_PASSIVE {
-                    Ok(Address::PoolAccrueAccount(None))
-                } else {
-                    let baker_id = pool
-                        .parse()
-                        .map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
-                    Ok(Address::PoolAccrueAccount(Some(baker_id)))
+                    return Ok(Address::PoolAccrueAccount(None));
+                }
+                let baker_id =
+                    pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
+                Ok(Address::PoolAccrueAccount(Some(baker_id)))
+            }
+            None => {
+                if addr == ACCOUNT_ACCRUE_FOUNDATION {
+                    return Ok(Address::FoundationAccrueAccount);
+                }
+                match AccountAddress::from_str(addr) {
+                    Ok(a) => Ok(Address::Account(a)),
+                    Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
                 }
             }
-            None => match AccountAddress::from_str(addr) {
-                Ok(a) => Ok(Address::Account(a)),
-                Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
-            },
         },
     }
 }

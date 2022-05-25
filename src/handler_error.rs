@@ -257,7 +257,9 @@ pub fn invalid_input_invalid_value_or_identifier_error(
         code:        1200,
         message:     "invalid input: invalid value or identifier".to_string(),
         description: Some(
-            "The provided value or identifier is incorrectly typed or formatted.".to_string(),
+            "The provided value or identifier is incorrectly typed or formatted. Note that some \
+             identifiers are valid in newer blocks but not in older ones."
+                .to_string(),
         ),
         retriable:   false,
         details:     key_value_pairs(&[

@@ -52,8 +52,10 @@ struct Args {
         help = "Path of file containing the signing keys for the sender account."
     )]
     sender_keys_file: PathBuf,
-    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
+    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transaction.", group = "memo")]
     memo_hex:         Option<String>,
+    #[clap(long = "memo-string", help = "Memo string to attach to the transaction (CBOR-encoded).", group = "memo")]
+    memo_str:         Option<String>,
 }
 
 #[tokio::main]
@@ -67,7 +69,20 @@ async fn main() -> Result<()> {
     let to_address = args.receiver_address;
     let from_address = args.sender_address;
     let amount = args.amount;
-    let memo = args.memo_hex;
+    let memo_hex = match (args.memo_hex, args.memo_str) {
+        (Some(_), Some(_)) => return Err(anyhow!("The arguments 'memo-hex' and 'memo-string' are mutually exclusive")),
+        (Some(hex), None) => Some(hex),
+        (None, Some(str)) => {
+            let mut buf: Vec<u8> = Vec::new();
+            serde_cbor::to_writer(&mut buf, &serde_cbor::Value::Text(str))?;
+            Some(buf.to_string())
+        },
+        (None, None) => unreachable!(),
+    };
+    if let Some(h) = memo_hex {
+        println!("memo_hex: {}", h);
+    }
+    return Ok(());
 
     // Load sender keys.
     let sender_keys_json =
@@ -90,7 +105,7 @@ async fn main() -> Result<()> {
         .await
         .context("cannot resolve next nonce of sender account")?;
 
-    let payload = match memo {
+    let payload = match memo_hex {
         None => Payload::Transfer {
             to_address,
             amount,

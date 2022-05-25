@@ -29,26 +29,26 @@ struct Args {
         help = "Endpoint (<hostname or IP>:<port>) of the node's gRPC endpoint.",
         default_value = "localhost:8080"
     )]
-    node:             Endpoint,
+    node_grpc_endpoint: Endpoint,
     #[clap(
-        long = "grpc-token",
+        long = "node-token",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
-    grpc_token:       String,
+    node_grpc_token:    String,
     #[clap(long = "sender", help = "Address of the account sending the transfer.")]
-    sender_address:   AccountAddress,
+    sender_address:     AccountAddress,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_address: AccountAddress,
+    receiver_address:   AccountAddress,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:           Amount,
+    amount:             Amount,
     #[clap(
         long = "keys-file",
         help = "Path of file containing the signing keys for the sender account."
     )]
-    sender_keys_file: PathBuf,
+    sender_keys_file:   PathBuf,
     #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
-    memo_hex:         Option<String>,
+    memo_hex:           Option<String>,
 }
 
 #[tokio::main]
@@ -56,8 +56,8 @@ async fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
     let sender_keys_file = args.sender_keys_file;
-    let grpc_endpoint = args.node;
-    let grpc_token = args.grpc_token;
+    let grpc_endpoint = args.node_grpc_endpoint;
+    let grpc_token = args.node_grpc_token;
     let to_address = args.receiver_address;
     let from_address = args.sender_address;
     let amount = args.amount;

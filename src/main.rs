@@ -33,28 +33,28 @@ struct Args {
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
-    network:    String,
+    network:            String,
     #[clap(
         long = "port",
         env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
-    port:       u16,
+    port:               u16,
     #[clap(
         long = "node",
-        env = "CONCORDIUM_ROSETTA_GRPC_NODE",
+        env = "CONCORDIUM_ROSETTA_NODE",
         help = "Endpoint (<hostname or IP>:<port>) of the node's gRPC endpoint.",
         default_value = "localhost:8080"
     )]
-    node:  Endpoint,
+    node_grpc_endpoint: Endpoint,
     #[clap(
-    long = "grpc-token",
-    env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
-    help = "Access token of the node's gRPC endpoint.",
-    default_value = "rpcadmin"
+        long = "node-token",
+        env = "CONCORDIUM_ROSETTA_NODE_TOKEN",
+        help = "Access token of the node's gRPC endpoint.",
+        default_value = "rpcadmin"
     )]
-    grpc_token: String,
+    node_grpc_token:    String,
 }
 
 #[tokio::main]
@@ -66,8 +66,9 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // Initialize gRPC and client.
-    let client =
-        Client::connect(args.node, args.grpc_token).await.context("cannot connect to node")?;
+    let client = Client::connect(args.node_grpc_endpoint, args.node_grpc_token)
+        .await
+        .context("cannot connect to node")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

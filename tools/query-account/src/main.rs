@@ -81,9 +81,9 @@ fn traverse_block_range(
 ) -> Result<i128> {
     eprintln!("Querying blocks from height {} to {}...", from_block_height, to_block_height);
     for block_height in from_block_height..=to_block_height {
-        if block_height % 100 == 0 {
+        // if block_height % 100 == 0 {
             eprintln!("Querying block at height {}...", block_height);
-        }
+        // }
         let block_result =
             call_rosetta_block(client.clone(), base_url, network_id.clone(), block_height)?;
         if let Some(block) = block_result.block {
@@ -105,23 +105,23 @@ fn traverse_block_range(
                                 block.block_identifier.index,
                                 amount,
                             );
-                            println!(
-                                "New computed balance: {}. Actual balance: {}.",
-                                computed_balance,
-                                call_rosetta_balance(
-                                    client.clone(),
-                                    base_url,
-                                    network_id.clone(),
-                                    block_height,
-                                    address.clone(),
-                                )?
-                                .balances[0]
-                                    .value
-                            );
                         }
                     }
                 }
             }
+            println!(
+                "New computed balance: {}. Actual balance: {}.",
+                computed_balance,
+                call_rosetta_balance(
+                    client.clone(),
+                    base_url,
+                    network_id.clone(),
+                    block_height,
+                    address.clone(),
+                )?
+                    .balances[0]
+                    .value
+            );
         }
 
         if let Some(ts) = block_result.other_transactions {

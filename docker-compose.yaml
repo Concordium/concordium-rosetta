@@ -1,0 +1,13 @@
+version: '3'
+services:
+  rosetta:
+    image: concordium/rosetta:${CONCORDIUM_ROSETTA_IMAGE_TAG}
+    environment:
+    - CONCORDIUM_ROSETTA_GRPC_HOST=${CONCORDIUM_ROSETTA_GRPC_HOST-172.17.0.1}
+    - CONCORDIUM_ROSETTA_GRPC_PORT
+    - CONCORDIUM_ROSETTA_GRPC_TOKEN
+    - CONCORDIUM_ROSETTA_NETWORK
+    - CONCORDIUM_ROSETTA_PORT
+    ports:
+    - "8080:8080"
+    stop_signal: SIGKILL

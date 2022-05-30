@@ -75,13 +75,16 @@ impl QueryHelper {
             Address::PoolAccrueAccount(baker_id) => {
                 match self.client.clone().get_pool_status(baker_id, &block_hash).await? {
                     PoolStatus::BakerPool {
-                        all_pool_total_capital,
+                        current_payday_status,
                         ..
-                    } => all_pool_total_capital,
+                    } => match current_payday_status {
+                        None => Amount::from_ccd(0),
+                        Some(s) => s.transaction_fees_earned,
+                    },
                     PoolStatus::PassiveDelegation {
-                        all_pool_total_capital,
+                        current_payday_transaction_fees_earned,
                         ..
-                    } => all_pool_total_capital,
+                    } => current_payday_transaction_fees_earned,
                 }
             }
         };

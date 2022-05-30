@@ -79,6 +79,7 @@ fn traverse_block_range(
     address: String,
     mut computed_balance: i128,
 ) -> Result<i128> {
+    eprintln!("Querying blocks from height {} to {}...", from_block_height, to_block_height);
     for block_height in from_block_height..=to_block_height {
         if block_height % 100 == 0 {
             eprintln!("Querying block at height {}...", block_height);

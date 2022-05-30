@@ -80,7 +80,7 @@ impl NetworkApi {
                     OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
                     OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
                     OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
-                    OPERATION_TYPE_CONFIGURE_BAKER:.to_string(),
+                    OPERATION_TYPE_CONFIGURE_BAKER.to_string(),
                     OPERATION_TYPE_CONFIGURE_DELEGATION.to_string(),
                 ],
                 errors:                    vec![

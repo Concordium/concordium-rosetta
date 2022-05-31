@@ -59,9 +59,20 @@ docker build \
 
 *Run*
 
+Exposing port:
+
 ```shell
-docker run --rm concordium-rosetta
+docker run --rm -p 8080:8080 concordium-rosetta <args...>
 ```
+
+Host network:
+
+```shell
+docker run --rm --network=host concordium-rosetta <args...>
+```
+
+See also [`docker-compose.yaml`](./docker-compose.yaml) for an easy way of spinning up instance with
+sensible defaults using Docker Compose.
 
 ## Rosetta
 

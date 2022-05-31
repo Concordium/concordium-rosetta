@@ -42,10 +42,9 @@ fn main() -> Result<()> {
         network_id.clone(),
         next_from_height,
         address.clone(),
-    )?
-    .balances[0]
-        .value
-        .parse()?;
+    )
+    .and_then(|v| v.balances[0].value.parse().map_err(anyhow::Error::new))
+    .unwrap_or_default();
     loop {
         let status = call_rosetta_status(client.clone(), &base_url, network_id.clone())?;
         let current_block_height = status.current_block_identifier.index;
@@ -122,7 +121,7 @@ fn traverse_block_range(
                         block_height,
                         address.clone(),
                     )?
-                        .balances[0]
+                    .balances[0]
                         .value
                 );
             }

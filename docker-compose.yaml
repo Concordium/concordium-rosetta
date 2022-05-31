@@ -1,13 +1,38 @@
+# Deployment for running a single Concordium Rosetta instance.
+# The deployment supports all the usual env vars of the service.
+#
+# Most values are passed directly to the service with no default values.
+# A few are slightly redefined as follows:
+#
+# - The value of `CONCORDIUM_ROSETTA_GRPC_HOST` defaults to `172.17.0.1`,
+#   i.e. a node running on the container's host.
+# - The value of `CONCORDIUM_ROSETTA_GRPC_PORT` only determines the port exposed to the host.
+#   The internal port is hard-coded to 8080.
+#   The default value of the exposed port is still 8080.
+#
+# The image containing the application is set using `CONCORDIUM_ROSETTA_IMAGE_TAG`.
+# This value must currently be provided as the default (latest official image) doesn't exist.
+#
+# Finally, `CONCORDIUM_ROSETTA_NETWORK` has no default value so must be set explicitly.
+#
+# Example:
+#
+#   CONCORDIUM_ROSETTA_IMAGE_TAG=concordium/rosetta:0.3.2-0 \
+#   CONCORDIUM_ROSETTA_GRPC_HOST=some-node.mainnet.example.com \
+#   CONCORDIUM_ROSETTA_NETWORK=mainnet \
+#   docker-compose up -d
+
 version: '3'
 services:
   rosetta:
-    image: concordium/rosetta:${CONCORDIUM_ROSETTA_IMAGE_TAG}
+    container_name: rosetta
+    image: ${CONCORDIUM_ROSETTA_IMAGE_TAG-concordium/rosetta:latest}
     environment:
     - CONCORDIUM_ROSETTA_GRPC_HOST=${CONCORDIUM_ROSETTA_GRPC_HOST-172.17.0.1}
-    - CONCORDIUM_ROSETTA_GRPC_PORT
+    - CONCORDIUM_ROSETTA_GRPC_PORT=8080
     - CONCORDIUM_ROSETTA_GRPC_TOKEN
     - CONCORDIUM_ROSETTA_NETWORK
     - CONCORDIUM_ROSETTA_PORT
-    ports:
-    - "8080:8080"
+    ports: # alternative: use "network_mode: host" (and "CONCORDIUM_ROSETTA_GRPC_HOST=localhost")
+    - "${CONCORDIUM_ROSETTA_GRPC_PORT-8080}:8080"
     stop_signal: SIGKILL

@@ -33,6 +33,6 @@ services:
     - CONCORDIUM_ROSETTA_GRPC_TOKEN
     - CONCORDIUM_ROSETTA_NETWORK
     - CONCORDIUM_ROSETTA_PORT
-    ports: # alternative: use "network_mode: host" (and "CONCORDIUM_ROSETTA_GRPC_HOST=localhost")
+    ports: # alternative: use "network_mode: host"
     - "${CONCORDIUM_ROSETTA_GRPC_PORT-8080}:8080"
     stop_signal: SIGKILL

@@ -442,7 +442,6 @@ async fn tokenomics_transaction_operations(
                 });
             }
             SpecialTransactionOutcome::BlockAccrueReward {
-                transaction_fees,
                 baker_reward,
                 passive_reward,
                 foundation_charge,
@@ -463,26 +462,6 @@ async fn tokenomics_transaction_operations(
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
                             foundation_charge.microccd as i128,
-                        ))),
-                        coin_change:          None,
-                        metadata:             None,
-                    });
-                }
-                if transaction_fees.microccd != 0 {
-                    res.push(Operation {
-                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
-                            &mut index_offset,
-                        ))),
-                        related_operations:   None,
-                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
-                        status:               Some(OPERATION_STATUS_OK.to_string()),
-                        account:              Some(Box::new(AccountIdentifier::new(format!(
-                            "{}{}",
-                            ACCOUNT_ACCRUE_POOL_PREFIX,
-                            baker_id.to_string()
-                        )))),
-                        amount:               Some(Box::new(amount_from_uccd(
-                            transaction_fees.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -515,9 +494,11 @@ async fn tokenomics_transaction_operations(
                         related_operations:   None,
                         _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                         status:               Some(OPERATION_STATUS_OK.to_string()),
-                        account:              Some(Box::new(AccountIdentifier::new(
-                            ACCOUNT_REWARD_BAKING.to_string(),
-                        ))),
+                        account:              Some(Box::new(AccountIdentifier::new(format!(
+                            "{}{}",
+                            ACCOUNT_ACCRUE_POOL_PREFIX,
+                            baker_id.to_string()
+                        )))),
                         amount:               Some(Box::new(amount_from_uccd(
                             baker_reward.microccd as i128,
                         ))),

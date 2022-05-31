@@ -90,8 +90,8 @@ fn traverse_block_range(
             for tx in block.transactions {
                 for op in tx.operations {
                     if let Some(a) = op.account {
-                        has_ops = true;
                         if a.address == address {
+                            has_ops = true;
                             let amount = match op.amount.clone() {
                                 None => 0,
                                 Some(a) => a.value.parse()?,

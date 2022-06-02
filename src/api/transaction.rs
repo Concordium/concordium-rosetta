@@ -567,11 +567,12 @@ fn operations_and_metadata_from_account_transaction_details(
         } => (
             events
                 .iter()
-                .map(|event| match event {
+                .enumerate()
+                .map(|(i, event)| match event {
                     BakerEvent::BakerAdded {
                         data,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerAddedMetadata {
@@ -587,7 +588,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     BakerEvent::BakerRemoved {
                         baker_id,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerRemovedMetadata {
@@ -598,7 +599,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         new_stake,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerStakeUpdatedMetadata {
@@ -611,7 +612,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         new_stake,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerStakeUpdatedMetadata {
@@ -624,7 +625,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         restake_earnings,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerRestakeEarningsUpdatedMetadata {
@@ -635,7 +636,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     BakerEvent::BakerKeysUpdated {
                         data,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerKeysUpdatedMetadata {
@@ -650,7 +651,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         open_status,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerSetOpenStatusMetadata {
@@ -666,7 +667,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         metadata_url,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerSetMetadataUrlMetadata {
@@ -678,7 +679,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         transaction_fee_commission,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerSetTransactionFeeCommissionMetadata {
@@ -690,7 +691,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         baking_reward_commission,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerSetBakingRewardCommissionMetadata {
@@ -702,7 +703,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         baker_id,
                         finalization_reward_commission,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&BakerSetFinalizationRewardCommissionMetadata {
@@ -720,11 +721,12 @@ fn operations_and_metadata_from_account_transaction_details(
         } => (
             events
                 .iter()
-                .map(|event| match event {
+                .enumerate()
+                .map(|(i, event)| match event {
                     DelegationEvent::DelegationAdded {
                         delegator_id,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationAddedMetadata {
@@ -734,7 +736,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     DelegationEvent::DelegationRemoved {
                         delegator_id,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationRemovedMetadata {
@@ -745,7 +747,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         delegator_id,
                         new_stake,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationStakeUpdatedMetadata {
@@ -758,7 +760,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         delegator_id,
                         new_stake,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationStakeUpdatedMetadata {
@@ -771,7 +773,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         delegator_id,
                         restake_earnings,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationSetRestakeEarningsMetadata {
@@ -783,7 +785,7 @@ fn operations_and_metadata_from_account_transaction_details(
                         delegator_id,
                         delegation_target,
                     } => normal_account_transaction_operation(
-                        0,
+                        i as i64,
                         details,
                         None,
                         Some(&DelegationSetDelegationTargetMetadata {

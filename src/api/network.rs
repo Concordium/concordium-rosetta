@@ -121,8 +121,8 @@ impl NetworkApi {
             }),
             current_block_timestamp:  consensus_status
                 .last_finalized_time
-                .map(|t| t.timestamp_millis())
-                .unwrap_or(-1),
+                .unwrap_or(consensus_status.genesis_time) // TODO lookup time of block (also, why does this become null??)
+                .timestamp_millis(),
             genesis_block_identifier: Box::new(BlockIdentifier {
                 index: 0,
                 hash:  consensus_status.genesis_block.to_string(),

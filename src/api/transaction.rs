@@ -160,14 +160,12 @@ struct EncryptedAmountTransferredReceiverMetadata {
 
 #[derive(SerdeSerialize)]
 struct TransferredToEncryptedMetadata {
-    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
 }
 
 #[derive(SerdeSerialize)]
 struct TransferredToPublicMetadata {
     address:              AccountAddress,
-    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
     encrypted_amount:     EncryptedAmount<EncryptedAmountsCurve>,
     up_to_index:          EncryptedAmountAggIndex,
@@ -175,10 +173,9 @@ struct TransferredToPublicMetadata {
 
 #[derive(SerdeSerialize)]
 struct TransferredWithScheduleMetadata {
-    receiver_address: AccountAddress,
-    amounts:          Vec<(Timestamp, Amount)>, // TODO convert to map?
+    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map?
     #[serde(skip_serializing_if = "Option::is_none")]
-    memo:             Option<Memo>,
+    memo:    Option<Memo>,
 }
 
 #[derive(SerdeSerialize)]
@@ -311,9 +308,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 account:              Some(Box::new(AccountIdentifier::new(
                     details.sender.to_string(),
                 ))),
-                amount:               Some(Box::new(amount_from_uccd(
-                    details.cost.microccd as i128,
-                ))),
+                amount:               None,
                 coin_change:          None,
                 metadata:             Some(
                     serde_json::to_value(&TransactionRejectedMetadata {
@@ -330,6 +325,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&ModuleDeployedMetadata {
                     module_ref: *module_ref,
                 }),
@@ -342,6 +338,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&ContractInitializedMetadata {
                     module_ref: data.origin_ref,
                     address:    data.address,
@@ -358,6 +355,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&ContractUpdateIssuedMetadata {}),
             )],
             None,
@@ -382,6 +380,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerAddedMetadata {
                     baker_id:         data.keys_event.baker_id,
                     account:          data.keys_event.account,
@@ -400,6 +399,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerRemovedMetadata {
                     baker_id: *baker_id,
                 }),
@@ -412,6 +412,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 data.map(|d| BakerStakeUpdatedMetadata {
                     baker_id:       d.baker_id,
                     new_stake_uccd: d.new_stake,
@@ -428,6 +429,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerRestakeEarningsUpdatedMetadata {
                     baker_id:         *baker_id,
                     restake_earnings: *restake_earnings,
@@ -441,6 +443,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerKeysUpdatedMetadata {
                     baker_id:        data.baker_id,
                     account:         data.account,
@@ -471,8 +474,8 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                Some(amount_from_uccd(-(data.amount.microccd as i128))),
                 Some(&TransferredToEncryptedMetadata {
-                    amount:               data.amount,
                     new_encrypted_amount: data.new_amount.clone(),
                 }),
             )],
@@ -485,9 +488,9 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                Some(amount_from_uccd(amount.microccd as i128)),
                 Some(&TransferredToPublicMetadata {
                     address:              removed.account,
-                    amount:               *amount,
                     new_encrypted_amount: removed.new_amount.clone(),
                     encrypted_amount:     removed.input_amount.clone(),
                     up_to_index:          removed.up_to_index,
@@ -499,32 +502,22 @@ fn operations_and_metadata_from_account_transaction_details(
             to,
             amount,
         } => (
-            vec![normal_account_transaction_operation(
-                0,
-                details,
-                Some(&TransferredWithScheduleMetadata {
-                    receiver_address: *to,
-                    amounts:          amount.clone(),
-                    memo:             None,
-                }),
-            )],
-            None,
+            simple_transfer_operations(details, &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.microccd).sum()), to),
+            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+                amounts: amount.clone(),
+                memo:    None,
+            })),
         ),
         AccountTransactionEffects::TransferredWithScheduleAndMemo {
             to,
             amount,
             memo,
         } => (
-            vec![normal_account_transaction_operation(
-                0,
-                details,
-                Some(&TransferredWithScheduleMetadata {
-                    receiver_address: *to,
-                    amounts:          amount.clone(),
-                    memo:             Some(memo.clone()),
-                }),
-            )],
-            None,
+            simple_transfer_operations(details, &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.microccd).sum()), to),
+            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+                amounts: amount.clone(),
+                memo:    Some(memo.clone()),
+            })),
         ),
         AccountTransactionEffects::CredentialKeysUpdated {
             cred_id,
@@ -532,6 +525,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&CredentialKeysUpdatedMetadata {
                     credential_id: cred_id.clone(),
                 }),
@@ -546,6 +540,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&CredentialsUpdatedMetadata {
                     removed_credential_ids: removed_cred_ids.clone(),
                     added_credential_ids:   new_cred_ids.clone(),
@@ -560,6 +555,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&DataRegisteredMetadata {
                     data: data.clone(),
                 }),
@@ -577,6 +573,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerAddedMetadata {
                             baker_id:         data.keys_event.baker_id,
                             account:          data.keys_event.account,
@@ -592,6 +589,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerRemovedMetadata {
                             baker_id: *baker_id,
                         }),
@@ -602,6 +600,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerStakeUpdatedMetadata {
                             baker_id:       *baker_id,
                             new_stake_uccd: *new_stake,
@@ -614,6 +613,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerStakeUpdatedMetadata {
                             baker_id:       *baker_id,
                             new_stake_uccd: *new_stake,
@@ -626,6 +626,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerRestakeEarningsUpdatedMetadata {
                             baker_id:         *baker_id,
                             restake_earnings: *restake_earnings,
@@ -636,6 +637,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerKeysUpdatedMetadata {
                             baker_id:        data.baker_id,
                             account:         data.account,
@@ -650,6 +652,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerSetOpenStatusMetadata {
                             baker_id:    *baker_id,
                             open_status: match open_status {
@@ -665,6 +668,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerSetMetadataUrlMetadata {
                             baker_id:     *baker_id,
                             metadata_url: metadata_url.to_string(),
@@ -676,6 +680,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerSetTransactionFeeCommissionMetadata {
                             baker_id:                   *baker_id,
                             transaction_fee_commission: transaction_fee_commission.to_string(),
@@ -687,6 +692,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerSetBakingRewardCommissionMetadata {
                             baker_id:                 *baker_id,
                             baking_reward_commission: baking_reward_commission.to_string(),
@@ -698,6 +704,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&BakerSetFinalizationRewardCommissionMetadata {
                             baker_id: *baker_id,
                             finalization_reward_commission: finalization_reward_commission
@@ -719,6 +726,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationAddedMetadata {
                             delegator_id: *delegator_id,
                         }),
@@ -728,6 +736,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationRemovedMetadata {
                             delegator_id: *delegator_id,
                         }),
@@ -738,6 +747,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationStakeUpdatedMetadata {
                             delegator_id:   *delegator_id,
                             new_stake_uccd: *new_stake,
@@ -750,6 +760,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationStakeUpdatedMetadata {
                             delegator_id:   *delegator_id,
                             new_stake_uccd: *new_stake,
@@ -762,6 +773,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationSetRestakeEarningsMetadata {
                             delegator_id:     *delegator_id,
                             restake_earnings: *restake_earnings,
@@ -773,6 +785,7 @@ fn operations_and_metadata_from_account_transaction_details(
                     } => normal_account_transaction_operation(
                         0,
                         details,
+                        None,
                         Some(&DelegationSetDelegationTargetMetadata {
                             delegator_id:      *delegator_id,
                             delegation_target: match delegation_target {
@@ -902,11 +915,11 @@ fn encrypted_transfer_operations(
 fn normal_account_transaction_operation<T: SerdeSerialize>(
     index: i64,
     details: &AccountTransactionDetails,
+    amount: Option<rosetta::models::Amount>,
     metadata: Option<&T>,
 ) -> Operation {
     let account_address = details.sender.to_string();
-    let amount = amount_from_uccd(details.cost.microccd as i128);
-    account_transaction_operation(index, details, account_address, Some(amount), metadata)
+    account_transaction_operation(index, details, account_address, amount, metadata)
 }
 
 fn account_transaction_operation<T: SerdeSerialize>(

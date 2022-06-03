@@ -10,6 +10,7 @@ use concordium_rust_sdk::{
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
+use concordium_rust_sdk::types::smart_contracts::InstanceInfo;
 
 #[derive(Clone)]
 pub struct QueryHelper {
@@ -34,6 +35,12 @@ impl QueryHelper {
         let amount = match address {
             Address::Account(addr) => {
                 self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
+            }
+            Address::Contract(addr) => {
+                match self.client.clone().get_instance_info(addr, &block_hash).await? {
+                    InstanceInfo::V0 { amount, .. } => amount,
+                    InstanceInfo::V1 { amount, .. } => amount,
+                }
             }
             Address::BakingRewardAccount => {
                 match self.client.clone().get_reward_status(&block_hash).await? {
@@ -156,6 +163,8 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
 pub enum Address {
     /// Real, ordinary account.
     Account(AccountAddress),
+    /// Real, contract account.
+    Contract(ContractAddress),
     /// Virtual baking reward account.
     BakingRewardAccount,
     /// Virtual finalization reward account.
@@ -178,24 +187,39 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
         ACCOUNT_REWARD_BAKING => Ok(Address::BakingRewardAccount),
         ACCOUNT_REWARD_FINALIZATION => Ok(Address::FinalizationRewardAccount),
-        _ => match addr.strip_prefix(ACCOUNT_ACCRUE_POOL_PREFIX) {
-            Some(pool) => {
+        ACCOUNT_ACCRUE_FOUNDATION => Ok(Address::FoundationAccrueAccount),
+        _ => {
+            if let Some(pool) = addr.strip_prefix(ACCOUNT_ACCRUE_POOL_PREFIX) {
                 if pool == POOL_PASSIVE {
                     return Ok(Address::PoolAccrueAccount(None));
                 }
                 let baker_id =
                     pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
                 Ok(Address::PoolAccrueAccount(Some(baker_id)))
-            }
-            None => {
-                if addr == ACCOUNT_ACCRUE_FOUNDATION {
-                    return Ok(Address::FoundationAccrueAccount);
+            } else if let Some(contract_addr) = addr.strip_prefix(ACCOUNT_CONTRACT_PREFIX) {
+                // TODO Improve error reporting (see parsing of signature string).
+                match contract_addr.split_once('_') {
+                    None => {
+                        // Currently not allowing subindex to be omitted.
+                        Err(ApiError::InvalidContractAddress(contract_addr.to_string()))
+                    }
+                    Some((contract_index, contract_subindex)) => {
+                        match (contract_index.parse(), contract_subindex.parse()) {
+                            (Ok(index), Ok(subindex)) => Ok(Address::Contract(ContractAddress::new(index, subindex))),
+                            _ => {
+                                Err(ApiError::InvalidContractAddress(
+                                    contract_addr.to_string(),
+                                ))
+                            }
+                        }
+                    }
                 }
+            } else {
                 match AccountAddress::from_str(addr) {
                     Ok(a) => Ok(Address::Account(a)),
                     Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
                 }
             }
-        },
+        }
     }
 }

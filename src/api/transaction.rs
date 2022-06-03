@@ -900,7 +900,7 @@ fn contract_update_operations(
     let mut res = vec![normal_account_transaction_operation(
         0,
         details,
-        Some(amount_from_uccd(updated_amount)),
+        Some(amount_from_uccd(-updated_amount)),
         Some(&ContractUpdateIssuedMetadata {}),
     )];
     res.extend(ops);

@@ -6,11 +6,10 @@ use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, *},
+    types::{hashes::BlockHash, queries::BlockInfo, smart_contracts::InstanceInfo, *},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
-use concordium_rust_sdk::types::smart_contracts::InstanceInfo;
 
 #[derive(Clone)]
 pub struct QueryHelper {
@@ -38,8 +37,14 @@ impl QueryHelper {
             }
             Address::Contract(addr) => {
                 match self.client.clone().get_instance_info(addr, &block_hash).await? {
-                    InstanceInfo::V0 { amount, .. } => amount,
-                    InstanceInfo::V1 { amount, .. } => amount,
+                    InstanceInfo::V0 {
+                        amount,
+                        ..
+                    } => amount,
+                    InstanceInfo::V1 {
+                        amount,
+                        ..
+                    } => amount,
                 }
             }
             Address::BakingRewardAccount => {
@@ -205,12 +210,10 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
                     }
                     Some((contract_index, contract_subindex)) => {
                         match (contract_index.parse(), contract_subindex.parse()) {
-                            (Ok(index), Ok(subindex)) => Ok(Address::Contract(ContractAddress::new(index, subindex))),
-                            _ => {
-                                Err(ApiError::InvalidContractAddress(
-                                    contract_addr.to_string(),
-                                ))
+                            (Ok(index), Ok(subindex)) => {
+                                Ok(Address::Contract(ContractAddress::new(index, subindex)))
                             }
+                            _ => Err(ApiError::InvalidContractAddress(contract_addr.to_string())),
                         }
                     }
                 }

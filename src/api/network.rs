@@ -1,9 +1,10 @@
 use crate::{
-    api::{error::ApiResult, transaction::*},
+    api::{error::ApiResult, query::block_hash_from_string, transaction::*},
     handler_error,
     validate::network::NetworkValidator,
     QueryHelper,
 };
+use concordium_rust_sdk::types::hashes::BlockHash;
 use rosetta::models::*;
 use serde_json::json;
 
@@ -119,9 +120,13 @@ impl NetworkApi {
                 index: consensus_status.last_finalized_block_height.height as i64,
                 hash:  consensus_status.last_finalized_block.to_string(),
             }),
-            current_block_timestamp:  consensus_status
-                .last_finalized_time
-                .unwrap_or(consensus_status.genesis_time) // TODO lookup time of block (also, why does this become null??)
+            current_block_timestamp:  self
+                .query_helper
+                .client
+                .clone()
+                .get_block_info(&consensus_status.last_finalized_block)
+                .await?
+                .block_slot_time
                 .timestamp_millis(),
             genesis_block_identifier: Box::new(BlockIdentifier {
                 index: 0,

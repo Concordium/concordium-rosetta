@@ -877,11 +877,13 @@ fn contract_update_operations(
                 amount,
                 to,
             } => {
-                ops.push(
-                account_transaction_operation::<Value>(
+                ops.push(account_transaction_operation::<Value>(
                     next_index,
                     details,
-                    format!("{}{}_{}", ACCOUNT_CONTRACT_PREFIX, from.index.index, from.subindex.sub_index),
+                    format!(
+                        "{}{}_{}",
+                        ACCOUNT_CONTRACT_PREFIX, from.index.index, from.subindex.sub_index
+                    ),
                     Some(amount_from_uccd(-(amount.microccd as i128))),
                     None,
                 ));

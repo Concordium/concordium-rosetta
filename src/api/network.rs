@@ -1,10 +1,9 @@
 use crate::{
-    api::{error::ApiResult, query::block_hash_from_string, transaction::*},
+    api::{error::ApiResult, transaction::*},
     handler_error,
     validate::network::NetworkValidator,
     QueryHelper,
 };
-use concordium_rust_sdk::types::hashes::BlockHash;
 use rosetta::models::*;
 use serde_json::json;
 

@@ -862,7 +862,7 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
 
 fn contract_update_operations(
     details: &AccountTransactionDetails,
-    effects: &Vec<ContractTraceElement>,
+    effects: &[ContractTraceElement],
 ) -> Vec<Operation> {
     let mut updated_amount = 0;
     let mut ops = vec![];

@@ -69,6 +69,15 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InvalidContractAddress(addr) => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("contract address".to_string()),
+                        None,
+                        Some(addr.clone()),
+                        Some("invalid format".to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
                 ApiError::InvalidCurrency => reply::with_status(
                     reply::json(&invalid_input_invalid_value_or_identifier_error(
                         Some("currency".to_string()),

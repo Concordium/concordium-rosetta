@@ -32,7 +32,6 @@ struct ModuleDeployedMetadata {
 struct ContractInitializedMetadata {
     module_ref: smart_contracts::ModuleRef,
     address:    ContractAddress,
-    amount:     Amount,
     init_name:  smart_contracts::InitName,
     events:     Vec<smart_contracts::ContractEvent>,
 }
@@ -101,14 +100,12 @@ struct EncryptedAmountTransferredReceiverMetadata {
 
 #[derive(SerdeSerialize)]
 struct TransferredToEncryptedMetadata {
-    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
 }
 
 #[derive(SerdeSerialize)]
 struct TransferredToPublicMetadata {
     address:              AccountAddress,
-    amount:               Amount,
     new_encrypted_amount: EncryptedAmount<EncryptedAmountsCurve>,
     encrypted_amount:     EncryptedAmount<EncryptedAmountsCurve>,
     up_to_index:          EncryptedAmountAggIndex,
@@ -116,10 +113,9 @@ struct TransferredToPublicMetadata {
 
 #[derive(SerdeSerialize)]
 struct TransferredWithScheduleMetadata {
-    receiver_address: AccountAddress,
-    amounts:          Vec<(Timestamp, Amount)>, // TODO convert to map?
+    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map?
     #[serde(skip_serializing_if = "Option::is_none")]
-    memo:             Option<Memo>,
+    memo:    Option<Memo>,
 }
 
 #[derive(SerdeSerialize)]
@@ -152,8 +148,9 @@ struct ChainUpdateMetadata {
     payload:        UpdatePayload,
 }
 
-pub const ACCOUNT_BAKING_REWARD: &str = "baking_reward_account";
-pub const ACCOUNT_FINALIZATION_REWARD: &str = "finalization_reward_account";
+pub const ACCOUNT_REWARD_BAKING: &str = "baking_reward_account";
+pub const ACCOUNT_REWARD_FINALIZATION: &str = "finalization_reward_account";
+pub const ACCOUNT_CONTRACT_PREFIX: &str = "contract:";
 
 pub const OPERATION_STATUS_OK: &str = "ok";
 pub const OPERATION_STATUS_FAIL: &str = "fail";
@@ -193,20 +190,22 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
         BlockItemSummaryDetails::AccountTransaction(details) => {
             let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);
             let mut ops_with_fee = ops.clone();
-            ops_with_fee.push(Operation {
-                operation_identifier: Box::new(OperationIdentifier::new(ops.len() as i64)),
-                related_operations:   None,
-                _type:                OPERATION_TYPE_FEE.to_string(),
-                status:               Some(OPERATION_STATUS_OK.to_string()),
-                account:              Some(Box::new(AccountIdentifier::new(
-                    details.sender.to_string(),
-                ))),
-                amount:               Some(Box::new(amount_from_uccd(
-                    -(details.cost.microgtu as i128),
-                ))),
-                coin_change:          None,
-                metadata:             None,
-            });
+            if details.cost.microgtu != 0 {
+                ops_with_fee.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(ops.len() as i64)),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_FEE.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        details.sender.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        -(details.cost.microgtu as i128),
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+            }
             (ops_with_fee, metadata)
         }
         BlockItemSummaryDetails::AccountCreation(details) => {
@@ -242,9 +241,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 account:              Some(Box::new(AccountIdentifier::new(
                     details.sender.to_string(),
                 ))),
-                amount:               Some(Box::new(amount_from_uccd(
-                    details.cost.microgtu as i128,
-                ))),
+                amount:               None,
                 coin_change:          None,
                 metadata:             Some(
                     serde_json::to_value(&TransactionRejectedMetadata {
@@ -261,6 +258,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&ModuleDeployedMetadata {
                     module_ref: *module_ref,
                 }),
@@ -273,10 +271,10 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                Some(amount_from_uccd(data.amount.microgtu as i128)),
                 Some(&ContractInitializedMetadata {
                     module_ref: data.origin_ref,
                     address:    data.address,
-                    amount:     data.amount,
                     init_name:  data.init_name.clone(),
                     events:     data.events.clone(),
                 }),
@@ -284,15 +282,8 @@ fn operations_and_metadata_from_account_transaction_details(
             None,
         ),
         AccountTransactionEffects::ContractUpdateIssued {
-            ..
-        } => (
-            vec![normal_account_transaction_operation(
-                0,
-                details,
-                Some(&ContractUpdateIssuedMetadata {}),
-            )],
-            None,
-        ),
+            effects,
+        } => (contract_update_operations(details, effects), None),
         AccountTransactionEffects::AccountTransfer {
             amount,
             to,
@@ -313,6 +304,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerAddedMetadata {
                     baker_id:         data.keys_event.baker_id,
                     account:          data.keys_event.account,
@@ -331,6 +323,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerRemovedMetadata {
                     baker_id: *baker_id,
                 }),
@@ -343,6 +336,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 data.map(|d| BakerStakeUpdatedMetadata {
                     baker_id:       d.baker_id,
                     new_stake_uccd: d.new_stake,
@@ -359,6 +353,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerRestakeEarningsUpdatedMetadata {
                     baker_id:         *baker_id,
                     restake_earnings: *restake_earnings,
@@ -372,6 +367,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&BakerKeysUpdatedMetadata {
                     baker_id:        data.baker_id,
                     account:         data.account,
@@ -402,8 +398,8 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                Some(amount_from_uccd(-(data.amount.microgtu as i128))),
                 Some(&TransferredToEncryptedMetadata {
-                    amount:               data.amount,
                     new_encrypted_amount: data.new_amount.clone(),
                 }),
             )],
@@ -416,9 +412,9 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                Some(amount_from_uccd(amount.microgtu as i128)),
                 Some(&TransferredToPublicMetadata {
                     address:              removed.account,
-                    amount:               *amount,
                     new_encrypted_amount: removed.new_amount.clone(),
                     encrypted_amount:     removed.input_amount.clone(),
                     up_to_index:          removed.up_to_index,
@@ -430,39 +426,38 @@ fn operations_and_metadata_from_account_transaction_details(
             to,
             amount,
         } => (
-            vec![normal_account_transaction_operation(
-                0,
+            simple_transfer_operations(
                 details,
-                Some(&TransferredWithScheduleMetadata {
-                    receiver_address: *to,
-                    amounts:          amount.clone(),
-                    memo:             None,
-                }),
-            )],
-            None,
+                &Amount::from(amount.iter().map(|(_, a)| a.microgtu).sum::<u64>()),
+                to,
+            ),
+            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+                amounts: amount.clone(),
+                memo:    None,
+            })),
         ),
         AccountTransactionEffects::TransferredWithScheduleAndMemo {
             to,
             amount,
             memo,
         } => (
-            vec![normal_account_transaction_operation(
-                0,
+            simple_transfer_operations(
                 details,
-                Some(&TransferredWithScheduleMetadata {
-                    receiver_address: *to,
-                    amounts:          amount.clone(),
-                    memo:             Some(memo.clone()),
-                }),
-            )],
-            None,
+                &Amount::from(amount.iter().map(|(_, a)| a.microgtu).sum::<u64>()),
+                to,
+            ),
+            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+                amounts: amount.clone(),
+                memo:    Some(memo.clone()),
+            })),
         ),
         AccountTransactionEffects::CredentialKeysUpdated {
             cred_id,
         } => (
-            vec![self::normal_account_transaction_operation(
+            vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&CredentialKeysUpdatedMetadata {
                     credential_id: cred_id.clone(),
                 }),
@@ -477,6 +472,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&CredentialsUpdatedMetadata {
                     removed_credential_ids: removed_cred_ids.clone(),
                     added_credential_ids:   new_cred_ids.clone(),
@@ -491,6 +487,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
+                None,
                 Some(&DataRegisteredMetadata {
                     data: data.clone(),
                 }),
@@ -554,6 +551,54 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
     }]
 }
 
+fn contract_update_operations(
+    details: &AccountTransactionDetails,
+    effects: &[ContractTraceElement],
+) -> Vec<Operation> {
+    let mut updated_amount = 0;
+    let mut ops = vec![];
+    let mut next_index = 1;
+    for e in effects.iter() {
+        match e {
+            ContractTraceElement::Updated {
+                data,
+            } => updated_amount += data.amount.microgtu as i128,
+            ContractTraceElement::Transferred {
+                from,
+                amount,
+                to,
+            } => {
+                ops.push(account_transaction_operation::<Value>(
+                    next_index,
+                    details,
+                    format!(
+                        "{}{}_{}",
+                        ACCOUNT_CONTRACT_PREFIX, from.index.index, from.subindex.sub_index
+                    ),
+                    Some(amount_from_uccd(-(amount.microgtu as i128))),
+                    None,
+                ));
+                ops.push(account_transaction_operation::<Value>(
+                    next_index + 1,
+                    details,
+                    to.to_string(),
+                    Some(amount_from_uccd(amount.microgtu as i128)),
+                    None,
+                ));
+                next_index += 2;
+            }
+        }
+    }
+    let mut res = vec![normal_account_transaction_operation(
+        0,
+        details,
+        Some(amount_from_uccd(-updated_amount)),
+        Some(&ContractUpdateIssuedMetadata {}),
+    )];
+    res.extend(ops);
+    res
+}
+
 fn simple_transfer_operations(
     details: &AccountTransactionDetails,
     amount: &Amount,
@@ -612,11 +657,11 @@ fn encrypted_transfer_operations(
 fn normal_account_transaction_operation<T: SerdeSerialize>(
     index: i64,
     details: &AccountTransactionDetails,
+    amount: Option<rosetta::models::Amount>,
     metadata: Option<&T>,
 ) -> Operation {
     let account_address = details.sender.to_string();
-    let amount = amount_from_uccd(details.cost.microgtu as i128);
-    account_transaction_operation(index, details, account_address, Some(amount), metadata)
+    account_transaction_operation(index, details, account_address, amount, metadata)
 }
 
 fn account_transaction_operation<T: SerdeSerialize>(

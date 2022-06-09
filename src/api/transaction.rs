@@ -120,8 +120,8 @@ struct TransferredWithScheduleMetadata {
 
 #[derive(SerdeSerialize)]
 struct TimestampedAmount {
-    timestamp: Timestamp,
-    amount: Amount,
+    timestamp:   Timestamp,
+    amount_uccd: Amount,
 }
 
 #[derive(SerdeSerialize)]
@@ -438,10 +438,13 @@ fn operations_and_metadata_from_account_transaction_details(
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
-                amounts: amount.iter().map(|(t, a)| TimestampedAmount{
-                    timestamp: *t,
-                    amount: *a,
-                }).collect(),
+                amounts: amount
+                    .iter()
+                    .map(|(t, a)| TimestampedAmount {
+                        timestamp:   *t,
+                        amount_uccd: *a,
+                    })
+                    .collect(),
                 memo:    None,
             })),
         ),
@@ -456,10 +459,13 @@ fn operations_and_metadata_from_account_transaction_details(
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
-                amounts: amount.iter().map(|(t, a)| TimestampedAmount{
-                    timestamp: *t,
-                    amount: *a,
-                }).collect(),
+                amounts: amount
+                    .iter()
+                    .map(|(t, a)| TimestampedAmount {
+                        timestamp:   *t,
+                        amount_uccd: *a,
+                    })
+                    .collect(),
                 memo:    Some(memo.clone()),
             })),
         ),

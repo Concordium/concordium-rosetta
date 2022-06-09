@@ -1,12 +1,12 @@
 use crate::api::{
     error::{ApiError, ApiResult, InvalidBlockIdentifierError},
-    transaction::{ACCOUNT_BAKING_REWARD, ACCOUNT_FINALIZATION_REWARD},
+    transaction::{ACCOUNT_CONTRACT_PREFIX, ACCOUNT_REWARD_BAKING, ACCOUNT_REWARD_FINALIZATION},
 };
 use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight},
+    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, ContractAddress},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
@@ -34,6 +34,9 @@ impl QueryHelper {
         let amount = match address {
             Address::Account(addr) => {
                 self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
+            }
+            Address::Contract(addr) => {
+                self.client.clone().get_instance_info(addr, &block_hash).await?.amount
             }
             Address::BakingRewardAccount => {
                 self.client.clone().get_reward_status(&block_hash).await?.baking_reward_account
@@ -109,11 +112,16 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
-/// Helper type for providing a way to represent reward accounts in addition to
-/// ordinary ones.
+/// Helper type for providing a way to represent virtual reward accounts in
+/// addition to ordinary ones.
 pub enum Address {
+    /// Real, ordinary account.
     Account(AccountAddress),
+    /// Real contract.
+    Contract(ContractAddress),
+    /// Virtual baking reward account.
     BakingRewardAccount,
+    /// Virtual finalization reward account.
     FinalizationRewardAccount,
 }
 
@@ -126,11 +134,31 @@ pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Addr
 
 pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
-        ACCOUNT_BAKING_REWARD => Ok(Address::BakingRewardAccount),
-        ACCOUNT_FINALIZATION_REWARD => Ok(Address::FinalizationRewardAccount),
-        _ => match AccountAddress::from_str(addr) {
-            Ok(a) => Ok(Address::Account(a)),
-            Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
-        },
+        ACCOUNT_REWARD_BAKING => Ok(Address::BakingRewardAccount),
+        ACCOUNT_REWARD_FINALIZATION => Ok(Address::FinalizationRewardAccount),
+        _ => {
+            if let Some(contract_addr) = addr.strip_prefix(ACCOUNT_CONTRACT_PREFIX) {
+                // TODO Improve error reporting (see parsing of signature string).
+                match contract_addr.split_once('_') {
+                    None => {
+                        // Currently not allowing subindex to be omitted.
+                        Err(ApiError::InvalidContractAddress(contract_addr.to_string()))
+                    }
+                    Some((contract_index, contract_subindex)) => {
+                        match (contract_index.parse(), contract_subindex.parse()) {
+                            (Ok(index), Ok(subindex)) => {
+                                Ok(Address::Contract(ContractAddress::new(index, subindex)))
+                            }
+                            _ => Err(ApiError::InvalidContractAddress(contract_addr.to_string())),
+                        }
+                    }
+                }
+            } else {
+                match AccountAddress::from_str(addr) {
+                    Ok(a) => Ok(Address::Account(a)),
+                    Err(_) => Err(ApiError::InvalidAccountAddress(addr.to_string())),
+                }
+            }
+        }
     }
 }

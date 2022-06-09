@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3
+
+- Fix operation amounts and add support for querying the balances of contracts.
+
 ## 0.3.2
 
 - Upgrade Rosetta spec to v1.4.12.

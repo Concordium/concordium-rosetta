@@ -211,6 +211,11 @@ This implementation imposes the following restrictions on these identifiers:
   This means that all amounts must be given in µCCD. The `metadata` field is ignored.
 
 - `account_identifier`: Only the `address` field is applicable.
+  The field supports the following kinds of values:
+  - Account address in Base58Check format.
+  - The special "addresses" `baking_reward_account` and `finalization_reward_account`
+    of the previously mentioned virtual accounts of the same names.
+  - Contract address with format `contract:<index>_<subindex>`.
 
 Identifier strings are generally expected in standard formats (hex for hashes, Base58Check for account addresses etc.).
 No prefixes such as "0x" may be added.

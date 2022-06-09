@@ -42,6 +42,8 @@ pub enum ApiError {
     // Invalid input: Invalid value or identifier (type or format).
     #[error("invalid account address '{0}'")]
     InvalidAccountAddress(String),
+    #[error("invalid contract address '{0}'")]
+    InvalidContractAddress(String),
     #[error("invalid currency")]
     InvalidCurrency,
     #[error("invalid amount '{0}'")]

@@ -74,10 +74,10 @@ fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
-        self::tokenomics_transaction_operations(&block_summary),
+        tokenomics_transaction_operations(&block_summary),
     );
     let mut res = vec![tokenomics_transaction];
-    res.extend(block_summary.transaction_summaries.iter().map(self::map_transaction));
+    res.extend(block_summary.transaction_summaries.iter().map(map_transaction));
     res
 }
 
@@ -105,7 +105,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     _type:                OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        "baking_reward_account".to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_baking_reward.microgtu as i128,
@@ -121,7 +121,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     _type:                OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        "finalization_reward_account".to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         mint_finalization_reward.microgtu as i128,
@@ -154,8 +154,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 foundation_account,
                 ..
             } => {
-                // Could add transaction fees going into GAS account and then extract block
-                // rewards, but it seems unnecessary?
+                // TODO Add gas account operations.
                 if baker_reward.microgtu != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
@@ -226,7 +225,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     _type:                OPERATION_TYPE_BAKING_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_BAKING_REWARD.to_string(),
+                        ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(-baking_reward_sum))),
                     coin_change:          None,
@@ -269,7 +268,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     _type:                OPERATION_TYPE_FINALIZATION_REWARD.to_string(),
                     status:               Some(OPERATION_STATUS_OK.to_string()),
                     account:              Some(Box::new(AccountIdentifier::new(
-                        ACCOUNT_FINALIZATION_REWARD.to_string(),
+                        ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
                         -finalization_reward_sum,

@@ -113,9 +113,15 @@ struct TransferredToPublicMetadata {
 
 #[derive(SerdeSerialize)]
 struct TransferredWithScheduleMetadata {
-    amounts: Vec<(Timestamp, Amount)>, // TODO convert to map?
+    amounts: Vec<TimestampedAmount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     memo:    Option<Memo>,
+}
+
+#[derive(SerdeSerialize)]
+struct TimestampedAmount {
+    timestamp: Timestamp,
+    amount: Amount,
 }
 
 #[derive(SerdeSerialize)]
@@ -432,7 +438,10 @@ fn operations_and_metadata_from_account_transaction_details(
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
-                amounts: amount.clone(),
+                amounts: amount.iter().map(|(t, a)| TimestampedAmount{
+                    timestamp: *t,
+                    amount: *a,
+                }).collect(),
                 memo:    None,
             })),
         ),
@@ -447,7 +456,10 @@ fn operations_and_metadata_from_account_transaction_details(
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
-                amounts: amount.clone(),
+                amounts: amount.iter().map(|(t, a)| TimestampedAmount{
+                    timestamp: *t,
+                    amount: *a,
+                }).collect(),
                 memo:    Some(memo.clone()),
             })),
         ),

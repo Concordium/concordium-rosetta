@@ -3,7 +3,11 @@
 ## 0.4.0
 
 - Bump Node SDK to support protocol version P4.
-  This makes it compatible with Concordium Node v4.x.x but not older versions.
+  This makes it compatible with Concordium Node v4.x.x but breaks it for older versions.
+
+## 0.3.3
+
+- Fix operation amounts and add support for querying the balances of contracts.
 
 ## 0.3.2
 

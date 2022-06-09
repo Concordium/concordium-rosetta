@@ -168,7 +168,7 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
 pub enum Address {
     /// Real, ordinary account.
     Account(AccountAddress),
-    /// Real, contract account.
+    /// Real contract.
     Contract(ContractAddress),
     /// Virtual baking reward account.
     BakingRewardAccount,

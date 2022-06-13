@@ -896,7 +896,8 @@ fn contract_update_operations(
                 ));
                 next_index += 2;
             }
-            _ => {}
+            ContractTraceElement::Interrupted { .. } => {}
+            ContractTraceElement::Resumed { .. } => {}
         }
     }
     let mut res = vec![normal_account_transaction_operation(

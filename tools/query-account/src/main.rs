@@ -28,11 +28,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     // Constants.
-    let network_id = NetworkIdentifier {
-        blockchain:             "concordium".to_string(),
-        network:                args.network,
-        sub_network_identifier: None,
-    };
+    let network_id = NetworkIdentifier::new("concordium".to_string(), args.network);
 
     // Configure HTTP client.
     let base_url = Url::parse(args.url.as_str())?;
@@ -40,6 +36,15 @@ fn main() -> Result<()> {
     let address = args.address;
 
     let mut next_from_height = 0;
+    let mut computed_balance: i128 = call_rosetta_balance(
+        client.clone(),
+        &base_url,
+        network_id.clone(),
+        next_from_height,
+        address.clone(),
+    )
+    .and_then(|v| v.balances[0].value.parse().map_err(anyhow::Error::new))
+    .unwrap_or_default();
     loop {
         let status = call_rosetta_status(client.clone(), &base_url, network_id.clone())?;
         let current_block_height = status.current_block_identifier.index;
@@ -51,13 +56,14 @@ fn main() -> Result<()> {
             sleep(Duration::from_secs(10));
             continue;
         }
-        traverse_block_range(
+        computed_balance = traverse_block_range(
             client.clone(),
             &base_url,
             network_id.clone(),
             next_from_height,
             current_block_height,
             address.clone(),
+            computed_balance,
         )?;
         next_from_height = current_block_height + 1;
     }
@@ -70,29 +76,54 @@ fn traverse_block_range(
     from_block_height: i64,
     to_block_height: i64,
     address: String,
-) -> Result<()> {
+    mut computed_balance: i128,
+) -> Result<i128> {
+    eprintln!("Querying blocks from height {} to {}...", from_block_height, to_block_height);
     for block_height in from_block_height..=to_block_height {
         if block_height % 100 == 0 {
             eprintln!("Querying block at height {}...", block_height);
         }
         let block_result =
             call_rosetta_block(client.clone(), base_url, network_id.clone(), block_height)?;
+        let mut has_ops = false;
         if let Some(block) = block_result.block {
             for tx in block.transactions {
                 for op in tx.operations {
                     if let Some(a) = op.account {
                         if a.address == address {
+                            has_ops = true;
+                            let amount = match op.amount.clone() {
+                                None => 0,
+                                Some(a) => a.value.parse()?,
+                            };
+                            computed_balance += amount;
                             println!(
                                 "Account affected with operation type '{}' in transaction '{}' of \
-                                 block '{}' at height {}.",
+                                 block '{}' at height {} with amount {}.",
                                 op._type,
                                 tx.transaction_identifier.hash,
                                 block.block_identifier.hash,
-                                block.block_identifier.index
+                                block.block_identifier.index,
+                                amount,
                             );
                         }
                     }
                 }
+            }
+            if has_ops {
+                println!(
+                    "New computed balance: {}. Actual balance: {}.",
+                    computed_balance,
+                    call_rosetta_balance(
+                        client.clone(),
+                        base_url,
+                        network_id.clone(),
+                        block_height,
+                        address.clone(),
+                    )?
+                    .balances[0]
+                        .value
+                );
             }
         }
 
@@ -102,7 +133,7 @@ fn traverse_block_range(
             }
         }
     }
-    Ok(())
+    Ok(computed_balance)
 }
 
 fn call_rosetta_status(
@@ -137,6 +168,30 @@ fn call_rosetta_block(
                 index: Some(block_height),
                 hash:  None,
             }),
+        })
+        .send()?
+        .json()
+        .map_err(reqwest::Error::into)
+}
+
+fn call_rosetta_balance(
+    client: Client,
+    base_url: &Url,
+    network_id: NetworkIdentifier,
+    block_height: i64,
+    address: String,
+) -> Result<AccountBalanceResponse> {
+    let url = base_url.join("/account/balance")?;
+    client
+        .post(url)
+        .json(&AccountBalanceRequest {
+            network_identifier: Box::new(network_id),
+            block_identifier:   Some(Box::new(PartialBlockIdentifier {
+                index: Some(block_height),
+                hash:  None,
+            })),
+            account_identifier: Box::new(AccountIdentifier::new(address)),
+            currencies:         None,
         })
         .send()?
         .json()

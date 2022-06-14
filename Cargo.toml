@@ -1,6 +1,6 @@
 [package]
 name = "concordium-rosetta"
-version = "0.3.3"
+version = "0.4.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -23,6 +23,6 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
-tokio = "1.8"
+tokio = { version = "1.8", features = ["rt-multi-thread"] }
 tonic = "0.5"
 warp = "0.3"

@@ -1,9 +1,8 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::{Amount, TransactionTime},
-    constants::DEFAULT_NETWORK_ID,
     endpoints::Client,
     id::types::{AccountAddress, AccountKeys},
     types::{
@@ -113,15 +112,12 @@ async fn main() -> Result<()> {
     );
     let signed_tx = pre_tx.sign(&sender_keys);
     let block_item = BlockItem::AccountTransaction(signed_tx);
-    let success = client
+    let transaction_hash = client
         .clone()
-        .send_transaction(DEFAULT_NETWORK_ID, &block_item)
+        .send_block_item(&block_item)
         .await
         .context("cannot send transaction to node")?;
-    if !success {
-        return Err(anyhow!("node rejected transaction"));
-    }
 
-    println!("Sent transaction '{}'", block_item.hash());
+    println!("Sent transaction '{}'", transaction_hash.to_string());
     Ok(())
 }

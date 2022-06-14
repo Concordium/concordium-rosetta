@@ -15,7 +15,7 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 ### Versions
 
 - Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 3.0.x.
+- Supported Concordium node version: 4.x.y, where x >= 1.
 - Supported Rust toolchain version: 1.54+.
 
 ## Build and run
@@ -119,8 +119,8 @@ All applicable endpoints except for the
   but its value is ignored.
   All blocks contain a synthetic first transaction with pseudo-hash `tokenomics` (think of Bitcoin's "coinbase" transaction)
   containing operations for minting and rewards.
-  These operations reference the special internal "baker-" and "finalization reward" accounts with the pseudo-addresses
-  `baking_reward_account` and `finalization_reward_account`, respectively.
+  These operations include references to the certain special internal reward and delegation accrue accounts.
+  See `account_identifier` in the [identifiers](#Identifiers) section for details.
   Likewise, almost all regular transactions have a "fee" operation.
 
 - [Mempool](https://www.rosetta-api.org/docs/MempoolApi.html):
@@ -213,11 +213,14 @@ This implementation imposes the following restrictions on these identifiers:
 - `account_identifier`: Only the `address` field is applicable.
   The field supports the following kinds of values:
   - Account address in Base58Check format.
-  - The special "addresses" `baking_reward_account` and `finalization_reward_account`
-    of the previously mentioned virtual accounts of the same names.
+  - The special "addresses" `baking_reward_account`, `finalization_reward_account`
+    for the virtual baking- and finalization reward accounts.
+  - The special "addresses" `foundation_accrue_account`, `pool_accrue_account:<pool>`, and `pool_accrue_account:passive`
+    for the delegation accrue accounts for the foundation account, delegation pool `<pool>`,
+    and passive the delegation pool, respectively.
   - Contract address with format `contract:<index>_<subindex>`.
 
-Identifier strings are generally expected in standard formats (hex for hashes, Base58Check for account addresses etc.).
+Identifier strings are generally expected in standard formats (i.e. hex for hashes, Base58Check for account addresses etc.).
 No prefixes such as "0x" may be added.
 
 ### Operations

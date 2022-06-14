@@ -75,6 +75,13 @@ impl NetworkApi {
                     OPERATION_TYPE_TRANSFER_WITH_SCHEDULE.to_string(),
                     OPERATION_TYPE_UPDATE_CREDENTIALS.to_string(),
                     OPERATION_TYPE_REGISTER_DATA.to_string(),
+                    OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
+                    OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                    OPERATION_TYPE_CONFIGURE_BAKER.to_string(),
+                    OPERATION_TYPE_CONFIGURE_DELEGATION.to_string(),
                 ],
                 errors:                    vec![
                     handler_error::invalid_input_unsupported_field_error(None),
@@ -89,7 +96,6 @@ impl NetworkApi {
                     handler_error::internal_json_encoding_failed_error(None, None),
                     handler_error::proxy_client_rpc_error(None),
                     handler_error::proxy_client_query_error(None),
-                    handler_error::proxy_transaction_rejected(),
                 ],
                 historical_balance_lookup: true,
                 timestamp_start_index:     None, /* not populated as the genesis block has a

@@ -41,7 +41,7 @@ impl BlockApi {
                     block_info.block_parent.to_string(),
                 ),
                 block_info.block_slot_time.timestamp_millis(),
-                block_transactions(block_summary),
+                block_transactions(block_summary).await?,
             ))),
             other_transactions: None, // currently just expanding all transactions inline
         })
@@ -59,7 +59,7 @@ impl BlockApi {
             .get_block_summary(&hash) // TODO should probably use the "raw" variant
             .await?;
         match block_summary
-            .transaction_summaries
+            .transaction_summaries()
             .iter()
             .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
         {
@@ -69,19 +69,21 @@ impl BlockApi {
     }
 }
 
-fn block_transactions(block_summary: BlockSummary) -> Vec<Transaction> {
+async fn block_transactions(block_summary: BlockSummary) -> ApiResult<Vec<Transaction>> {
     // Synthetic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
-        tokenomics_transaction_operations(&block_summary),
+        tokenomics_transaction_operations(&block_summary).await?,
     );
     let mut res = vec![tokenomics_transaction];
-    res.extend(block_summary.transaction_summaries.iter().map(map_transaction));
-    res
+    res.extend(block_summary.transaction_summaries().iter().map(map_transaction));
+    Ok(res)
 }
 
-fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operation> {
+async fn tokenomics_transaction_operations(
+    block_summary: &BlockSummary,
+) -> ApiResult<Vec<Operation>> {
     let mut index_offset: i64 = 0;
     let next_index = |offset: &mut i64| {
         let res = *offset;
@@ -89,7 +91,8 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
         res
     };
     let mut res = vec![];
-    for e in &block_summary.special_events {
+    let mut current_pool_owner = None;
+    for e in block_summary.special_events() {
         match e {
             SpecialTransactionOutcome::Mint {
                 mint_baking_reward,
@@ -108,7 +111,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_baking_reward.microgtu as i128,
+                        mint_baking_reward.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -124,7 +127,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_finalization_reward.microgtu as i128,
+                        mint_finalization_reward.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -141,7 +144,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                         foundation_account.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_platform_development_charge.microgtu as i128,
+                        mint_platform_development_charge.microccd as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -155,7 +158,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 ..
             } => {
                 // TODO Add gas account operations.
-                if baker_reward.microgtu != 0 {
+                if baker_reward.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -167,13 +170,13 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microgtu as i128,
+                            baker_reward.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if foundation_charge.microgtu != 0 {
+                if foundation_charge.microccd != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -185,7 +188,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             foundation_account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            foundation_charge.microgtu as i128,
+                            foundation_charge.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -199,7 +202,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 let mut baking_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in baker_rewards {
-                    baking_reward_sum += amount.microgtu as i128;
+                    baking_reward_sum += amount.microccd as i128;
                     let id = OperationIdentifier::new(next_index(&mut index_offset));
                     operation_identifiers.push(id.clone());
                     res.push(Operation {
@@ -211,7 +214,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i128,
+                            amount.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -239,7 +242,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                 let mut finalization_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in finalization_rewards {
-                    finalization_reward_sum += amount.microgtu as i128;
+                    finalization_reward_sum += amount.microccd as i128;
                     let id = OperationIdentifier {
                         index:         next_index(&mut index_offset),
                         network_index: None,
@@ -254,7 +257,7 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microgtu as i128,
+                            amount.microccd as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -277,7 +280,234 @@ fn tokenomics_transaction_operations(block_summary: &BlockSummary) -> Vec<Operat
                     metadata:             None,
                 })
             }
+            SpecialTransactionOutcome::PaydayPoolReward {
+                pool_owner,
+                ..
+            } => {
+                // The events are ordered such that PaydayPoolReward events are followed
+                // by PaydayAccountReward events for the accounts in the given pool.
+                current_pool_owner = *pool_owner;
+            }
+            SpecialTransactionOutcome::PaydayAccountReward {
+                account,
+                transaction_fees,
+                baker_reward,
+                finalization_reward,
+            } => {
+                if transaction_fees.microccd != 0 {
+                    let pool_account_address =
+                        format!("{}{}", ACCOUNT_ACCRUE_POOL_PREFIX, match current_pool_owner {
+                            None => POOL_PASSIVE.to_string(),
+                            Some(id) => id.to_string(),
+                        });
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD
+                            .to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            account.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            transaction_fees.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD
+                            .to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            pool_account_address,
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            -(transaction_fees.microccd as i128),
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+                if baker_reward.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            account.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            baker_reward.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            ACCOUNT_REWARD_BAKING.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            -(baker_reward.microccd as i128),
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+                if finalization_reward.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            account.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            finalization_reward.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            ACCOUNT_REWARD_FINALIZATION.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            -(finalization_reward.microccd as i128),
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+            }
+            SpecialTransactionOutcome::PaydayFoundationReward {
+                foundation_account,
+                development_charge,
+            } => {
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        foundation_account.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        development_charge.microccd as i128,
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+                res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                    ))),
+                    amount:               Some(Box::new(amount_from_uccd(
+                        -(development_charge.microccd as i128),
+                    ))),
+                    coin_change:          None,
+                    metadata:             None,
+                });
+            }
+            SpecialTransactionOutcome::BlockAccrueReward {
+                baker_reward,
+                passive_reward,
+                foundation_charge,
+                baker_id,
+                ..
+            } => {
+                // TODO Add gas account operations.
+                if foundation_charge.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                        ))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            foundation_charge.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+                if passive_reward.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(format!(
+                            "{}{}",
+                            ACCOUNT_ACCRUE_POOL_PREFIX, POOL_PASSIVE
+                        )))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            passive_reward.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+                if baker_reward.microccd != 0 {
+                    res.push(Operation {
+                        operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                            &mut index_offset,
+                        ))),
+                        related_operations:   None,
+                        _type:                OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                        status:               Some(OPERATION_STATUS_OK.to_string()),
+                        account:              Some(Box::new(AccountIdentifier::new(format!(
+                            "{}{}",
+                            ACCOUNT_ACCRUE_POOL_PREFIX,
+                            baker_id.to_string()
+                        )))),
+                        amount:               Some(Box::new(amount_from_uccd(
+                            baker_reward.microccd as i128,
+                        ))),
+                        coin_change:          None,
+                        metadata:             None,
+                    });
+                }
+            }
         }
     }
-    res
+    Ok(res)
 }

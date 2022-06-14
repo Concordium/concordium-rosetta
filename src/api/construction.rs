@@ -15,7 +15,6 @@ use concordium_rust_sdk::{
         types::{CredentialIndex, KeyIndex, TransactionSignature, TransactionTime},
         SerdeDeserialize, SerdeSerialize,
     },
-    constants::DEFAULT_NETWORK_ID,
     id::types::AccountAddress,
     types::{
         transactions::{
@@ -339,18 +338,10 @@ impl ConstructionApi {
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
 
         let block_item = parse_block_item(req.signed_transaction.as_str())?;
-        let success = self
-            .query_helper
-            .client
-            .clone()
-            .send_transaction(DEFAULT_NETWORK_ID, &block_item)
-            .await?;
-        if !success {
-            // TODO Verify signatures in this case?
-            return Err(ApiError::TransactionNotAccepted);
-        }
+        let transaction_hash =
+            self.query_helper.client.clone().send_block_item(&block_item).await?;
         Ok(TransactionIdentifierResponse::new(TransactionIdentifier::new(
-            block_item.hash().to_string(),
+            transaction_hash.to_string(),
         )))
     }
 
@@ -462,7 +453,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i128,
+            amount.microccd as i128,
             None,
         ),
         Payload::TransferWithMemo {
@@ -472,7 +463,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i128,
+            amount.microccd as i128,
             Some(memo.clone()),
         ),
         _ => Err(ApiError::UnsupportedOperationType(transaction_type_to_operation_type(Some(

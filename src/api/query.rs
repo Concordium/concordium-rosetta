@@ -1,12 +1,12 @@
 use crate::api::{
     error::{ApiError, ApiResult, InvalidBlockIdentifierError},
-    transaction::{ACCOUNT_CONTRACT_PREFIX, ACCOUNT_REWARD_BAKING, ACCOUNT_REWARD_FINALIZATION},
+    transaction::*,
 };
 use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, AbsoluteBlockHeight, ContractAddress},
+    types::{hashes::BlockHash, queries::BlockInfo, smart_contracts::InstanceInfo, *},
 };
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
@@ -36,17 +36,68 @@ impl QueryHelper {
                 self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
             }
             Address::Contract(addr) => {
-                self.client.clone().get_instance_info(addr, &block_hash).await?.amount
+                match self.client.clone().get_instance_info(addr, &block_hash).await? {
+                    InstanceInfo::V0 {
+                        amount,
+                        ..
+                    } => amount,
+                    InstanceInfo::V1 {
+                        amount,
+                        ..
+                    } => amount,
+                }
             }
             Address::BakingRewardAccount => {
-                self.client.clone().get_reward_status(&block_hash).await?.baking_reward_account
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.baking_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.baking_reward_account,
+                }
             }
             Address::FinalizationRewardAccount => {
-                self.client
-                    .clone()
-                    .get_reward_status(&block_hash)
-                    .await?
-                    .finalization_reward_account
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.finalization_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.finalization_reward_account,
+                }
+            }
+            Address::FoundationAccrueAccount => {
+                match self.client.clone().get_reward_status(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        ..
+                    } => {
+                        return Err(ApiError::InvalidAccountAddress(
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                        ))
+                    }
+                    RewardsOverview::V1 {
+                        foundation_transaction_rewards,
+                        ..
+                    } => foundation_transaction_rewards,
+                }
+            }
+            Address::PoolAccrueAccount(baker_id) => {
+                match self.client.clone().get_pool_status(baker_id, &block_hash).await? {
+                    PoolStatus::BakerPool {
+                        current_payday_status,
+                        ..
+                    } => match current_payday_status {
+                        None => Amount::from_ccd(0),
+                        Some(s) => s.transaction_fees_earned,
+                    },
+                    PoolStatus::PassiveDelegation {
+                        current_payday_transaction_fees_earned,
+                        ..
+                    } => current_payday_transaction_fees_earned,
+                }
             }
         };
         Ok((block_info, amount))
@@ -112,8 +163,8 @@ pub fn block_hash_from_string(hash: &str) -> ApiResult<BlockHash> {
     })
 }
 
-/// Helper type for providing a way to represent virtual reward accounts in
-/// addition to ordinary ones.
+/// Helper type for providing a way to represent virtual reward/accrue accounts
+/// in addition to ordinary ones.
 pub enum Address {
     /// Real, ordinary account.
     Account(AccountAddress),
@@ -123,6 +174,11 @@ pub enum Address {
     BakingRewardAccount,
     /// Virtual finalization reward account.
     FinalizationRewardAccount,
+    /// Virtual foundation accrue account.
+    FoundationAccrueAccount,
+    /// Virtual pool accrue account. Baker ID of None denotes the accrue account
+    /// of the passive pool.
+    PoolAccrueAccount(Option<BakerId>),
 }
 
 pub fn account_address_from_identifier(id: &AccountIdentifier) -> ApiResult<Address> {
@@ -136,8 +192,16 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
     match addr {
         ACCOUNT_REWARD_BAKING => Ok(Address::BakingRewardAccount),
         ACCOUNT_REWARD_FINALIZATION => Ok(Address::FinalizationRewardAccount),
+        ACCOUNT_ACCRUE_FOUNDATION => Ok(Address::FoundationAccrueAccount),
         _ => {
-            if let Some(contract_addr) = addr.strip_prefix(ACCOUNT_CONTRACT_PREFIX) {
+            if let Some(pool) = addr.strip_prefix(ACCOUNT_ACCRUE_POOL_PREFIX) {
+                if pool == POOL_PASSIVE {
+                    return Ok(Address::PoolAccrueAccount(None));
+                }
+                let baker_id =
+                    pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
+                Ok(Address::PoolAccrueAccount(Some(baker_id)))
+            } else if let Some(contract_addr) = addr.strip_prefix(ACCOUNT_CONTRACT_PREFIX) {
                 // TODO Improve error reporting (see parsing of signature string).
                 match contract_addr.split_once('_') {
                     None => {

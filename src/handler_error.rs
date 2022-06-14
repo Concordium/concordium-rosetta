@@ -215,10 +215,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     reply::json(&proxy_client_query_error(Some(err.to_string()))),
                     StatusCode::INTERNAL_SERVER_ERROR,
                 ),
-                ApiError::TransactionNotAccepted => reply::with_status(
-                    reply::json(&proxy_transaction_rejected()),
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ),
             })
         }
     }
@@ -270,7 +266,9 @@ pub fn invalid_input_invalid_value_or_identifier_error(
         code:        1200,
         message:     "invalid input: invalid value or identifier".to_string(),
         description: Some(
-            "The provided value or identifier is incorrectly typed or formatted.".to_string(),
+            "The provided value or identifier is incorrectly typed or formatted. Note that some \
+             identifiers are valid in newer blocks but not in older ones."
+                .to_string(),
         ),
         retriable:   false,
         details:     key_value_pairs(&[
@@ -368,15 +366,5 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
         ),
         retriable:   true,
         details:     key_value_pairs(&[key_value_pair("message", err)]),
-    }
-}
-
-pub fn proxy_transaction_rejected() -> Error {
-    Error {
-        code:        10200,
-        message:     "proxy error: node rejected transaction".to_string(),
-        description: Some("The submitted transaction was rejected by the node.".to_string()),
-        retriable:   false,
-        details:     None,
     }
 }

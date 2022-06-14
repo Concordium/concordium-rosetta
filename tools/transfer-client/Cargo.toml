@@ -13,7 +13,9 @@ version = "*"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "=3.1", features = ["derive"] }
+clap_derive = "=3.1" # fix dependency of 'clap' to last 2018-edition version
+clap_lex = "=0.2.0" # fix dependency of 'clap' to last 2018-edition version
 chrono = "0.4"
 hex = "0.4"
 reqwest = { version = "0.11", features = ["blocking", "json"] }

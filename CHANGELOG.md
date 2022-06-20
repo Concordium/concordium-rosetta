@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Upgrade versions of dependencies.
+
 ## 0.4.0
 
 - Bump Node SDK to support protocol version P4.

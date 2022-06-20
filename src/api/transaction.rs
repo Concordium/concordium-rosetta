@@ -223,6 +223,7 @@ pub const POOL_PASSIVE: &str = "passive";
 pub const OPERATION_STATUS_OK: &str = "ok";
 pub const OPERATION_STATUS_FAIL: &str = "fail";
 
+pub const OPERATION_TYPE_UNKNOWN: &str = "unknown";
 pub const OPERATION_TYPE_FEE: &str = "fee";
 
 pub const OPERATION_TYPE_ACCOUNT_CREATION: &str = "account_creation";
@@ -1049,7 +1050,7 @@ pub fn transaction_type_from_operation_type(type_: &str) -> ApiResult<Transactio
 
 pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> String {
     let res = match type_ {
-        None => "unknown",
+        None => OPERATION_TYPE_UNKNOWN,
         Some(t) => match t {
             TransactionType::AddBaker => OPERATION_TYPE_ADD_BAKER,
             TransactionType::DeployModule => OPERATION_TYPE_DEPLOY_MODULE,

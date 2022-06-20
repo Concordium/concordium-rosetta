@@ -50,6 +50,7 @@ impl NetworkApi {
                     },
                 ],
                 operation_types:           vec![
+                    OPERATION_TYPE_UNKNOWN.to_string(),
                     OPERATION_TYPE_FEE.to_string(),
                     OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),

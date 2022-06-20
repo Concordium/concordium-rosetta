@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+
+- Add operation type "unknown" to list of operation types in '/network/options'.
+
 ## 0.4.1
 
 - Upgrade versions of dependencies.

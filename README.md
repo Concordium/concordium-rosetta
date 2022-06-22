@@ -581,6 +581,19 @@ looking for transactions related to a given account.
 
 The intent is to provide a way for testers to exercise the Data API.
 
+### Test CLI
+
+The dockerfile in [`test-cli`](./test-cli) builds a dockerized `rosetta-cli` that may be used
+to run a full check of the Data API against a local Rosetta implementation.
+The configuration file is generated from default values using `rosetta-cli configuration:create rosetta-config.json`
+with the following changes:
+- The Rosetta address is set to `localhost` which probably doesn't work in most cases
+  (it works in Kubernetes if the containers run within the same pod).
+  Unfortunately, the CLI doesn't seem to allow this to be overwritten with a CLI arg:
+  Either the build job needs to patch the config file or it needs to be mounted in at startup.
+- To avoid hard-coding `network_identifier` to any particular value, the `network` field is set to `""`,
+  As always, the Rosetta instance must have been started up with the same value.
+
 ## Resources
 
 - [List of implementations for other blockchains](https://github.com/coinbase/rosetta-ecosystem/blob/master/implementations.md).

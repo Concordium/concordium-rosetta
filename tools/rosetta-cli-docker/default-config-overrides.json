@@ -1,0 +1,7 @@
+{
+ "network": {
+  "blockchain": "concordium",
+  "network": "rosetta"
+ },
+ "online_url": "http://172.17.0.1:8080"
+}

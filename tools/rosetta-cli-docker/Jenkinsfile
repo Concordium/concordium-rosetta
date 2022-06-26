@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    environment {
+        image_repo = "concordium/rosetta-cli"
+        image_name = "${image_repo}:${image_tag}"
+    }
+    stages {
+        stage('dockerhub-login') {
+            environment {
+                // Defines 'CRED_USR' and 'CRED_PSW'
+                // (see 'https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#handling-credentials').
+                CRED = credentials('jenkins-dockerhub')
+            }
+            steps {
+                sh 'docker login --username "${CRED_USR}" --password "${CRED_PSW}"'
+            }
+        }
+        stage('build-push-docker') {
+            steps {
+                sh '''\
+                    docker build \
+                      --build-arg build_image="${build_image}" \
+                      --label build_image="${build_image}" \
+                      --build-arg base_image="${base_image}" \
+                      --label base_image="${base_image}" \
+                      --build-arg branch="${branch}" \
+                      --label branch="${branch}" \
+                      --tag="${image_name}" \
+                      ./tools/rosetta-cli-docker
+                    docker push "${image_name}"
+                '''.stripIndent()
+            }
+        }
+    }
+}

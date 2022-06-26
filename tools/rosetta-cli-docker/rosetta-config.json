@@ -1,7 +1,7 @@
 {
  "network": {
   "blockchain": "concordium",
-  "network": ""
+  "network": "rosetta"
  },
  "online_url": "http://172.17.0.1:8080",
  "data_directory": "",
@@ -15,7 +15,8 @@
  "log_configuration": false,
  "compression_disabled": false,
  "memory_limit_disabled": false,
- "error_stack_trace_enabled": false,
+ "error_stack_trace_disabled": false,
+ "coin_supported": false,
  "construction": null,
  "data": {
   "active_reconciliation_concurrency": 16,
@@ -38,5 +39,6 @@
   "results_output_file": "",
   "pruning_disabled": false,
   "initial_balance_fetch_disabled": false
- }
+ },
+ "perf": null
 }

@@ -11,4 +11,7 @@ RUN cd rosetta-cli && make install
 # Copy binary to slim image.
 FROM ${base_image}
 COPY --from=build /build/rosetta-cli /usr/local/bin/
-ENTRYPOINT [ "rosetta-cli", "--configuration-file=rosetta-config.json", "check:data" ]
+COPY ./rosetta-config.json /rosetta-config.json
+ENV ROSETTA_CLI_CONFIGURATION_FILE=/rosetta-config.json
+ENTRYPOINT [ "rosetta-cli", "--configuration-file=$ROSETTA_CLI_CONFIGURATION_FILE" ]
+CMD [ "check:data" ]

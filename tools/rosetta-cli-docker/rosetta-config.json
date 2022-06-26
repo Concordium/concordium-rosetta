@@ -3,7 +3,7 @@
   "blockchain": "concordium",
   "network": ""
  },
- "online_url": "http://localhost:8080",
+ "online_url": "http://172.17.0.1:8080",
  "data_directory": "",
  "http_timeout": 10,
  "max_retries": 5,

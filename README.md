@@ -590,7 +590,7 @@ with the following changes:
 - The Rosetta address is set to `172.17.0.1` which indicates that Rosetta is running locally on the host.
   Unfortunately, the CLI doesn't seem to allow this to be overwritten with a CLI arg:
   Either the build job needs to patch the config file or it needs to be mounted in at startup.
-- To avoid hard-coding `network_identifier` to any particular value, the `network` field is set to `""`,
+- To avoid hard-coding `network_identifier` to any particular value, the `network` field is set to `"rosetta"`,
   As always, the Rosetta instance must have been started up with the same value.
 
 ## Resources

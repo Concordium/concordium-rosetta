@@ -72,13 +72,10 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // Initialize gRPC and client.
-    let endpoint = tonic::transport::Endpoint::from_shared(format!(
-        "http://{}:{}",
-        args.grpc_host, args.grpc_port
-    ))
-    .context("invalid host and/or port")?;
     let client =
-        Client::connect(endpoint, args.grpc_token).await.context("cannot connect to node")?;
+        Client::connect(format!("http://{}:{}", args.grpc_host, args.grpc_port), args.grpc_token)
+            .await
+            .context("cannot connect to node")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

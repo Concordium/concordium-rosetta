@@ -75,10 +75,9 @@ async fn main() -> Result<()> {
         serde_json::from_str(&sender_keys_json).context("cannot parse keys loaded from file")?;
 
     // Configure client.
-    let endpoint =
-        tonic::transport::Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))
-            .context("invalid host and/or port")?;
-    let client = Client::connect(endpoint, grpc_token).await.context("cannot connect to node")?;
+    let client = Client::connect(format!("http://{}:{}", grpc_host, grpc_port), grpc_token)
+        .await
+        .context("cannot connect to node")?;
 
     // Configure and send transfer.
     let consensus_status =

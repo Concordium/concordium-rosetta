@@ -24,6 +24,7 @@ pipeline {
                       --build-arg base_image="${base_image}" \
                       --label base_image="${base_image}" \
                       --tag="${image_name}" \
+                      --pull \
                       .
                     docker push "${image_name}"
                 '''.stripIndent()

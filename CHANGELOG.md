@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3
+
+- Bump Node SDK to fix a parsing bug. This bumps the minimum Rust version to 1.56.
+
 ## 0.4.2
 
 - Add operation type "unknown" to list of operation types in '/network/options'.

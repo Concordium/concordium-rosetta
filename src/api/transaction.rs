@@ -350,20 +350,32 @@ fn operations_and_metadata_from_account_transaction_details(
         ),
         AccountTransactionEffects::ContractInitialized {
             data,
-        } => (
-            vec![normal_account_transaction_operation(
-                0,
-                details,
-                Some(amount_from_uccd(data.amount.microccd as i128)),
-                Some(&ContractInitializedMetadata {
-                    module_ref: data.origin_ref,
-                    address:    data.address,
-                    init_name:  data.init_name.clone(),
-                    events:     data.events.clone(),
-                }),
-            )],
-            None,
-        ),
+        } => {
+            // TODO Adapt and use 'simple_transfer_operations'?
+            let mut ops = vec![
+                normal_account_transaction_operation(
+                    0,
+                    details,
+                    Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                    Some(&ContractInitializedMetadata {
+                        module_ref: data.origin_ref,
+                        address:    data.address,
+                        init_name:  data.init_name.clone(),
+                        events:     data.events.clone(),
+                    }),
+                )
+            ];
+            if data.amount.microccd != 0 {
+                ops.push(account_transaction_operation::<Value>(
+                    1,
+                    details,
+                    contract_address_string(&data.address),
+                    Some(amount_from_uccd(data.amount.microccd as i128)),
+                    None,
+                ));
+            }
+            (ops, None)
+        },
         AccountTransactionEffects::ContractUpdateIssued {
             effects,
         } => (contract_update_operations(details, effects), None),
@@ -897,6 +909,7 @@ fn contract_update_operations(
             ContractTraceElement::Updated {
                 data,
             } => {
+                // TODO Adapt and use 'simple_transfer_operations'.
                 ops.push(account_transaction_operation::<Value>(
                     next_index,
                     details,
@@ -921,6 +934,7 @@ fn contract_update_operations(
                 amount,
                 to,
             } => {
+                // TODO Adapt and use 'simple_transfer_operations'.
                 ops.push(account_transaction_operation::<Value>(
                     next_index,
                     details,

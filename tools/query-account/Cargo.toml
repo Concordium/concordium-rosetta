@@ -10,6 +10,4 @@ version = "*"
 [dependencies]
 anyhow = "1"
 clap = { version = "=3.1", features = ["derive"] }
-clap_derive = "=3.1" # pin dependency of 'clap' to last 2018-edition version
-clap_lex = "=0.2.0" # pin dependency of 'clap' to last 2018-edition version
 reqwest = { version = "0.11", features = ["blocking", "json"] }

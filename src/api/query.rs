@@ -4,7 +4,7 @@ use crate::api::{
 };
 use concordium_rust_sdk::{
     common::types::Amount,
-    endpoints::{BlocksAtHeightInput, Client},
+    endpoints::{BlocksAtHeightInput, Client, QueryError},
     id::types::AccountAddress,
     types::{hashes::BlockHash, queries::BlockInfo, smart_contracts::InstanceInfo, *},
 };
@@ -33,18 +33,30 @@ impl QueryHelper {
         let address = account_address_from_identifier(account_identifier)?;
         let amount = match address {
             Address::Account(addr) => {
-                self.client.clone().get_account_info(addr, &block_hash).await?.account_amount
+                match self.client.clone().get_account_info(addr, &block_hash).await {
+                    Ok(i) => i.account_amount,
+                    Err(err) => match err {
+                        QueryError::RPCError(_) => return Err(err.into()),
+                        QueryError::NotFound => Amount::from_micro_ccd(0),
+                    },
+                }
             }
             Address::Contract(addr) => {
-                match self.client.clone().get_instance_info(addr, &block_hash).await? {
-                    InstanceInfo::V0 {
-                        amount,
-                        ..
-                    } => amount,
-                    InstanceInfo::V1 {
-                        amount,
-                        ..
-                    } => amount,
+                match self.client.clone().get_instance_info(addr, &block_hash).await {
+                    Ok(i) => match i {
+                        InstanceInfo::V0 {
+                            amount,
+                            ..
+                        } => amount,
+                        InstanceInfo::V1 {
+                            amount,
+                            ..
+                        } => amount,
+                    },
+                    Err(err) => match err {
+                        QueryError::RPCError(_) => return Err(err.into()),
+                        QueryError::NotFound => Amount::from_micro_ccd(0),
+                    },
                 }
             }
             Address::BakingRewardAccount => {

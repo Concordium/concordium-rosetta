@@ -352,19 +352,17 @@ fn operations_and_metadata_from_account_transaction_details(
             data,
         } => {
             // TODO Adapt and use 'simple_transfer_operations'?
-            let mut ops = vec![
-                normal_account_transaction_operation(
-                    0,
-                    details,
-                    Some(amount_from_uccd(-(data.amount.microccd as i128))),
-                    Some(&ContractInitializedMetadata {
-                        module_ref: data.origin_ref,
-                        address:    data.address,
-                        init_name:  data.init_name.clone(),
-                        events:     data.events.clone(),
-                    }),
-                )
-            ];
+            let mut ops = vec![normal_account_transaction_operation(
+                0,
+                details,
+                Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                Some(&ContractInitializedMetadata {
+                    module_ref: data.origin_ref,
+                    address:    data.address,
+                    init_name:  data.init_name.clone(),
+                    events:     data.events.clone(),
+                }),
+            )];
             if data.amount.microccd != 0 {
                 ops.push(account_transaction_operation::<Value>(
                     1,
@@ -375,7 +373,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 ));
             }
             (ops, None)
-        },
+        }
         AccountTransactionEffects::ContractUpdateIssued {
             effects,
         } => (contract_update_operations(details, effects), None),

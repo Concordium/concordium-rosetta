@@ -261,6 +261,13 @@ pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
+pub fn contract_address_string(contract_addr: &ContractAddress) -> String {
+    format!(
+        "{}{}_{}",
+        ACCOUNT_CONTRACT_PREFIX, contract_addr.index.index, contract_addr.subindex.sub_index
+    )
+}
+
 pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
     let (operations, extra_metadata) = match &info.details {
         BlockItemSummaryDetails::AccountTransaction(details) => {
@@ -343,20 +350,30 @@ fn operations_and_metadata_from_account_transaction_details(
         ),
         AccountTransactionEffects::ContractInitialized {
             data,
-        } => (
-            vec![normal_account_transaction_operation(
+        } => {
+            // TODO Adapt and use 'simple_transfer_operations'?
+            let mut ops = vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(amount_from_uccd(data.amount.microccd as i128)),
+                Some(amount_from_uccd(-(data.amount.microccd as i128))),
                 Some(&ContractInitializedMetadata {
                     module_ref: data.origin_ref,
                     address:    data.address,
                     init_name:  data.init_name.clone(),
                     events:     data.events.clone(),
                 }),
-            )],
-            None,
-        ),
+            )];
+            if data.amount.microccd != 0 {
+                ops.push(account_transaction_operation::<Value>(
+                    1,
+                    details,
+                    contract_address_string(&data.address),
+                    Some(amount_from_uccd(data.amount.microccd as i128)),
+                    None,
+                ));
+            }
+            (ops, None)
+        }
         AccountTransactionEffects::ContractUpdateIssued {
             effects,
         } => (contract_update_operations(details, effects), None),
@@ -883,26 +900,43 @@ fn contract_update_operations(
     details: &AccountTransactionDetails,
     effects: &[ContractTraceElement],
 ) -> Vec<Operation> {
-    let mut updated_amount = 0;
     let mut ops = vec![];
-    let mut next_index = 1;
+    let mut next_index = 0;
     for e in effects.iter() {
         match e {
             ContractTraceElement::Updated {
                 data,
-            } => updated_amount += data.amount.microccd as i128,
+            } => {
+                // TODO Adapt and use 'simple_transfer_operations'.
+                ops.push(account_transaction_operation::<Value>(
+                    next_index,
+                    details,
+                    match &data.instigator {
+                        Address::Account(a) => a.to_string(),
+                        Address::Contract(a) => contract_address_string(a),
+                    },
+                    Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                    None,
+                ));
+                ops.push(account_transaction_operation::<Value>(
+                    next_index + 1,
+                    details,
+                    contract_address_string(&data.address),
+                    Some(amount_from_uccd(data.amount.microccd as i128)),
+                    None,
+                ));
+                next_index += 2;
+            }
             ContractTraceElement::Transferred {
                 from,
                 amount,
                 to,
             } => {
+                // TODO Adapt and use 'simple_transfer_operations'.
                 ops.push(account_transaction_operation::<Value>(
                     next_index,
                     details,
-                    format!(
-                        "{}{}_{}",
-                        ACCOUNT_CONTRACT_PREFIX, from.index.index, from.subindex.sub_index
-                    ),
+                    contract_address_string(from),
                     Some(amount_from_uccd(-(amount.microccd as i128))),
                     None,
                 ));
@@ -923,14 +957,7 @@ fn contract_update_operations(
             } => {}
         }
     }
-    let mut res = vec![normal_account_transaction_operation(
-        0,
-        details,
-        Some(amount_from_uccd(-updated_amount)),
-        Some(&ContractUpdateIssuedMetadata {}),
-    )];
-    res.extend(ops);
-    res
+    ops
 }
 
 fn simple_transfer_operations(
@@ -1006,18 +1033,11 @@ fn account_transaction_operation<T: SerdeSerialize>(
     metadata: Option<&T>,
 ) -> Operation {
     Operation {
-        operation_identifier: Box::new(OperationIdentifier {
-            index,
-            network_index: None,
-        }),
+        operation_identifier: Box::new(OperationIdentifier::new(index)),
         related_operations:   None,
         _type:                transaction_type_to_operation_type(details.transaction_type()),
         status:               Some(OPERATION_STATUS_OK.to_string()),
-        account:              Some(Box::new(AccountIdentifier {
-            address:     account_address,
-            sub_account: None,
-            metadata:    None,
-        })),
+        account:              Some(Box::new(AccountIdentifier::new(account_address))),
         amount:               amount.map(Box::new),
         coin_change:          None,
         metadata:             metadata.map(serde_json::to_value).map(Result::unwrap),

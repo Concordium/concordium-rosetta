@@ -122,9 +122,7 @@ impl NetworkApi {
             }),
             current_block_timestamp:  self
                 .query_helper
-                .client
-                .clone()
-                .get_block_info(&consensus_status.last_finalized_block)
+                .query_block_info_by_hash(&consensus_status.last_finalized_block)
                 .await?
                 .block_slot_time
                 .timestamp_millis(),

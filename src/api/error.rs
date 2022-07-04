@@ -1,4 +1,4 @@
-use concordium_rust_sdk::endpoints::{QueryError, RPCError};
+use concordium_rust_sdk::endpoints::RPCError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -78,6 +78,8 @@ pub enum ApiError {
     NoBlocksMatched,
     #[error("no transactions matched")]
     NoTransactionsMatched,
+    #[error("no accounts matched")]
+    NoAccountsMatched,
 
     // Identifier not resolved: Ambiguous identifier.
     #[error("multiple blocks matched")]
@@ -90,23 +92,12 @@ pub enum ApiError {
     // Proxy errors.
     #[error("client RPC error")]
     ClientRpcError(RPCError),
-    #[error("client query error")]
-    ClientQueryError(QueryError),
 }
 
 impl warp::reject::Reject for ApiError {}
 
 impl From<RPCError> for ApiError {
     fn from(err: RPCError) -> Self { ApiError::ClientRpcError(err) }
-}
-
-impl From<QueryError> for ApiError {
-    fn from(err: QueryError) -> Self {
-        match err {
-            QueryError::RPCError(e) => ApiError::ClientRpcError(e),
-            _ => ApiError::ClientQueryError(err),
-        }
-    }
 }
 
 pub type ApiResult<T> = Result<T, ApiError>;

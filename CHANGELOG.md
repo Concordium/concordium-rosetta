@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Fix smart contract amount computations.
+- Return balance 0 for non-existent accounts. 'rosetta-cli check:data' will fail if this isn't undocumented behavior
+  isn't implemented; see 'https://community.rosetta-api.org/t/can-the-endpoints-block-and-account-balance-not-be-implemented/115/14'.
+- Convert Node SDK "not found" error to appropriate Rosetta error.
+
 ## 0.4.3
 
 - Bump Node SDK to fix a parsing bug. This bumps the minimum Rust version to 1.56.

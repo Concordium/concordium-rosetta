@@ -128,9 +128,7 @@ impl ConstructionApi {
         let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
         let sender_info = self
             .query_helper
-            .client
-            .clone()
-            .get_account_info(opts.sender, &consensus_status.last_finalized_block)
+            .query_account_info_by_address(opts.sender, &consensus_status.last_finalized_block)
             .await?;
         // TODO Should include account's credential keys? Would enable signature
         // verification later on.

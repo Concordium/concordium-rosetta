@@ -194,6 +194,12 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     ))),
                     StatusCode::NOT_FOUND,
                 ),
+                ApiError::NoAccountsMatched => reply::with_status(
+                    reply::json(&identifier_not_resolved_no_matches_error(Some(
+                        "account_identifier".to_string(),
+                    ))),
+                    StatusCode::NOT_FOUND,
+                ),
                 ApiError::MultipleBlocksMatched => reply::with_status(
                     reply::json(&identifier_not_resolved_multiple_matches_error(Some(
                         "block_identifier".to_string(),
@@ -209,10 +215,6 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                 ),
                 ApiError::ClientRpcError(err) => reply::with_status(
                     reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ),
-                ApiError::ClientQueryError(err) => reply::with_status(
-                    reply::json(&proxy_client_query_error(Some(err.to_string()))),
                     StatusCode::INTERNAL_SERVER_ERROR,
                 ),
             })

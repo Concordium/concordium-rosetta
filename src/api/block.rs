@@ -27,8 +27,10 @@ impl BlockApi {
 
     pub async fn block(&self, req: BlockRequest) -> ApiResult<BlockResponse> {
         let block_info = self.query_helper.query_block_info(Some(req.block_identifier)).await?;
-        let block_summary =
-            self.query_helper.client.clone().get_block_summary(&block_info.block_hash).await?;
+        let block_summary = self
+            .query_helper
+            .query_block_summary_by_hash(&block_info.block_hash) // TODO should probably use the "raw" variant
+            .await?;
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
             block:              Some(Box::new(Block::new(
@@ -51,13 +53,11 @@ impl BlockApi {
         &self,
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
-        let hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
+        let block_hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
         let block_summary = self
             .query_helper
-            .client
-            .clone()
-            .get_block_summary(&hash) // TODO should probably use the "raw" variant
-            .await?;
+            .query_block_summary_by_hash(&block_hash) // TODO should probably use the "raw" variant
+            .await ?;
         match block_summary
             .transaction_summaries()
             .iter()

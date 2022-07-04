@@ -120,12 +120,7 @@ impl NetworkApi {
                 index: consensus_status.last_finalized_block_height.height as i64,
                 hash:  consensus_status.last_finalized_block.to_string(),
             }),
-            current_block_timestamp:  self
-                .query_helper
-                .client
-                .clone()
-                .get_block_info(&consensus_status.last_finalized_block)
-                .await?
+            current_block_timestamp:  self.query_helper.query_block_info_by_hash(&consensus_status.last_finalized_block).await?
                 .block_slot_time
                 .timestamp_millis(),
             genesis_block_identifier: Box::new(BlockIdentifier {

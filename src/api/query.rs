@@ -60,14 +60,14 @@ impl QueryHelper {
                 }
             }
             Address::BakingRewardAccount => {
-                match self.query_reward_status_by_hash(&block_hash) .await? {
-                        RewardsOverview::V0 {
-                            data,
-                        } => data.baking_reward_account,
-                        RewardsOverview::V1 {
-                            common,
-                            ..
-                        } => common.baking_reward_account,
+                match self.query_reward_status_by_hash(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.baking_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.baking_reward_account,
                 }
             }
             Address::FinalizationRewardAccount => {
@@ -197,9 +197,7 @@ impl QueryHelper {
                             // this particular GetBlockInfo call is redundant
                             // (as we don't really need to return an "entire" BlockInfo, only hash
                             // and height).
-                            [block_hash] => {
-                                self.query_block_info_by_hash(&block_hash).await
-                            }
+                            [block_hash] => self.query_block_info_by_hash(&block_hash).await,
                             _ => Err(ApiError::MultipleBlocksMatched),
                         }
                     }

@@ -5,7 +5,7 @@ ARG base_image
 FROM ${build_image} AS build
 ARG branch
 WORKDIR /build
-RUN git clone --branch="${branch}" --depth=1 https://github.com/coinbase/rosetta-cli.git
+RUN git clone --branch="${branch}" --depth=1 https://github.com/Concordium/rosetta-cli.git
 RUN cd rosetta-cli && go build .
 
 # Generate default config file of the version of the application that was just built.

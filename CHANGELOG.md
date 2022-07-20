@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Return balance 0 for non-existent pool accrue (virtual) accounts for the same reason as it was done for the other types in 0.5.0.
+
 ## 0.5.0
 
 - Fix smart contract amount computations.

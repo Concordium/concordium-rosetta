@@ -97,18 +97,24 @@ impl QueryHelper {
                 }
             }
             Address::PoolAccrueAccount(baker_id) => {
-                match self.query_pool_status_by_hash(baker_id, &block_hash).await? {
-                    PoolStatus::BakerPool {
-                        current_payday_status,
-                        ..
-                    } => match current_payday_status {
-                        None => Amount::from_ccd(0),
-                        Some(s) => s.transaction_fees_earned,
+                match self.client.clone().get_pool_status(baker_id, &block_hash).await {
+                    Ok(i) => match i {
+                        PoolStatus::BakerPool {
+                            current_payday_status,
+                            ..
+                        } => match current_payday_status {
+                            None => Amount::from_ccd(0),
+                            Some(s) => s.transaction_fees_earned,
+                        },
+                        PoolStatus::PassiveDelegation {
+                            current_payday_transaction_fees_earned,
+                            ..
+                        } => current_payday_transaction_fees_earned,
+                    }
+                    Err(err) => match err {
+                        QueryError::RPCError(err) => return Err(err.into()),
+                        QueryError::NotFound => Amount::from_micro_ccd(0),
                     },
-                    PoolStatus::PassiveDelegation {
-                        current_payday_transaction_fees_earned,
-                        ..
-                    } => current_payday_transaction_fees_earned,
                 }
             }
         };
@@ -149,17 +155,6 @@ impl QueryHelper {
     ) -> ApiResult<RewardsOverview> {
         map_query_result(
             self.client.clone().get_reward_status(block_hash).await,
-            ApiError::NoBlocksMatched,
-        )
-    }
-
-    pub async fn query_pool_status_by_hash(
-        &self,
-        baker_id: Option<BakerId>,
-        block_hash: &BlockHash,
-    ) -> ApiResult<PoolStatus> {
-        map_query_result(
-            self.client.clone().get_pool_status(baker_id, block_hash).await,
             ApiError::NoBlocksMatched,
         )
     }

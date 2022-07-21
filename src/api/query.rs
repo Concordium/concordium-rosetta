@@ -110,7 +110,7 @@ impl QueryHelper {
                             current_payday_transaction_fees_earned,
                             ..
                         } => current_payday_transaction_fees_earned,
-                    }
+                    },
                     Err(err) => match err {
                         QueryError::RPCError(err) => return Err(err.into()),
                         QueryError::NotFound => Amount::from_micro_ccd(0),

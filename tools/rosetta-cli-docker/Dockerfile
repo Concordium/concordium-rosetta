@@ -3,9 +3,14 @@ ARG base_image
 
 # Build stage.
 FROM ${build_image} AS build
+ARG repo=https://github.com/Concordium/rosetta-cli.git
 ARG branch
+# Make anything contained in the context root folder available to the build.
+# This may be used to build from a local subrepo 'rosetta-cli':
+#   --build-arg=repo=file:///tmp/rosetta-cli
+COPY . /tmp
 WORKDIR /build
-RUN git clone --branch="${branch}" --depth=1 https://github.com/Concordium/rosetta-cli.git . && go build .
+RUN git clone --branch="${branch}" --depth=1 "${repo}" . && go build .
 
 # Generate default config file of the version of the application that was just built.
 # Then merge "default-config-overrides.json" into that file.

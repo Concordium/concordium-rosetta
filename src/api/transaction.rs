@@ -32,7 +32,7 @@ struct ModuleDeployedMetadata {
 struct ContractInitializedMetadata {
     module_ref: smart_contracts::ModuleRef,
     address:    ContractAddress,
-    init_name:  smart_contracts::InitName,
+    init_name:  smart_contracts::OwnedContractName,
     events:     Vec<smart_contracts::ContractEvent>,
 }
 
@@ -262,10 +262,7 @@ pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
 pub fn contract_address_string(contract_addr: &ContractAddress) -> String {
-    format!(
-        "{}{}_{}",
-        ACCOUNT_CONTRACT_PREFIX, contract_addr.index.index, contract_addr.subindex.sub_index
-    )
+    format!("{}{}_{}", ACCOUNT_CONTRACT_PREFIX, contract_addr.index, contract_addr.subindex)
 }
 
 pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
@@ -273,7 +270,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
         BlockItemSummaryDetails::AccountTransaction(details) => {
             let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);
             let mut ops_with_fee = ops.clone();
-            if details.cost.microccd != 0 {
+            if details.cost.micro_ccd() != 0 {
                 ops_with_fee.push(Operation {
                     operation_identifier: Box::new(OperationIdentifier::new(ops.len() as i64)),
                     related_operations:   None,
@@ -283,7 +280,7 @@ pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
                         details.sender.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(details.cost.microccd as i128),
+                        -(details.cost.micro_ccd() as i128),
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -355,7 +352,7 @@ fn operations_and_metadata_from_account_transaction_details(
             let mut ops = vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                Some(amount_from_uccd(-(data.amount.micro_ccd() as i128))),
                 Some(&ContractInitializedMetadata {
                     module_ref: data.origin_ref,
                     address:    data.address,
@@ -363,12 +360,12 @@ fn operations_and_metadata_from_account_transaction_details(
                     events:     data.events.clone(),
                 }),
             )];
-            if data.amount.microccd != 0 {
+            if data.amount.micro_ccd() != 0 {
                 ops.push(account_transaction_operation::<Value>(
                     1,
                     details,
                     contract_address_string(&data.address),
-                    Some(amount_from_uccd(data.amount.microccd as i128)),
+                    Some(amount_from_uccd(data.amount.micro_ccd() as i128)),
                     None,
                 ));
             }
@@ -491,7 +488,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                Some(amount_from_uccd(-(data.amount.micro_ccd() as i128))),
                 Some(&TransferredToEncryptedMetadata {
                     new_encrypted_amount: data.new_amount.clone(),
                 }),
@@ -505,7 +502,7 @@ fn operations_and_metadata_from_account_transaction_details(
             vec![normal_account_transaction_operation(
                 0,
                 details,
-                Some(amount_from_uccd(amount.microccd as i128)),
+                Some(amount_from_uccd(amount.micro_ccd() as i128)),
                 Some(&TransferredToPublicMetadata {
                     address:              removed.account,
                     new_encrypted_amount: removed.new_amount.clone(),
@@ -521,7 +518,7 @@ fn operations_and_metadata_from_account_transaction_details(
         } => (
             simple_transfer_operations(
                 details,
-                &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.microccd).sum()),
+                &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.micro_ccd()).sum()),
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
@@ -542,7 +539,7 @@ fn operations_and_metadata_from_account_transaction_details(
         } => (
             simple_transfer_operations(
                 details,
-                &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.microccd).sum()),
+                &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.micro_ccd()).sum()),
                 to,
             ),
             Some(serde_json::to_value(&TransferredWithScheduleMetadata {
@@ -915,14 +912,14 @@ fn contract_update_operations(
                         Address::Account(a) => a.to_string(),
                         Address::Contract(a) => contract_address_string(a),
                     },
-                    Some(amount_from_uccd(-(data.amount.microccd as i128))),
+                    Some(amount_from_uccd(-(data.amount.micro_ccd() as i128))),
                     None,
                 ));
                 ops.push(account_transaction_operation::<Value>(
                     next_index + 1,
                     details,
                     contract_address_string(&data.address),
-                    Some(amount_from_uccd(data.amount.microccd as i128)),
+                    Some(amount_from_uccd(data.amount.micro_ccd() as i128)),
                     None,
                 ));
                 next_index += 2;
@@ -937,14 +934,14 @@ fn contract_update_operations(
                     next_index,
                     details,
                     contract_address_string(from),
-                    Some(amount_from_uccd(-(amount.microccd as i128))),
+                    Some(amount_from_uccd(-(amount.micro_ccd() as i128))),
                     None,
                 ));
                 ops.push(account_transaction_operation::<Value>(
                     next_index + 1,
                     details,
                     to.to_string(),
-                    Some(amount_from_uccd(amount.microccd as i128)),
+                    Some(amount_from_uccd(amount.micro_ccd() as i128)),
                     None,
                 ));
                 next_index += 2;
@@ -969,14 +966,14 @@ fn simple_transfer_operations(
         0,
         details,
         details.sender.to_string(),
-        Some(amount_from_uccd(-(amount.microccd as i128))),
+        Some(amount_from_uccd(-(amount.micro_ccd() as i128))),
         None,
     );
     let mut receiver_operation = account_transaction_operation::<Value>(
         1,
         details,
         to.to_string(),
-        Some(amount_from_uccd(amount.microccd as i128)),
+        Some(amount_from_uccd(amount.micro_ccd() as i128)),
         None,
     );
     receiver_operation.related_operations =

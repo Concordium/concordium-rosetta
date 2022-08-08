@@ -12,7 +12,9 @@ use crate::{
 };
 use concordium_rust_sdk::{
     common::{
-        types::{CredentialIndex, KeyIndex, TransactionSignature, TransactionTime},
+        types::{
+            Amount as CCAmount, CredentialIndex, KeyIndex, TransactionSignature, TransactionTime,
+        },
         SerdeDeserialize, SerdeSerialize,
     },
     id::types::AccountAddress,
@@ -158,7 +160,7 @@ impl ConstructionApi {
         let (builder, account_address) = match parsed_transaction {
             ParsedTransaction::Transfer(tx) => {
                 let to_address = tx.receiver_address;
-                let amount = tx.amount_uccd.into();
+                let amount = CCAmount::from_micro_ccd(tx.amount_uccd);
                 let payload = match metadata.memo {
                     None => Payload::Transfer {
                         to_address,
@@ -451,7 +453,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microccd as i128,
+            amount.micro_ccd() as i128,
             None,
         ),
         Payload::TransferWithMemo {
@@ -461,7 +463,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microccd as i128,
+            amount.micro_ccd() as i128,
             Some(memo.clone()),
         ),
         _ => Err(ApiError::UnsupportedOperationType(transaction_type_to_operation_type(Some(

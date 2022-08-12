@@ -111,7 +111,7 @@ async fn tokenomics_transaction_operations(
                         ACCOUNT_REWARD_BAKING.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_baking_reward.microccd as i128,
+                        mint_baking_reward.micro_ccd() as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -127,7 +127,7 @@ async fn tokenomics_transaction_operations(
                         ACCOUNT_REWARD_FINALIZATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_finalization_reward.microccd as i128,
+                        mint_finalization_reward.micro_ccd() as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -144,7 +144,7 @@ async fn tokenomics_transaction_operations(
                         foundation_account.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        mint_platform_development_charge.microccd as i128,
+                        mint_platform_development_charge.micro_ccd() as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -158,7 +158,7 @@ async fn tokenomics_transaction_operations(
                 ..
             } => {
                 // TODO Add gas account operations.
-                if baker_reward.microccd != 0 {
+                if baker_reward.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -170,13 +170,13 @@ async fn tokenomics_transaction_operations(
                             baker.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microccd as i128,
+                            baker_reward.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if foundation_charge.microccd != 0 {
+                if foundation_charge.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -188,7 +188,7 @@ async fn tokenomics_transaction_operations(
                             foundation_account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            foundation_charge.microccd as i128,
+                            foundation_charge.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -202,7 +202,7 @@ async fn tokenomics_transaction_operations(
                 let mut baking_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in baker_rewards {
-                    baking_reward_sum += amount.microccd as i128;
+                    baking_reward_sum += amount.micro_ccd() as i128;
                     let id = OperationIdentifier::new(next_index(&mut index_offset));
                     operation_identifiers.push(id.clone());
                     res.push(Operation {
@@ -214,7 +214,7 @@ async fn tokenomics_transaction_operations(
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microccd as i128,
+                            amount.micro_ccd() as i128
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -242,7 +242,7 @@ async fn tokenomics_transaction_operations(
                 let mut finalization_reward_sum: i128 = 0;
                 let mut operation_identifiers = vec![];
                 for (baker_account_address, amount) in finalization_rewards {
-                    finalization_reward_sum += amount.microccd as i128;
+                    finalization_reward_sum += amount.micro_ccd() as i128;
                     let id = OperationIdentifier {
                         index:         next_index(&mut index_offset),
                         network_index: None,
@@ -257,7 +257,7 @@ async fn tokenomics_transaction_operations(
                             baker_account_address.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            amount.microccd as i128,
+                            amount.micro_ccd() as i128
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -294,7 +294,7 @@ async fn tokenomics_transaction_operations(
                 baker_reward,
                 finalization_reward,
             } => {
-                if transaction_fees.microccd != 0 {
+                if transaction_fees.micro_ccd() != 0 {
                     let pool_account_address =
                         format!("{}{}", ACCOUNT_ACCRUE_POOL_PREFIX, match current_pool_owner {
                             None => POOL_PASSIVE.to_string(),
@@ -312,7 +312,7 @@ async fn tokenomics_transaction_operations(
                             account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            transaction_fees.microccd as i128,
+                            transaction_fees.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -329,13 +329,13 @@ async fn tokenomics_transaction_operations(
                             pool_account_address,
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            -(transaction_fees.microccd as i128),
+                            -(transaction_fees.micro_ccd() as i128),
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if baker_reward.microccd != 0 {
+                if baker_reward.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -347,7 +347,7 @@ async fn tokenomics_transaction_operations(
                             account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microccd as i128,
+                            baker_reward.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -363,13 +363,13 @@ async fn tokenomics_transaction_operations(
                             ACCOUNT_REWARD_BAKING.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            -(baker_reward.microccd as i128),
+                            -(baker_reward.micro_ccd() as i128),
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if finalization_reward.microccd != 0 {
+                if finalization_reward.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -381,7 +381,7 @@ async fn tokenomics_transaction_operations(
                             account.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            finalization_reward.microccd as i128,
+                            finalization_reward.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -397,7 +397,7 @@ async fn tokenomics_transaction_operations(
                             ACCOUNT_REWARD_FINALIZATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            -(finalization_reward.microccd as i128),
+                            -(finalization_reward.micro_ccd() as i128),
                         ))),
                         coin_change:          None,
                         metadata:             None,
@@ -419,7 +419,7 @@ async fn tokenomics_transaction_operations(
                         foundation_account.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        development_charge.microccd as i128,
+                        development_charge.micro_ccd() as i128,
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -435,7 +435,7 @@ async fn tokenomics_transaction_operations(
                         ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                     ))),
                     amount:               Some(Box::new(amount_from_uccd(
-                        -(development_charge.microccd as i128),
+                        -(development_charge.micro_ccd() as i128),
                     ))),
                     coin_change:          None,
                     metadata:             None,
@@ -449,7 +449,7 @@ async fn tokenomics_transaction_operations(
                 ..
             } => {
                 // TODO Add gas account operations.
-                if foundation_charge.microccd != 0 {
+                if foundation_charge.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -461,13 +461,13 @@ async fn tokenomics_transaction_operations(
                             ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                         ))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            foundation_charge.microccd as i128,
+                            foundation_charge.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if passive_reward.microccd != 0 {
+                if passive_reward.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -480,13 +480,13 @@ async fn tokenomics_transaction_operations(
                             ACCOUNT_ACCRUE_POOL_PREFIX, POOL_PASSIVE
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            passive_reward.microccd as i128,
+                            passive_reward.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,
                     });
                 }
-                if baker_reward.microccd != 0 {
+                if baker_reward.micro_ccd() != 0 {
                     res.push(Operation {
                         operation_identifier: Box::new(OperationIdentifier::new(next_index(
                             &mut index_offset,
@@ -500,7 +500,7 @@ async fn tokenomics_transaction_operations(
                             baker_id.to_string()
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
-                            baker_reward.microccd as i128,
+                            baker_reward.micro_ccd() as i128,
                         ))),
                         coin_change:          None,
                         metadata:             None,

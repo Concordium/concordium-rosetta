@@ -15,7 +15,7 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 ### Versions
 
 - Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 4.x.y, where x >= 1.
+- Supported Concordium node version: 4.1+.
 - Supported Rust toolchain version: 1.56+.
 
 ## Build and run
@@ -28,7 +28,7 @@ The repository uses *nested* git submodules. Make sure that all submodules are c
 git submodule update --init --recursive
 ```
 
-**IMPORTANT:** This must be done after the initial clone as well as after you've switched between branches.
+**IMPORTANT:** This must be done after the initial clone as well as after switching branch.
 
 *Build*
 

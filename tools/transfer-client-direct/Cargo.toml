@@ -1,6 +1,6 @@
 [package]
 name = "transfer-client-direct"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 
 [dependencies.concordium-rust-sdk]

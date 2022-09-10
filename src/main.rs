@@ -18,7 +18,7 @@ use concordium_rust_sdk::endpoints::Client;
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(
     author = "Concordium Foundation",
     about = "A server implementing the Rosetta API for the Concordium blockchain.",

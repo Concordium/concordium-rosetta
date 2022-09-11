@@ -11,14 +11,15 @@
 #   The default value of the exposed port is still 8080.
 #
 # The image containing the application is set using `CONCORDIUM_ROSETTA_IMAGE`.
-# This value must currently be provided as the default (latest official image) doesn't exist.
+# If this value isn't provided it will default to an image that doesn't exist in the public repo,
+# which will cause Compose to build the image from source.
 #
 # Finally, `CONCORDIUM_ROSETTA_NETWORK` has no default value so must be set explicitly.
 #
 # Example:
 #
-#   CONCORDIUM_ROSETTA_IMAGE=concordium/rosetta:0.3.2-0 \
-#   CONCORDIUM_ROSETTA_GRPC_HOST=some-node.mainnet.example.com \
+#   CONCORDIUM_ROSETTA_IMAGE=concordium/rosetta:0.6.0-0 \
+#   CONCORDIUM_ROSETTA_GRPC_HOST=node.mainnet.concordium.example.com \
 #   CONCORDIUM_ROSETTA_NETWORK=mainnet \
 #   docker-compose up -d
 
@@ -26,7 +27,12 @@ version: '3'
 services:
   rosetta:
     container_name: rosetta
-    image: ${CONCORDIUM_ROSETTA_IMAGE-concordium/rosetta:latest}
+    build:
+      context: .
+      args:
+        build_image: ${BUILD_IMAGE-rust:1.56-slim-buster}
+        base_image: ${BASE_IMAGE-debian:buster-slim}
+    image: ${CONCORDIUM_ROSETTA_IMAGE-concordium/rosetta:test}
     environment:
     - CONCORDIUM_ROSETTA_GRPC_HOST=${CONCORDIUM_ROSETTA_GRPC_HOST-172.17.0.1}
     - CONCORDIUM_ROSETTA_GRPC_PORT

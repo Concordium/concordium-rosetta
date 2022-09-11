@@ -71,8 +71,8 @@ Host network:
 docker run --rm --network=host concordium-rosetta <args...>
 ```
 
-See also [`docker-compose.yaml`](./docker-compose.yaml) for an easy way of spinning up instance with
-sensible defaults using Docker Compose.
+See also [`docker-compose.yaml`](./docker-compose.yaml) for an easy way of
+building and/or deploying an instance with sensible defaults using Docker Compose.
 
 ## Rosetta
 

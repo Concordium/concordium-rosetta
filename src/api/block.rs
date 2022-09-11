@@ -7,7 +7,10 @@ use crate::{
     },
     NetworkValidator,
 };
-use concordium_rust_sdk::types::{BlockSummary, SpecialTransactionOutcome};
+use concordium_rust_sdk::{
+    common::SerdeSerialize,
+    types::{BakerId, BlockSummary, SpecialTransactionOutcome},
+};
 use rosetta::models::*;
 use std::cmp::max;
 
@@ -15,6 +18,11 @@ use std::cmp::max;
 pub struct BlockApi {
     network_validator: NetworkValidator,
     query_helper:      QueryHelper,
+}
+
+#[derive(SerdeSerialize)]
+struct BlockMetadata {
+    baker_id: Option<BakerId>,
 }
 
 impl BlockApi {
@@ -33,18 +41,24 @@ impl BlockApi {
             .await?;
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
-            block:              Some(Box::new(Block::new(
-                BlockIdentifier::new(
+            block:              Some(Box::new(Block {
+                block_identifier:        Box::new(BlockIdentifier::new(
                     block_info.block_height.height as i64,
                     block_info.block_hash.to_string(),
-                ),
-                BlockIdentifier::new(
+                )),
+                parent_block_identifier: Box::new(BlockIdentifier::new(
                     max(block_info.block_height.height as i64 - 1, 0),
                     block_info.block_parent.to_string(),
+                )),
+                timestamp:               block_info.block_slot_time.timestamp_millis(),
+                transactions:            block_transactions(block_summary).await?,
+                metadata:                Some(
+                    serde_json::to_value(&BlockMetadata {
+                        baker_id: block_info.block_baker,
+                    })
+                    .unwrap(),
                 ),
-                block_info.block_slot_time.timestamp_millis(),
-                block_transactions(block_summary).await?,
-            ))),
+            })),
             other_transactions: None, // currently just expanding all transactions inline
         })
     }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Add field `baker_id` in metadata of `BlockResponse`.
+
 ## 0.6.0
 
 - Bump Node SDK.

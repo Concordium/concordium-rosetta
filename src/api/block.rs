@@ -510,8 +510,7 @@ async fn tokenomics_transaction_operations(
                         status:               Some(OPERATION_STATUS_OK.to_string()),
                         account:              Some(Box::new(AccountIdentifier::new(format!(
                             "{}{}",
-                            ACCOUNT_ACCRUE_POOL_PREFIX,
-                            baker_id.to_string()
+                            ACCOUNT_ACCRUE_POOL_PREFIX, baker_id
                         )))),
                         amount:               Some(Box::new(amount_from_uccd(
                             baker_reward.micro_ccd() as i128,

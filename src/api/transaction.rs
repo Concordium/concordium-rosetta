@@ -561,7 +561,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 details,
                 None,
                 Some(&CredentialKeysUpdatedMetadata {
-                    credential_id: cred_id.clone(),
+                    credential_id: *cred_id,
                 }),
             )],
             None,
@@ -864,7 +864,7 @@ fn operations_and_metadata_from_account_creation_details(
                     CredentialType::Normal => "normal".to_string(),
                 },
                 address:         details.address,
-                registration_id: details.reg_id.clone(),
+                registration_id: details.reg_id,
             })
             .unwrap(),
         ),
@@ -950,6 +950,9 @@ fn contract_update_operations(
                 ..
             } => {}
             ContractTraceElement::Resumed {
+                ..
+            } => {}
+            ContractTraceElement::Upgraded {
                 ..
             } => {}
         }

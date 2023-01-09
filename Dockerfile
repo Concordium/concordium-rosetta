@@ -4,8 +4,17 @@ ARG base_image
 
 # Build stage.
 FROM ${build_image} AS build
+
+
 # Install system dependencies ('cmake' and 'g++' are dependencies of Rust crate 'prost-build').
-RUN apt-get update && apt-get install -y libssl-dev pkg-config cmake g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libssl-dev pkg-config cmake g++ wget zip && rm -rf /var/lib/apt/lists/*
+
+# Install protobuf
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.15.3/protoc-3.15.3-linux-x86_64.zip \
+    && unzip protoc-3.15.3-linux-x86_64.zip \
+    && mv ./bin/protoc /usr/bin/protoc \
+    && chmod +x /usr/bin/protoc
+
 WORKDIR /build
 COPY . .
 RUN cargo build --release

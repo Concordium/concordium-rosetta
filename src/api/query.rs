@@ -100,16 +100,14 @@ impl QueryHelper {
                 match self.client.clone().get_pool_status(baker_id, &block_hash).await {
                     Ok(i) => match i {
                         PoolStatus::BakerPool {
-                            current_payday_status,
-                            ..
-                        } => match current_payday_status {
+                            status,
+                        } => match status.current_payday_status {
                             None => Amount::from_ccd(0),
                             Some(s) => s.transaction_fees_earned,
                         },
                         PoolStatus::PassiveDelegation {
-                            current_payday_transaction_fees_earned,
-                            ..
-                        } => current_payday_transaction_fees_earned,
+                            status,
+                        } => status.current_payday_transaction_fees_earned,
                     },
                     Err(err) => match err {
                         QueryError::RPCError(err) => return Err(err.into()),

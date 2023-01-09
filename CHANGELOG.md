@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+- Support interfacing node version 5 and its protocol 5.
+
 ## 0.6.1
 
 - Add field `baker_id` in metadata of `BlockResponse`.

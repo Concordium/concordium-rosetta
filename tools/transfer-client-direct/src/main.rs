@@ -117,6 +117,6 @@ async fn main() -> Result<()> {
         .await
         .context("cannot send transaction to node")?;
 
-    println!("Sent transaction '{}'", transaction_hash.to_string());
+    println!("Sent transaction '{}'", transaction_hash);
     Ok(())
 }

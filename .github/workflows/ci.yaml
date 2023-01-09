@@ -12,8 +12,8 @@ on:
   workflow_dispatch: # allow manual trigger
 
 env:
-  RUST_FMT: nightly-2021-06-09-x86_64-unknown-linux-gnu
-  RUST_TOOLCHAIN: 1.56
+  RUST_FMT: nightly-2022-06-09-x86_64-unknown-linux-gnu
+  RUST_TOOLCHAIN: 1.62
 
 jobs:
   fmt:
@@ -51,6 +51,11 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
+      - name: Install protobuf
+        run: |
+          wget https://github.com/protocolbuffers/protobuf/releases/download/v3.15.3/protoc-3.15.3-linux-x86_64.zip
+          unzip protoc-3.15.3-linux-x86_64.zip
+          sudo mv ./bin/protoc /usr/bin/protoc
       - name: Checkout
         uses: actions/checkout@v2
         with:

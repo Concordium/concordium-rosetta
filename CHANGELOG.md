@@ -3,6 +3,7 @@
 ## 0.7.0
 
 - Support interfacing node version 5 and its protocol 5.
+  This bumps the minimum supported node version to 5.0.x and Rust version to 1.62.
 
 ## 0.6.1
 

@@ -14,9 +14,9 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 ### Versions
 
-- Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 4.1+.
-- Supported Rust toolchain version: 1.56+.
+- Rosetta spec version: 1.4.12.
+- Supported Concordium node version: 5.0+.
+- Supported Rust toolchain version: 1.62+.
 
 ## Build and run
 

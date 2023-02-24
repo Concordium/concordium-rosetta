@@ -93,13 +93,6 @@ impl ConstructionApi {
         req: ConstructionPreprocessRequest,
     ) -> ApiResult<ConstructionPreprocessResponse> {
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
-        if req.max_fee.is_some() {
-            // TODO can query field name from serde?
-            return Err(ApiError::UnsupportedFieldPresent("max_fee".to_string()));
-        }
-        if req.suggested_fee_multiplier.is_some() {
-            return Err(ApiError::UnsupportedFieldPresent("suggested_fee_multiplier".to_string()));
-        }
         let options = match transaction_from_operations(&req.operations)? {
             ParsedTransaction::Transfer(transfer_tx) => ConstructionOptions {
                 sender: transfer_tx.sender_address,

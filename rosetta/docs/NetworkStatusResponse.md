@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **genesis_block_identifier** | [**crate::models::BlockIdentifier**](BlockIdentifier.md) |  | 
 **oldest_block_identifier** | Option<[**crate::models::BlockIdentifier**](BlockIdentifier.md)> |  | [optional]
 **sync_status** | Option<[**crate::models::SyncStatus**](SyncStatus.md)> |  | [optional]
-**peers** | [**Vec<crate::models::Peer>**](Peer.md) |  | 
+**peers** | Option<[**Vec<crate::models::Peer>**](Peer.md)> |  | [optional]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

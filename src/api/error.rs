@@ -1,4 +1,4 @@
-use concordium_rust_sdk::endpoints::RPCError;
+use concordium_rust_sdk::{endpoints::RPCError, v2::QueryError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

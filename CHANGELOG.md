@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Bump Rosetta specification to v1.4.15.
+
 ## 0.7.0
 
 - Support interfacing node version 5 and its protocol 5.

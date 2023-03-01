@@ -145,8 +145,6 @@ fn call_preprocess(
             network_identifier: Box::new(network_id),
             operations,
             metadata: None,
-            max_fee: None,
-            suggested_fee_multiplier: None,
         })
         .send()?
         .json()

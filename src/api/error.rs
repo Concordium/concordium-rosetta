@@ -1,4 +1,4 @@
-use concordium_rust_sdk::{endpoints::RPCError};
+use concordium_rust_sdk::endpoints::RPCError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -89,7 +89,7 @@ pub enum ApiError {
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
 
-    // Something that should be invalid has happened.
+    // Something that should be impossible has happened.
     #[error("this error should not be possible.")]
     Impossible,
 

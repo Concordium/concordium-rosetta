@@ -69,13 +69,41 @@ impl QueryHelper {
                 }
             }
             Address::BakingRewardAccount => {
-                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
+                match self.query_tokenomics_info(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.baking_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.baking_reward_account,
+                }
             }
             Address::FinalizationRewardAccount => {
-                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
+                match self.query_tokenomics_info(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        data,
+                    } => data.finalization_reward_account,
+                    RewardsOverview::V1 {
+                        common,
+                        ..
+                    } => common.finalization_reward_account,
+                }
             }
             Address::FoundationAccrueAccount => {
-                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
+                match self.query_tokenomics_info(&block_hash).await? {
+                    RewardsOverview::V0 {
+                        ..
+                    } => {
+                        return Err(ApiError::InvalidAccountAddress(
+                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
+                        ))
+                    }
+                    RewardsOverview::V1 {
+                        foundation_transaction_rewards,
+                        ..
+                    } => foundation_transaction_rewards,
+                }
             }
             Address::PoolAccrueAccount(baker_id) => {
                 let baker_id_unwrapped = baker_id.unwrap();
@@ -104,44 +132,51 @@ impl QueryHelper {
     pub async fn query_account_info_by_address(
         &self,
         addr: AccountAddress,
-        block_hash: impl v2::IntoBlockIdentifier,
+        block_id: impl v2::IntoBlockIdentifier,
     ) -> ApiResult<AccountInfo> {
         let acc_id = v2::AccountIdentifier::Address(addr);
         map_query_result(
-            self.client.clone().get_account_info(&acc_id, block_hash).await.map(|x| x.response),
+            self.client.clone().get_account_info(&acc_id, block_id).await.map(|x| x.response),
             ApiError::NoAccountsMatched,
         )
     }
 
     pub async fn query_block_info_by_hash(
         &self,
-        block_hash: impl v2::IntoBlockIdentifier,
+        block_id: impl v2::IntoBlockIdentifier,
     ) -> ApiResult<BlockInfo> {
         map_query_result(
-            self.client.clone().get_block_info(block_hash).await.map(|x| x.response),
+            self.client.clone().get_block_info(block_id).await.map(|x| x.response),
             ApiError::NoBlocksMatched,
         )
     }
 
     pub async fn query_block_item_summary(
         &self,
-        block_hash: impl v2::IntoBlockIdentifier,
+        block_id: impl v2::IntoBlockIdentifier,
     ) -> ApiResult<Vec<BlockItemSummary>> {
         let event_stream =
-            self.client.clone().get_block_transaction_events(block_hash).await.unwrap().response;
+            self.client.clone().get_block_transaction_events(block_id).await.unwrap().response;
         let events: Result<Vec<BlockItemSummary>, v2::Status> = event_stream.try_collect().await;
         Ok(events.map_err(|x| RPCError::CallError(x))?)
     }
 
     pub async fn query_block_special_events(
         &self,
-        block_hash: impl v2::IntoBlockIdentifier,
+        block_id: impl v2::IntoBlockIdentifier,
     ) -> ApiResult<Vec<SpecialTransactionOutcome>> {
         let event_stream =
-            self.client.clone().get_block_special_events(block_hash).await.unwrap().response;
+            self.client.clone().get_block_special_events(block_id).await.unwrap().response;
         let events: Result<Vec<SpecialTransactionOutcome>, v2::Status> =
             event_stream.try_collect().await;
         Ok(events.map_err(|x| RPCError::CallError(x))?)
+    }
+
+    pub async fn query_tokenomics_info(&self, block_id: impl v2::IntoBlockIdentifier) -> ApiResult<RewardsOverview> {
+        map_query_result(
+            self.client.clone().get_tokenomics_info(block_id).await.map(|x| x.response),
+            ApiError::NoBlocksMatched
+        )
     }
 
     pub async fn query_block_hash_from_height(&self, height: i64) -> ApiResult<BlockHash> {

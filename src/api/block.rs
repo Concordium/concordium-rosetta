@@ -9,9 +9,7 @@ use crate::{
 };
 use concordium_rust_sdk::{
     common::SerdeSerialize,
-    types::{
-        BakerId, SpecialTransactionOutcome,
-    },
+    types::{BakerId, SpecialTransactionOutcome},
 };
 use rosetta::models::*;
 use std::cmp::max;
@@ -37,9 +35,11 @@ impl BlockApi {
 
     pub async fn block(&self, req: BlockRequest) -> ApiResult<BlockResponse> {
         let block_info = self.query_helper.query_block_info(Some(req.block_identifier)).await?;
-        let block_summaries = self.query_helper.query_block_item_summary(block_info.block_hash).await?;
+        let block_summaries =
+            self.query_helper.query_block_item_summary(block_info.block_hash).await?;
         let transactions: Vec<Transaction> = block_summaries.iter().map(map_transaction).collect();
-        let special_events = self.query_helper.query_block_special_events(block_info.block_hash).await?;
+        let special_events =
+            self.query_helper.query_block_special_events(block_info.block_hash).await?;
 
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
@@ -70,7 +70,10 @@ impl BlockApi {
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
         let block_hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
-        match self.query_helper.query_block_item_summary(block_hash).await?
+        match self
+            .query_helper
+            .query_block_item_summary(block_hash)
+            .await?
             .iter()
             .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
         {
@@ -79,7 +82,6 @@ impl BlockApi {
         }
     }
 }
-
 
 async fn block_transactions(
     special_events: Vec<SpecialTransactionOutcome>,

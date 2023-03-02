@@ -68,17 +68,15 @@ impl QueryHelper {
                     },
                 }
             }
-            Address::BakingRewardAccount => {
-                match self.query_tokenomics_info(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        data,
-                    } => data.baking_reward_account,
-                    RewardsOverview::V1 {
-                        common,
-                        ..
-                    } => common.baking_reward_account,
-                }
-            }
+            Address::BakingRewardAccount => match self.query_tokenomics_info(&block_hash).await? {
+                RewardsOverview::V0 {
+                    data,
+                } => data.baking_reward_account,
+                RewardsOverview::V1 {
+                    common,
+                    ..
+                } => common.baking_reward_account,
+            },
             Address::FinalizationRewardAccount => {
                 match self.query_tokenomics_info(&block_hash).await? {
                     RewardsOverview::V0 {
@@ -105,22 +103,25 @@ impl QueryHelper {
                     } => foundation_transaction_rewards,
                 }
             }
-            Address::PoolAccrueAccount(baker_id) => {
-                let baker_id_unwrapped = baker_id.unwrap();
-                match self.client.clone().get_pool_info(&block_hash, baker_id_unwrapped).await {
-                    Ok(i) => {
-                        // TODO: fix this, it's weird
-                        match i.response.current_payday_status {
-                            None => Amount::from_ccd(0),
-                            Some(s) => s.transaction_fees_earned,
-                        }
-                    }
+            Address::PoolAccrueAccount(baker_id) => match baker_id {
+                Some(id) => match self.client.clone().get_pool_info(&block_hash, id).await {
+                    Ok(i) => match i.response.current_payday_status {
+                        None => Amount::from_ccd(0),
+                        Some(s) => s.transaction_fees_earned,
+                    },
                     Err(err) => match err {
                         QueryError::RPCError(err) => return Err(err.into()),
                         QueryError::NotFound => Amount::from_micro_ccd(0),
                     },
-                }
-            }
+                },
+                None => match self.client.clone().get_passive_delegation_info(&block_hash).await {
+                    Ok(i) => i.response.current_payday_transaction_fees_earned,
+                    Err(err) => match err {
+                        QueryError::RPCError(err) => return Err(err.into()),
+                        QueryError::NotFound => Amount::from_micro_ccd(0),
+                    },
+                },
+            },
         };
         Ok((block_info, amount))
     }
@@ -172,10 +173,13 @@ impl QueryHelper {
         Ok(events.map_err(|x| RPCError::CallError(x))?)
     }
 
-    pub async fn query_tokenomics_info(&self, block_id: impl v2::IntoBlockIdentifier) -> ApiResult<RewardsOverview> {
+    pub async fn query_tokenomics_info(
+        &self,
+        block_id: impl v2::IntoBlockIdentifier,
+    ) -> ApiResult<RewardsOverview> {
         map_query_result(
             self.client.clone().get_tokenomics_info(block_id).await.map(|x| x.response),
-            ApiError::NoBlocksMatched
+            ApiError::NoBlocksMatched,
         )
     }
 

@@ -4,7 +4,7 @@ use crate::api::{
 };
 use concordium_rust_sdk::{
     common::types::Amount,
-    endpoints::{BlocksAtHeightInput, Client, QueryError},
+    endpoints::{BlocksAtHeightInput, QueryError},
     id::types::AccountAddress,
     types::{
         hashes::BlockHash,
@@ -41,8 +41,8 @@ impl QueryHelper {
         let address = account_address_from_identifier(account_identifier)?;
         let amount = match address {
             Address::Account(addr) => {
-                let accId = v2::AccountIdentifier::Address(addr);
-                match self.client.clone().get_account_info(&accId, &block_hash).await {
+                let acc_id = v2::AccountIdentifier::Address(addr);
+                match self.client.clone().get_account_info(&acc_id, &block_hash).await {
                     Ok(i) => i.response.account_amount,
                     Err(err) => match err {
                         QueryError::RPCError(err) => return Err(err.into()),
@@ -144,33 +144,6 @@ impl QueryHelper {
         Ok(events.map_err(|x| RPCError::CallError(x))?)
     }
 
-    /*
-    pub async fn query_block_summary_by_hash(
-        &self,
-        block_hash: &BlockHash,
-    ) -> ApiResult<BlockSummary> {
-
-        match self.client.clone().get_block_transaction_events(block_hash).await {
-            Ok(o) => {
-                let x: Vec<(BlockItemSummary, )> = o.response.into_stream().try_collect();
-      kk      }
-            Err(e) => Err(ApiError::ClientQueryError(e)),
-        }
-    }
-    */
-
-    /*
-    pub async fn query_reward_status_by_hash(
-        &self,
-        block_hash: &BlockHash,
-    ) -> ApiResult<RewardsOverview> {
-        map_query_result(
-            self.client.clone().get_reward_status(block_hash).await,
-            ApiError::NoBlocksMatched,
-        )
-    }
-    */
-
     pub async fn query_block_hash_from_height(&self, height: i64) -> ApiResult<BlockHash> {
         if height < 0 {
             return Err(ApiError::InvalidBlockIdentifier(
@@ -231,205 +204,6 @@ impl QueryHelper {
         }
     }
 }
-
-/*
-// TODO: After all translation is done, remove this:
-impl QueryHelper {
-    pub fn new(client: Client) -> Self {
-        Self {
-            client,
-        }
-    }
-
-    pub async fn query_account_balance(
-        &self,
-        block_identifier: Option<Box<PartialBlockIdentifier>>,
-        account_identifier: &AccountIdentifier,
-    ) -> ApiResult<(BlockInfo, Amount)> {
-        let block_info = self.query_block_info(block_identifier).await?;
-        let block_hash = block_info.block_hash;
-        let address = account_address_from_identifier(account_identifier)?;
-        let amount = match address {
-            Address::Account(addr) => {
-                match self.client.clone().get_account_info(addr, &block_hash).await {
-                    Ok(i) => i.account_amount,
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
-                }
-            }
-            Address::Contract(addr) => {
-                match self.client.clone().get_instance_info(addr, &block_hash).await {
-                    Ok(i) => match i {
-                        InstanceInfo::V0 {
-                            amount,
-                            ..
-                        } => amount,
-                        InstanceInfo::V1 {
-                            amount,
-                            ..
-                        } => amount,
-                    },
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
-                }
-            }
-            Address::BakingRewardAccount => {
-                match self.query_reward_status_by_hash(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        data,
-                    } => data.baking_reward_account,
-                    RewardsOverview::V1 {
-                        common,
-                        ..
-                    } => common.baking_reward_account,
-                }
-            }
-            Address::FinalizationRewardAccount => {
-                match self.query_reward_status_by_hash(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        data,
-                    } => data.finalization_reward_account,
-                    RewardsOverview::V1 {
-                        common,
-                        ..
-                    } => common.finalization_reward_account,
-                }
-            }
-            Address::FoundationAccrueAccount => {
-                match self.query_reward_status_by_hash(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        ..
-                    } => {
-                        return Err(ApiError::InvalidAccountAddress(
-                            ACCOUNT_ACCRUE_FOUNDATION.to_string(),
-                        ))
-                    }
-                    RewardsOverview::V1 {
-                        foundation_transaction_rewards,
-                        ..
-                    } => foundation_transaction_rewards,
-                }
-            }
-            Address::PoolAccrueAccount(baker_id) => {
-                match self.client.clone().get_pool_status(baker_id, &block_hash).await {
-                    Ok(i) => match i {
-                        PoolStatus::BakerPool {
-                            status,
-                        } => match status.current_payday_status {
-                            None => Amount::from_ccd(0),
-                            Some(s) => s.transaction_fees_earned,
-                        },
-                        PoolStatus::PassiveDelegation {
-                            status,
-                        } => status.current_payday_transaction_fees_earned,
-                    },
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
-                }
-            }
-        };
-        Ok((block_info, amount))
-    }
-
-    pub async fn query_account_info_by_address(
-        &self,
-        addr: AccountAddress,
-        block_hash: &BlockHash,
-    ) -> ApiResult<AccountInfo> {
-        map_query_result(
-            self.client.clone().get_account_info(addr, block_hash).await,
-            ApiError::NoAccountsMatched,
-        )
-    }
-
-    pub async fn query_block_info_by_hash(&self, block_hash: &BlockHash) -> ApiResult<BlockInfo> {
-        map_query_result(
-            self.client.clone().get_block_info(block_hash).await,
-            ApiError::NoBlocksMatched,
-        )
-    }
-
-    pub async fn query_block_summary_by_hash(
-        &self,
-        block_hash: &BlockHash,
-    ) -> ApiResult<BlockSummary> {
-        map_query_result(
-            self.client.clone().get_block_summary(block_hash).await,
-            ApiError::NoBlocksMatched,
-        )
-    }
-
-    pub async fn query_reward_status_by_hash(
-        &self,
-        block_hash: &BlockHash,
-    ) -> ApiResult<RewardsOverview> {
-        map_query_result(
-            self.client.clone().get_reward_status(block_hash).await,
-            ApiError::NoBlocksMatched,
-        )
-    }
-
-    pub async fn query_block_info(
-        &self,
-        block_id: Option<Box<PartialBlockIdentifier>>,
-    ) -> ApiResult<BlockInfo> {
-        match block_id {
-            None => {
-                let consensus_status = self.client.clone().get_consensus_status().await?;
-                let block_hash = consensus_status.last_finalized_block;
-                self.query_block_info_by_hash(&block_hash).await
-            }
-            Some(bid) => {
-                match (bid.index, bid.hash) {
-                    (Some(height), None) => {
-                        if height < 0 {
-                            return Err(ApiError::InvalidBlockIdentifier(
-                                InvalidBlockIdentifierError::InvalidIndex(height),
-                            ));
-                        }
-                        let blocks = self
-                            .client
-                            .clone()
-                            .get_blocks_at_height(BlocksAtHeightInput::Absolute {
-                                height: AbsoluteBlockHeight {
-                                    height: height as u64,
-                                },
-                            })
-                            .await?;
-                        match blocks[..] {
-                            [] => Err(ApiError::NoBlocksMatched),
-                            // Note that unless we decide to return additional block metadata,
-                            // this particular GetBlockInfo call is redundant
-                            // (as we don't really need to return an "entire" BlockInfo, only hash
-                            // and height).
-                            [block_hash] => self.query_block_info_by_hash(&block_hash).await,
-                            _ => Err(ApiError::MultipleBlocksMatched),
-                        }
-                    }
-                    (None, Some(hash)) => {
-                        let block_hash = block_hash_from_string(hash.as_str())?;
-                        self.query_block_info_by_hash(&block_hash).await
-                    }
-                    // TODO Allow if height and hash are consistent.
-                    (Some(_), Some(_)) => Err(ApiError::InvalidBlockIdentifier(
-                        InvalidBlockIdentifierError::InconsistentValues,
-                    )),
-                    (None, None) => {
-                        Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
-                    }
-                }
-            }
-        }
-    }
-}
-
- */
 
 pub fn map_query_result<T>(res: Result<T, QueryError>, not_found_err: ApiError) -> ApiResult<T> {
     res.map_err(|err| map_query_error(err, not_found_err))

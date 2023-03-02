@@ -112,8 +112,8 @@ impl NetworkApi {
 
     pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
         self.validator.validate_network_identifier(*req.network_identifier)?;
-        let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
-        let peer_list = self.query_helper.client.clone().peer_list(false).await?;
+        let consensus_status = self.query_helper.query_consensus_info().await?;
+        let peer_list = self.query_helper.client.clone().get_peers_info().await?.peers;
         Ok(NetworkStatusResponse {
             // Defining "current" block as last finalized block.
             current_block_identifier: Box::new(BlockIdentifier {
@@ -134,15 +134,13 @@ impl NetworkApi {
                                              * blocks */
             sync_status:              None, /* the connected node's sync status is not easily
                                              * available and thus currently not exposed here */
-            peers:                    Some(
-                peer_list
-                    .iter()
-                    .map(|p| Peer {
-                        peer_id:  p.node_id.to_string(),
-                        metadata: Some(json!({ "ip": p.ip, "port": p.port })),
-                    })
-                    .collect(),
-            ),
+            peers:                    Some(peer_list
+                .iter()
+                .map(|p| Peer {
+                    peer_id:  p.peer_id.0.clone(),
+                    metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
+                })
+                .collect()),
         })
     }
 }

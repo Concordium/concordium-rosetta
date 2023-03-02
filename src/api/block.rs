@@ -9,7 +9,9 @@ use crate::{
 };
 use concordium_rust_sdk::{
     common::SerdeSerialize,
-    types::{BakerId, BlockSummary, SpecialTransactionOutcome},
+    types::{
+        BakerId, SpecialTransactionOutcome,
+    },
 };
 use rosetta::models::*;
 use std::cmp::max;
@@ -35,10 +37,10 @@ impl BlockApi {
 
     pub async fn block(&self, req: BlockRequest) -> ApiResult<BlockResponse> {
         let block_info = self.query_helper.query_block_info(Some(req.block_identifier)).await?;
-        let block_summary = self
-            .query_helper
-            .query_block_summary_by_hash(&block_info.block_hash) // TODO should probably use the "raw" variant
-            .await?;
+        let block_summaries = self.query_helper.query_block_item_summary(block_info.block_hash).await?;
+        let transactions: Vec<Transaction> = block_summaries.iter().map(map_transaction).collect();
+        let special_events = self.query_helper.query_block_special_events(block_info.block_hash).await?;
+
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
         Ok(BlockResponse {
             block:              Some(Box::new(Block {
@@ -51,7 +53,7 @@ impl BlockApi {
                     block_info.block_parent.to_string(),
                 )),
                 timestamp:               block_info.block_slot_time.timestamp_millis(),
-                transactions:            block_transactions(block_summary).await?,
+                transactions:            block_transactions(special_events, transactions).await?,
                 metadata:                Some(
                     serde_json::to_value(&BlockMetadata {
                         baker_id: block_info.block_baker,
@@ -68,12 +70,7 @@ impl BlockApi {
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
         let block_hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
-        let block_summary = self
-            .query_helper
-            .query_block_summary_by_hash(&block_hash) // TODO should probably use the "raw" variant
-            .await ?;
-        match block_summary
-            .transaction_summaries()
+        match self.query_helper.query_block_item_summary(block_hash).await?
             .iter()
             .find(|t| t.hash.to_string() == req.transaction_identifier.hash)
         {
@@ -83,20 +80,24 @@ impl BlockApi {
     }
 }
 
-async fn block_transactions(block_summary: BlockSummary) -> ApiResult<Vec<Transaction>> {
+
+async fn block_transactions(
+    special_events: Vec<SpecialTransactionOutcome>,
+    transactions: Vec<Transaction>,
+) -> ApiResult<Vec<Transaction>> {
     // Synthetic transaction that contains all the minting and rewards operations.
     // Inspired by the "coinbase" transaction in Bitcoin.
     let tokenomics_transaction = Transaction::new(
         TransactionIdentifier::new(TRANSACTION_HASH_TOKENOMICS.to_string()),
-        tokenomics_transaction_operations(&block_summary).await?,
+        tokenomics_transaction_operations(special_events).await?,
     );
     let mut res = vec![tokenomics_transaction];
-    res.extend(block_summary.transaction_summaries().iter().map(map_transaction));
+    res.extend(transactions);
     Ok(res)
 }
 
 async fn tokenomics_transaction_operations(
-    block_summary: &BlockSummary,
+    special_events: Vec<SpecialTransactionOutcome>,
 ) -> ApiResult<Vec<Operation>> {
     let mut index_offset: i64 = 0;
     let next_index = |offset: &mut i64| {
@@ -106,7 +107,8 @@ async fn tokenomics_transaction_operations(
     };
     let mut res = vec![];
     let mut current_pool_owner = None;
-    for e in block_summary.special_events() {
+
+    for e in special_events {
         match e {
             SpecialTransactionOutcome::Mint {
                 mint_baking_reward,
@@ -300,7 +302,7 @@ async fn tokenomics_transaction_operations(
             } => {
                 // The events are ordered such that PaydayPoolReward events are followed
                 // by PaydayAccountReward events for the accounts in the given pool.
-                current_pool_owner = *pool_owner;
+                current_pool_owner = pool_owner;
             }
             SpecialTransactionOutcome::PaydayAccountReward {
                 account,

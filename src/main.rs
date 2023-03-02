@@ -14,7 +14,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use clap::Parser;
-use concordium_rust_sdk::endpoints::Client;
+use concordium_rust_sdk::{v2::{Client, Endpoint}};
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
 
@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
 
     // Initialize gRPC and client.
     let client =
-        Client::connect(format!("http://{}:{}", args.grpc_host, args.grpc_port), args.grpc_token)
+        Client::new(Endpoint::from_shared(format!("http://{}:{}", args.grpc_host, args.grpc_port))?/*, args.grpc_token*/)
             .await
             .context("cannot connect to node")?;
 

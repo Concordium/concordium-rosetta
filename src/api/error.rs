@@ -89,15 +89,15 @@ pub enum ApiError {
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
 
+    // Something that should be invalid has happened.
+    #[error("this error should not be possible.")]
+    Impossible,
+
     // Proxy errors.
     #[error("client RPC error")]
-    ClientRpcError(RPCError),
+    ClientRpcError(#[from] RPCError),
 }
 
 impl warp::reject::Reject for ApiError {}
-
-impl From<RPCError> for ApiError {
-    fn from(err: RPCError) -> Self { ApiError::ClientRpcError(err) }
-}
 
 pub type ApiResult<T> = Result<T, ApiError>;

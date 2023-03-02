@@ -120,7 +120,7 @@ impl ConstructionApi {
             Some(v) => serde_json::from_value::<ConstructionOptions>(v)
                 .map_err(|_| ApiError::InvalidConstructionOptions)?,
         };
-        let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
+        let consensus_status = self.query_helper.query_consensus_info().await?;
         let sender_info = self
             .query_helper
             .query_account_info_by_address(opts.sender, &consensus_status.last_finalized_block)

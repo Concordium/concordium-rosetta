@@ -6,24 +6,25 @@ use concordium_rust_sdk::{
     common::types::Amount,
     endpoints::{BlocksAtHeightInput, Client, QueryError},
     id::types::AccountAddress,
-    types::{hashes::BlockHash, queries::BlockInfo, smart_contracts::InstanceInfo, *}, v2,
+    types::{
+        hashes::BlockHash,
+        queries::{BlockInfo, ConsensusInfo},
+        smart_contracts::InstanceInfo,
+        *,
+    },
+    v2::{self, RPCError},
 };
+use futures::TryStreamExt;
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
 
 #[derive(Clone)]
 // TODO: After all translation is done, remove this:
 pub struct QueryHelper {
-    pub client: Client,
-}
-
-#[derive(Clone)]
-pub struct QueryHelperV2 {
     pub client: v2::Client,
 }
 
-
-impl QueryHelperV2 {
+impl QueryHelper {
     pub fn new(client: v2::Client) -> Self {
         Self {
             client,
@@ -68,25 +69,24 @@ impl QueryHelperV2 {
                 }
             }
             Address::BakingRewardAccount => {
-                panic!("");
+                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
             }
             Address::FinalizationRewardAccount => {
-                panic!("");
+                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
             }
             Address::FoundationAccrueAccount => {
-                panic!("");
+                panic!(""); // TODO: Where is this now? Maybe BlockSpecialEvents
             }
             Address::PoolAccrueAccount(baker_id) => {
                 let baker_id_unwrapped = baker_id.unwrap();
                 match self.client.clone().get_pool_info(&block_hash, baker_id_unwrapped).await {
                     Ok(i) => {
                         // TODO: fix this, it's weird
-                        let x = match i.response.current_payday_status {
+                        match i.response.current_payday_status {
                             None => Amount::from_ccd(0),
                             Some(s) => s.transaction_fees_earned,
-                        };
-                        x
-                    },
+                        }
+                    }
                     Err(err) => match err {
                         QueryError::RPCError(err) => return Err(err.into()),
                         QueryError::NotFound => Amount::from_micro_ccd(0),
@@ -97,17 +97,51 @@ impl QueryHelperV2 {
         Ok((block_info, amount))
     }
 
+    pub async fn query_consensus_info(&self) -> ApiResult<ConsensusInfo> {
+        map_query_result(self.client.clone().get_consensus_info().await, ApiError::Impossible)
+    }
+
     pub async fn query_account_info_by_address(
         &self,
         addr: AccountAddress,
-        block_hash: &BlockHash,
+        block_hash: impl v2::IntoBlockIdentifier,
     ) -> ApiResult<AccountInfo> {
         let acc_id = v2::AccountIdentifier::Address(addr);
-        Ok(self.client.clone().get_account_info(&acc_id, block_hash).await.map_err(|_| ApiError::InvalidCurrency)?.response)
+        map_query_result(
+            self.client.clone().get_account_info(&acc_id, block_hash).await.map(|x| x.response),
+            ApiError::NoAccountsMatched,
+        )
     }
 
-    pub async fn query_block_info_by_hash(&self, block_hash: impl v2::IntoBlockIdentifier) -> ApiResult<BlockInfo> {
-        Ok(self.client.clone().get_block_info(block_hash).await.map_err(|_| ApiError::InvalidCurrency)?.response)
+    pub async fn query_block_info_by_hash(
+        &self,
+        block_hash: impl v2::IntoBlockIdentifier,
+    ) -> ApiResult<BlockInfo> {
+        map_query_result(
+            self.client.clone().get_block_info(block_hash).await.map(|x| x.response),
+            ApiError::NoBlocksMatched,
+        )
+    }
+
+    pub async fn query_block_item_summary(
+        &self,
+        block_hash: impl v2::IntoBlockIdentifier,
+    ) -> ApiResult<Vec<BlockItemSummary>> {
+        let event_stream =
+            self.client.clone().get_block_transaction_events(block_hash).await.unwrap().response;
+        let events: Result<Vec<BlockItemSummary>, v2::Status> = event_stream.try_collect().await;
+        Ok(events.map_err(|x| RPCError::CallError(x))?)
+    }
+
+    pub async fn query_block_special_events(
+        &self,
+        block_hash: impl v2::IntoBlockIdentifier,
+    ) -> ApiResult<Vec<SpecialTransactionOutcome>> {
+        let event_stream =
+            self.client.clone().get_block_special_events(block_hash).await.unwrap().response;
+        let events: Result<Vec<SpecialTransactionOutcome>, v2::Status> =
+            event_stream.try_collect().await;
+        Ok(events.map_err(|x| RPCError::CallError(x))?)
     }
 
     /*
@@ -148,12 +182,10 @@ impl QueryHelperV2 {
                 height: height as u64,
             },
         };
-        let blocks = self
-            .client
-            .clone()
-            .get_blocks_at_height(&block_height)
-            .await
-            .map_err(|_| ApiError::InvalidCurrency)?;
+        let blocks = map_query_result(
+            self.client.clone().get_blocks_at_height(&block_height).await,
+            ApiError::NoBlocksMatched,
+        )?;
         match blocks[..] {
             [] => Err(ApiError::NoBlocksMatched),
             // Note that unless we decide to return additional block metadata,
@@ -170,38 +202,37 @@ impl QueryHelperV2 {
         block_id: Option<Box<PartialBlockIdentifier>>,
     ) -> ApiResult<BlockInfo> {
         match block_id {
-            None => {
-                self.query_block_info_by_hash(v2::BlockIdentifier::LastFinal).await
-            }
-            Some(bid) => {
-                match (bid.index, bid.hash) {
-                    (Some(height), None) => {
-                        let block_hash = self.query_block_hash_from_height(height).await?;
-                        self.query_block_info_by_hash(block_hash).await
-                    }
-                    (None, Some(hash)) => {
-                        let block_hash = block_hash_from_string(hash.as_str())?;
-                        self.query_block_info_by_hash(&block_hash).await
-                    }
-                    (Some(height), Some(hash)) => {
-                        let block_hash_string = block_hash_from_string(hash.as_str())?;
-                        let block_hash_height = self.query_block_hash_from_height(height).await?;
+            None => self.query_block_info_by_hash(v2::BlockIdentifier::LastFinal).await,
+            Some(bid) => match (bid.index, bid.hash) {
+                (Some(height), None) => {
+                    let block_hash = self.query_block_hash_from_height(height).await?;
+                    self.query_block_info_by_hash(block_hash).await
+                }
+                (None, Some(hash)) => {
+                    let block_hash = block_hash_from_string(hash.as_str())?;
+                    self.query_block_info_by_hash(&block_hash).await
+                }
+                (Some(height), Some(hash)) => {
+                    let block_hash_string = block_hash_from_string(hash.as_str())?;
+                    let block_hash_height = self.query_block_hash_from_height(height).await?;
 
-                        if block_hash_string == block_hash_height {
-                            self.query_block_info_by_hash(&block_hash_string).await
-                        } else {
-                            Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::InconsistentValues))
-                        }
-                    }
-                    (None, None) => {
-                        Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
+                    if block_hash_string == block_hash_height {
+                        self.query_block_info_by_hash(&block_hash_string).await
+                    } else {
+                        Err(ApiError::InvalidBlockIdentifier(
+                            InvalidBlockIdentifierError::InconsistentValues,
+                        ))
                     }
                 }
-            }
+                (None, None) => {
+                    Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
+                }
+            },
         }
     }
 }
 
+/*
 // TODO: After all translation is done, remove this:
 impl QueryHelper {
     pub fn new(client: Client) -> Self {
@@ -397,6 +428,8 @@ impl QueryHelper {
         }
     }
 }
+
+ */
 
 pub fn map_query_result<T>(res: Result<T, QueryError>, not_found_err: ApiError) -> ApiResult<T> {
     res.map_err(|err| map_query_error(err, not_found_err))

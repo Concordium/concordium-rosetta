@@ -18,7 +18,7 @@
 #
 # Example:
 #
-#   CONCORDIUM_ROSETTA_IMAGE=concordium/rosetta:0.6.0-0 \
+#   CONCORDIUM_ROSETTA_IMAGE=concordium/rosetta:0.7.0-0 \
 #   CONCORDIUM_ROSETTA_GRPC_HOST=node.mainnet.concordium.example.com \
 #   CONCORDIUM_ROSETTA_NETWORK=mainnet \
 #   docker-compose up -d
@@ -30,7 +30,7 @@ services:
     build:
       context: .
       args:
-        build_image: ${BUILD_IMAGE-rust:1.56-slim-buster}
+        build_image: ${BUILD_IMAGE-rust:1.62-slim-buster}
         base_image: ${BASE_IMAGE-debian:buster-slim}
     image: ${CONCORDIUM_ROSETTA_IMAGE-concordium/rosetta:test}
     environment:

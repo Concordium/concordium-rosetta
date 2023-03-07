@@ -134,13 +134,15 @@ impl NetworkApi {
                                              * blocks */
             sync_status:              None, /* the connected node's sync status is not easily
                                              * available and thus currently not exposed here */
-            peers:                    Some(peer_list
-                .iter()
-                .map(|p| Peer {
-                    peer_id:  p.peer_id.0.clone(),
-                    metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
-                })
-                .collect()),
+            peers:                    Some(
+                peer_list
+                    .iter()
+                    .map(|p| Peer {
+                        peer_id:  p.peer_id.0.clone(),
+                        metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
+                    })
+                    .collect(),
+            ),
         })
     }
 }

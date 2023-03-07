@@ -562,35 +562,73 @@ The bottom line is that the only way to confirm that a transaction is successful
 is to check the hash against the chain.
 Also, the block containing the transaction has to be finalized for the transaction to be as well.
 
-## Tools
+## Testing
+
+### Running Rosetta CLI for testing
+
+To run the rosetta-cli tool you must have a running instance of both the
+[concordium-node](https://github.com/Concordium/concordium-node) and
+the concordium rosetta API implementation. The concordium Rosetta-API
+implementation must be started with the network flag set to `rosetta`:
+
+```bash
+concordium-rosetta --network rosetta
+```
+
+To install the rosetta-cli tool that can run tests follow the steps
+below:
+
+```bash
+# Install the rosetta-cli in ./bin
+curl -sSfL https://raw.githubusercontent.com/coinbase/rosetta-cli/master/scripts/install.sh | sh -s
+```
+
+We also need a configurations file which is generated from default
+values using `rosetta-cli configuration:create rosetta-config.json`
+with the following changes:
+- The Rosetta address is set to `172.17.0.1` which indicates that
+  Rosetta is running locally on the host.
+  Unfortunately, the CLI doesn't seem to allow this to be overwritten
+  with a CLI arg: Either the build job needs to patch the config file
+  or it needs to be mounted in at startup.
+- To avoid hard-coding `network_identifier` to any particular value,
+  the `network` field is set to `"rosetta"`,
+  As always, the Rosetta instance must have been started up with the
+  same value.
+
+The config file can be generated like this:
+
+```bash
+# Create the config file
+cd ./bin
+curl -O https://raw.githubusercontent.com/Concordium/concordium-rosetta/main/tools/rosetta-cli-docker/default-config-overrides.json
+./rosetta-cli configuration:create ./orig-config.json
+jq -s '.[0] * .[1]' ./orig-config.json ./default-config-overrides.json > ./rosetta-config.json
+```
+
+Now the test tool can be run:
+
+```bash
+# Check the correctness of a Rosetta Data API Implementation
+./rosetta-cli --configuration-file ./rosetta-config.json check:data
+```
+
+Note that this only tests the data returned by the Rosetta
+API implementation is valid. It does not test interaction
+on chain, such as transactions. We test that with a different
+[tool](https://github.com/Concordium/concordium-rosetta#transfer-client).
+There is more info on the [Rosetta-API
+website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
+
+### Rosetta CLI (Docker)
+
+You can also build using the provided docker file in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker)
 
 ### Transfer client
 
 The [`transfer-client`](tools/transfer-client) tool (used in [example](#Example) above) is a simple client
 that uses the Rosetta implementation to make a CCD transfer from one account to another.
 The transfer may optionally include a memo.
-
-For comparison, a similar tool [`transfer-client-direct`](tools/transfer-client-direct) does the same thing
-except that it uses the SDK directly instead of going through a Rosetta server.
-
-### Query account
-
-The [`query-account`](tools/query-account) tool traverses the chain,
-looking for transactions related to a given account.
-
-The intent is to provide a way for testers to exercise the Data API.
-
-### Rosetta CLI (Docker)
-
-The dockerfile in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker) builds a dockerized `rosetta-cli` that may be used
-to run checks against a local Rosetta implementation.
-The configuration file is generated from default values using `rosetta-cli configuration:create rosetta-config.json`
-with the following changes:
-- The Rosetta address is set to `172.17.0.1` which indicates that Rosetta is running locally on the host.
-  Unfortunately, the CLI doesn't seem to allow this to be overwritten with a CLI arg:
-  Either the build job needs to patch the config file or it needs to be mounted in at startup.
-- To avoid hard-coding `network_identifier` to any particular value, the `network` field is set to `"rosetta"`,
-  As always, the Rosetta instance must have been started up with the same value.
 
 ## Resources
 

@@ -32,28 +32,28 @@ struct Args {
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
-    network:    String,
+    network:   String,
     #[clap(
         long = "port",
         env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
-    port:       u16,
+    port:      u16,
     #[clap(
         long = "grpc-host",
         env = "CONCORDIUM_ROSETTA_GRPC_HOST",
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:  String,
+    grpc_host: String,
     #[clap(
         long = "grpc-port",
         env = "CONCORDIUM_ROSETTA_GRPC_PORT",
         help = "Port of the node's gRPC endpoint. For testnet you should normally use 20001",
         default_value = "20000"
     )]
-    grpc_port:  u16,
+    grpc_port: u16,
 }
 
 #[tokio::main]

@@ -1,7 +1,7 @@
 # Changelog
 
-## Unreleased
-
+## 1.0.0
+- Use GRPCv2 API instead of the GRPCv1 API.
 - Bump Rosetta specification to v1.4.15.
 
 ## 0.7.0

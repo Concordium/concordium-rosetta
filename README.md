@@ -39,8 +39,7 @@ The application accepts the following parameters:
   Only requests with network identifier using this value will be accepted (see [below](#Identifiers)).
 - `--port`: The port that HTTP requests are to be served on (default: `8080`).
 - `--grpc-host`: Host address of a node with accessible gRPC interface (default: `localhost`).
-- `--grpc-port`: Port of the node's gRPC interface (default: `10000`).
-- `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
+- `--grpc-port`: Port of the node's gRPC interface, should normally be 20000 for mainnet and 20001 for testnet (default: `20000`).
 
 ### Docker
 

@@ -54,13 +54,6 @@ struct Args {
         default_value = "20000"
     )]
     grpc_port:  u16,
-    #[clap(
-        long = "grpc-token",
-        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
-        help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin"
-    )]
-    grpc_token: String,
 }
 
 #[tokio::main]

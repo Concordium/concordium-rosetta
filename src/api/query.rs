@@ -158,7 +158,7 @@ impl QueryHelper {
         let event_stream =
             self.client.clone().get_block_transaction_events(block_id).await.unwrap().response;
         let events: Result<Vec<BlockItemSummary>, v2::Status> = event_stream.try_collect().await;
-        Ok(events.map_err(|x| RPCError::CallError(x))?)
+        Ok(events.map_err(RPCError::CallError)?)
     }
 
     pub async fn query_block_special_events(
@@ -169,7 +169,7 @@ impl QueryHelper {
             self.client.clone().get_block_special_events(block_id).await.unwrap().response;
         let events: Result<Vec<SpecialTransactionOutcome>, v2::Status> =
             event_stream.try_collect().await;
-        Ok(events.map_err(|x| RPCError::CallError(x))?)
+        Ok(events.map_err(RPCError::CallError)?)
     }
 
     pub async fn query_tokenomics_info(

@@ -89,9 +89,9 @@ pub enum ApiError {
     #[error("JSON encoding failed")]
     JsonEncodingFailed(String, serde_json::Error),
 
-    // Something that should be impossible has happened.
-    #[error("this error should not be possible.")]
-    Impossible,
+    // SDK error.
+    #[error("an unexpecred SDK error has occured.")]
+    UnexpectedSdkError,
 
     // Proxy errors.
     #[error("client RPC error")]

@@ -12,7 +12,7 @@ use concordium_rust_sdk::{
         smart_contracts::InstanceInfo,
         *,
     },
-    v2::{self, RPCError},
+    v2::{self, Client, IntoBlockIdentifier, RPCError, Status},
 };
 use futures::TryStreamExt;
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
@@ -20,11 +20,11 @@ use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct QueryHelper {
-    pub client: v2::Client,
+    pub client: Client,
 }
 
 impl QueryHelper {
-    pub fn new(client: v2::Client) -> Self {
+    pub fn new(client: Client) -> Self {
         Self {
             client,
         }
@@ -126,13 +126,16 @@ impl QueryHelper {
     }
 
     pub async fn query_consensus_info(&self) -> ApiResult<ConsensusInfo> {
-        map_query_result(self.client.clone().get_consensus_info().await, ApiError::Impossible)
+        map_query_result(
+            self.client.clone().get_consensus_info().await,
+            ApiError::UnexpectedSdkError,
+        )
     }
 
     pub async fn query_account_info_by_address(
         &self,
         addr: AccountAddress,
-        block_id: impl v2::IntoBlockIdentifier,
+        block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<AccountInfo> {
         let acc_id = v2::AccountIdentifier::Address(addr);
         map_query_result(
@@ -143,7 +146,7 @@ impl QueryHelper {
 
     pub async fn query_block_info_by_hash(
         &self,
-        block_id: impl v2::IntoBlockIdentifier,
+        block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<BlockInfo> {
         map_query_result(
             self.client.clone().get_block_info(block_id).await.map(|x| x.response),
@@ -153,28 +156,28 @@ impl QueryHelper {
 
     pub async fn query_block_item_summary(
         &self,
-        block_id: impl v2::IntoBlockIdentifier,
+        block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<Vec<BlockItemSummary>> {
         let event_stream =
             self.client.clone().get_block_transaction_events(block_id).await.unwrap().response;
-        let events: Result<Vec<BlockItemSummary>, v2::Status> = event_stream.try_collect().await;
+        let events: Result<Vec<BlockItemSummary>, Status> = event_stream.try_collect().await;
         Ok(events.map_err(RPCError::CallError)?)
     }
 
     pub async fn query_block_special_events(
         &self,
-        block_id: impl v2::IntoBlockIdentifier,
+        block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<Vec<SpecialTransactionOutcome>> {
         let event_stream =
             self.client.clone().get_block_special_events(block_id).await.unwrap().response;
-        let events: Result<Vec<SpecialTransactionOutcome>, v2::Status> =
+        let events: Result<Vec<SpecialTransactionOutcome>, Status> =
             event_stream.try_collect().await;
         Ok(events.map_err(RPCError::CallError)?)
     }
 
     pub async fn query_tokenomics_info(
         &self,
-        block_id: impl v2::IntoBlockIdentifier,
+        block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<RewardsOverview> {
         map_query_result(
             self.client.clone().get_tokenomics_info(block_id).await.map(|x| x.response),

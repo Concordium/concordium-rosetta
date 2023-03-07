@@ -19,7 +19,6 @@ use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
 
 #[derive(Clone)]
-// TODO: After all translation is done, remove this:
 pub struct QueryHelper {
     pub client: v2::Client,
 }

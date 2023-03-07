@@ -50,8 +50,8 @@ struct Args {
     #[clap(
         long = "grpc-port",
         env = "CONCORDIUM_ROSETTA_GRPC_PORT",
-        help = "Port of the node's gRPC endpoint.",
-        default_value = "10000"
+        help = "Port of the node's gRPC endpoint. For testnet you should normally use 20001",
+        default_value = "20000"
     )]
     grpc_port:  u16,
     #[clap(
@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
     let client = Client::new(Endpoint::from_shared(format!(
         "http://{}:{}",
         args.grpc_host, args.grpc_port
-    ))? /* , args.grpc_token */)
+    ))?)
     .await
     .context("cannot connect to node")?;
 

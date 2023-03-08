@@ -90,7 +90,7 @@ pub enum ApiError {
     JsonEncodingFailed(String, serde_json::Error),
 
     // SDK error.
-    #[error("an unexpecred SDK error has occured.")]
+    #[error("an unexpected SDK error has occured.")]
     UnexpectedSdkError,
 
     // Proxy errors.

@@ -626,7 +626,7 @@ You can also build using the provided docker file in [`tools/rosetta-cli-docker`
 
 ### Transfer client
 
-The [`transfer-client`](tools/transfer-client) tool (used in [example](#Example) above) is a simple client
+The [`transfer-client`](tools/transfer-client) tool (used in [example](#Examples) above) is a simple client
 that uses the Rosetta implementation to make a CCD transfer from one account to another.
 The transfer may optionally include a memo.
 

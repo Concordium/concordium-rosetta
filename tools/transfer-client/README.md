@@ -47,9 +47,7 @@ The expected JSON format of the keys file is
 }
 ```
 
-## Extracting keys from Mobile Wallet
-
-## wallet key export
+## Extracting keys from the Browser Wallet
 
 In the [browser wallet](https://github.com/Concordium/concordium-browser-wallet), go to:
 

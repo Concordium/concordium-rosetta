@@ -214,7 +214,15 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     StatusCode::BAD_REQUEST,
                 ),
                 ApiError::UnexpectedSdkError => reply::with_status(
-                    reply::json(&unexpected_sdk_error()),
+                    reply::json(&Error {
+                        code:        9100,
+                        message:     "an unexpecred error related to the rust-SDK has occured, \
+                                      this should not be possible"
+                            .to_string(),
+                        description: None,
+                        retriable:   true,
+                        details:     None,
+                    }),
                     StatusCode::BAD_REQUEST,
                 ),
                 ApiError::ClientRpcError(err) => reply::with_status(
@@ -350,18 +358,6 @@ pub fn internal_json_encoding_failed_error(
             key_value_pair("field", field_name),
             key_value_pair("message", err),
         ]),
-    }
-}
-
-pub fn unexpected_sdk_error() -> Error {
-    Error {
-        code:        9100,
-        message:     "an unexpecred error related to the rust-SDK has occured, this should not be \
-                      possible"
-            .to_string(),
-        description: None,
-        retriable:   true,
-        details:     None,
     }
 }
 

@@ -202,10 +202,6 @@ impl QueryHelper {
         )?;
         match blocks[..] {
             [] => Err(ApiError::NoBlocksMatched),
-            // Note that unless we decide to return additional block metadata,
-            // this particular GetBlockInfo call is redundant
-            // (as we don't really need to return an "entire" BlockInfo, only hash
-            // and height).
             [block_hash] => Ok(block_hash),
             _ => Err(ApiError::MultipleBlocksMatched),
         }

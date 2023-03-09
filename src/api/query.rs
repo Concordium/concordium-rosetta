@@ -12,9 +12,9 @@ use concordium_rust_sdk::{
         smart_contracts::InstanceInfo,
         *,
     },
-    v2::{self, Client, IntoBlockIdentifier, RPCError, Status},
+    v2::{self, Client, IntoBlockIdentifier, RPCError},
 };
-use futures::TryStreamExt;
+use futures::{Stream, TryStreamExt};
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
 use std::str::FromStr;
 
@@ -157,22 +157,23 @@ impl QueryHelper {
     pub async fn query_block_item_summary(
         &self,
         block_id: impl IntoBlockIdentifier,
-    ) -> ApiResult<Vec<BlockItemSummary>> {
-        let event_stream =
-            self.client.clone().get_block_transaction_events(block_id).await.unwrap().response;
-        let events: Result<Vec<BlockItemSummary>, Status> = event_stream.try_collect().await;
-        Ok(events.map_err(RPCError::CallError)?)
+    ) -> ApiResult<impl Stream<Item = ApiResult<BlockItemSummary>>> {
+        let mapped_stream = map_query_result(
+            self.client.clone().get_block_transaction_events(block_id).await.map(|x| x.response),
+            ApiError::NoBlocksMatched,
+        )?;
+        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
     }
 
     pub async fn query_block_special_events(
         &self,
         block_id: impl IntoBlockIdentifier,
-    ) -> ApiResult<Vec<SpecialTransactionOutcome>> {
-        let event_stream =
-            self.client.clone().get_block_special_events(block_id).await.unwrap().response;
-        let events: Result<Vec<SpecialTransactionOutcome>, Status> =
-            event_stream.try_collect().await;
-        Ok(events.map_err(RPCError::CallError)?)
+    ) -> ApiResult<impl Stream<Item = ApiResult<SpecialTransactionOutcome>>> {
+        let mapped_stream = map_query_result(
+            self.client.clone().get_block_special_events(block_id).await.map(|x| x.response),
+            ApiError::NoBlocksMatched,
+        )?;
+        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
     }
 
     pub async fn query_tokenomics_info(

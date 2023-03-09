@@ -9,6 +9,7 @@
 # - The value of `CONCORDIUM_ROSETTA_PORT` only determines the port exposed to the host.
 #   The internal port is hard-coded to 8080.
 #   The default value of the exposed port is still 8080.
+#   Don't change this when running with profile 'check:data' as the Rosetta CLI expects to use this port on the host.
 #
 # The image containing the application is set using `CONCORDIUM_ROSETTA_IMAGE`.
 # If this value isn't provided it will default to an image that doesn't exist in the public repo,
@@ -18,7 +19,7 @@
 #
 # Example:
 #
-#   CONCORDIUM_ROSETTA_IMAGE=concordium/rosetta:0.7.0-0 \
+#   ROSETTA_IMAGE=concordium/rosetta:0.7.0-0 \
 #   CONCORDIUM_ROSETTA_GRPC_HOST=node.mainnet.concordium.example.com \
 #   CONCORDIUM_ROSETTA_NETWORK=mainnet \
 #   docker-compose up -d
@@ -30,9 +31,9 @@ services:
     build:
       context: .
       args:
-        build_image: ${BUILD_IMAGE-rust:1.62-slim-buster}
-        base_image: ${BASE_IMAGE-debian:buster-slim}
-    image: ${CONCORDIUM_ROSETTA_IMAGE-concordium/rosetta:test}
+        build_image: ${ROSETTA_BUILD_IMAGE-rust:1.62-slim-buster}
+        base_image: ${ROSETTA_BASE_IMAGE-debian:buster-slim}
+    image: ${ROSETTA_IMAGE-rosetta:test}
     environment:
     - CONCORDIUM_ROSETTA_GRPC_HOST=${CONCORDIUM_ROSETTA_GRPC_HOST-172.17.0.1}
     - CONCORDIUM_ROSETTA_GRPC_PORT
@@ -42,3 +43,17 @@ services:
     ports: # alternative: use "network_mode: host"
     - "${CONCORDIUM_ROSETTA_PORT-8080}:8080"
     stop_signal: SIGKILL
+  rosetta-cli-check-data:
+    profiles: [check:data]
+    container_name: rosetta-cli-check-data
+    build:
+      context: ./tools/rosetta-cli-docker
+      args:
+        build_image: ${ROSETTA_CLI_BUILD_IMAGE-golang:1.16-buster} # the project lists "go 1.16" in 'go.mod'
+        base_image: ${ROSETTA_CLI_BASE_IMAGE-debian:buster-slim}
+    image: ${ROSETTA_CLI_IMAGE-rosetta-cli:test}
+    # TODO Consider mounting in config file that uses rosetta directly on the internal network.
+    depends_on:
+    - rosetta
+    command:
+    - check:data

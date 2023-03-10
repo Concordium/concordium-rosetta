@@ -209,7 +209,7 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                 // We explicitly ignore the error message as it should not be passed to the user
                 ApiError::InternalServerError(_) => reply::with_status(
                     reply::json(&internal_server_error()),
-                    StatusCode::BAD_REQUEST,
+                    StatusCode::INTERNAL_SERVER_ERROR,
                 ),
                 ApiError::ClientRpcError(err) => reply::with_status(
                     reply::json(&proxy_client_rpc_error(Some(err.to_string()))),

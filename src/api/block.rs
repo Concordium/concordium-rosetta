@@ -12,7 +12,7 @@ use concordium_rust_sdk::{
     types::{BakerId, SpecialTransactionOutcome},
     v2::IntoBlockIdentifier,
 };
-use futures::stream::StreamExt;
+use futures::{stream::StreamExt, TryStreamExt};
 use rosetta::models::*;
 use std::cmp::max;
 
@@ -82,7 +82,6 @@ impl BlockApi {
         &self,
         block_id: impl IntoBlockIdentifier + Clone,
     ) -> ApiResult<Vec<Transaction>> {
-        use futures::TryStreamExt;
         // Synthetic transaction that contains all the minting and rewards operations.
         // Inspired by the "coinbase" transaction in Bitcoin.
         let tokenomics_transaction = Transaction::new(

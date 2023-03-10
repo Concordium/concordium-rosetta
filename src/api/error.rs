@@ -86,7 +86,7 @@ pub enum ApiError {
     MultipleBlocksMatched,
 
     // Internal errors.
-    #[error("An unexpected internal error has occured {0}")]
+    #[error("an unexpected internal error has occured {0}")]
     InternalServerError(#[from] anyhow::Error),
 
     // Proxy errors.

@@ -50,7 +50,8 @@ struct Args {
     #[clap(
         long = "grpc-port",
         env = "CONCORDIUM_ROSETTA_GRPC_PORT",
-        help = "Port of the node's gRPC (API v2) endpoint. For testnet you should normally use 20001",
+        help = "Port of the node's gRPC (API v2) endpoint. For testnet you should normally use \
+                20001",
         default_value = "20000"
     )]
     grpc_port: u16,

@@ -128,7 +128,9 @@ impl QueryHelper {
     pub async fn query_consensus_info(&self) -> ApiResult<ConsensusInfo> {
         map_query_result(
             self.client.clone().get_consensus_info().await,
-            ApiError::UnexpectedSdkError,
+            ApiError::InternalServerError(anyhow::anyhow!(
+                "get_consensus_status returned NotFound, but it should not be able to do so"
+            )),
         )
     }
 

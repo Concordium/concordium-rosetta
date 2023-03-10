@@ -101,7 +101,7 @@ impl ConstructionApi {
         Ok(ConstructionPreprocessResponse {
             options:              Some(
                 serde_json::to_value(&options)
-                    .map_err(|err| ApiError::JsonEncodingFailed("options".to_string(), err))?,
+                    .map_err(|err| ApiError::InternalServerError(anyhow::anyhow!(err)))?,
             ),
             required_public_keys: Some(vec![AccountIdentifier::new(options.sender.to_string())]),
         })
@@ -183,7 +183,7 @@ impl ConstructionApi {
                 header:  builder.header.clone(),
                 payload: builder.encoded.clone(),
             })
-            .map_err(|err| ApiError::JsonEncodingFailed("unsigned_transaction".to_string(), err))?,
+            .map_err(|err| ApiError::InternalServerError(anyhow::anyhow!(err)))?,
             payloads:             vec![SigningPayload {
                 address:            None, // deprecated
                 account_identifier: Some(Box::new(AccountIdentifier::new(
@@ -318,7 +318,7 @@ impl ConstructionApi {
             header:    unsigned_tx.header,
             payload:   unsigned_tx.payload.encode(),
         })
-        .map_err(|err| ApiError::JsonEncodingFailed("signed_transaction".to_string(), err))?;
+        .map_err(|err| ApiError::InternalServerError(anyhow::anyhow!(err)))?;
         Ok(ConstructionCombineResponse {
             signed_transaction: tx,
         })

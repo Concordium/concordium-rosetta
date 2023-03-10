@@ -86,15 +86,11 @@ pub enum ApiError {
     MultipleBlocksMatched,
 
     // Internal errors.
-    #[error("JSON encoding failed")]
-    JsonEncodingFailed(String, serde_json::Error),
-
-    // SDK error.
-    #[error("an unexpected SDK error has occured.")]
-    UnexpectedSdkError,
+    #[error("An unexpected internal error has occured {0}")]
+    InternalServerError(#[from] anyhow::Error),
 
     // Proxy errors.
-    #[error("client RPC error")]
+    #[error("client RPC error {0}")]
     ClientRpcError(#[from] RPCError),
 }
 

@@ -94,7 +94,7 @@ impl NetworkApi {
                     handler_error::invalid_input_inconsistent_value_error(None, None),
                     handler_error::identifier_not_resolved_no_matches_error(None),
                     handler_error::identifier_not_resolved_multiple_matches_error(None),
-                    handler_error::internal_json_encoding_failed_error(None, None),
+                    handler_error::internal_server_error(),
                     handler_error::proxy_client_rpc_error(None),
                     handler_error::proxy_client_query_error(None),
                 ],

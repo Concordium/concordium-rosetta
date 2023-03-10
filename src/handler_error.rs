@@ -206,23 +206,9 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     ))),
                     StatusCode::NOT_FOUND,
                 ),
-                ApiError::JsonEncodingFailed(field_name, err) => reply::with_status(
-                    reply::json(&internal_json_encoding_failed_error(
-                        Some(field_name.clone()),
-                        Some(err.to_string()),
-                    )),
-                    StatusCode::BAD_REQUEST,
-                ),
-                ApiError::UnexpectedSdkError => reply::with_status(
-                    reply::json(&Error {
-                        code:        9100,
-                        message:     "an unexpecred error related to the rust-SDK has occured, \
-                                      this should not be possible"
-                            .to_string(),
-                        description: None,
-                        retriable:   true,
-                        details:     None,
-                    }),
+                // We explicitly ignore the error message as it should not be passed to the user
+                ApiError::InternalServerError(_) => reply::with_status(
+                    reply::json(&internal_server_error()),
                     StatusCode::BAD_REQUEST,
                 ),
                 ApiError::ClientRpcError(err) => reply::with_status(
@@ -345,22 +331,6 @@ pub fn identifier_not_resolved_multiple_matches_error(identifier_type: Option<St
     }
 }
 
-pub fn internal_json_encoding_failed_error(
-    field_name: Option<String>,
-    err: Option<String>,
-) -> Error {
-    Error {
-        code:        9000,
-        message:     "internal error: JSON encoding failed".to_string(),
-        description: Some("JSON encoding failed.".to_string()),
-        retriable:   false,
-        details:     key_value_pairs(&[
-            key_value_pair("field", field_name),
-            key_value_pair("message", err),
-        ]),
-    }
-}
-
 pub fn proxy_client_rpc_error(err: Option<String>) -> Error {
     Error {
         code:        10000,
@@ -380,5 +350,15 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
         ),
         retriable:   true,
         details:     key_value_pairs(&[key_value_pair("message", err)]),
+    }
+}
+
+pub fn internal_server_error() -> Error {
+    Error {
+        code:        9100,
+        message:     "an unexpected internal error has occured".to_string(),
+        description: None,
+        retriable:   true,
+        details:     None,
     }
 }

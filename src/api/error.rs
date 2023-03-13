@@ -86,11 +86,11 @@ pub enum ApiError {
     MultipleBlocksMatched,
 
     // Internal errors.
-    #[error("an unexpected internal error has occured {0}")]
+    #[error("unexpected internal error: {0}")]
     InternalServerError(anyhow::Error),
 
     // Proxy errors.
-    #[error("client RPC error {0}")]
+    #[error("client RPC error: {0}")]
     ClientRpcError(#[from] RPCError),
 }
 

@@ -568,49 +568,48 @@ Also, the block containing the transaction has to be finalized for the transacti
 
 To run the rosetta-cli tool you must have a running instance of both the
 [concordium-node](https://github.com/Concordium/concordium-node) and
-the concordium rosetta API implementation. The concordium Rosetta-API
-implementation must be started with the network flag set to `rosetta`:
+the concordium rosetta API implementation:
 
 ```bash
-concordium-rosetta --network rosetta
+concordium-rosetta --network testnet
 ```
 
 To install the rosetta-cli tool that can run tests follow the steps
 below:
 
 ```bash
-# Install the rosetta-cli in ./bin
-curl -sSfL https://raw.githubusercontent.com/coinbase/rosetta-cli/master/scripts/install.sh | sh -s
+# Clone our Rosetta-CLI clone
+git clone https://github.com/Concordium/rosetta-cli
+
+cd rosetta-cli
+
+# Build the binary
+go build .
 ```
 
-We also need a configurations file which is generated from default
-values using `rosetta-cli configuration:create rosetta-config.json`
-with the following changes:
-- The Rosetta address is set to `172.17.0.1` which indicates that
-  Rosetta is running locally on the host.
-  Unfortunately, the CLI doesn't seem to allow this to be overwritten
-  with a CLI arg: Either the build job needs to patch the config file
-  or it needs to be mounted in at startup.
-- To avoid hard-coding `network_identifier` to any particular value,
-  the `network` field is set to `"rosetta"`,
-  As always, the Rosetta instance must have been started up with the
-  same value.
-
-The config file can be generated like this:
+The default config file can be generated like this:
 
 ```bash
 # Create the config file
 cd ./bin
-curl -O https://raw.githubusercontent.com/Concordium/concordium-rosetta/main/tools/rosetta-cli-docker/default-config-overrides.json
-./rosetta-cli configuration:create ./orig-config.json
-jq -s '.[0] * .[1]' ./orig-config.json ./default-config-overrides.json > ./rosetta-config.json
+./rosetta-cli configuration:create ./config.json
 ```
+
+We need to make the following changes to this configuration:
+- The Rosetta address is set to `172.17.0.1` which indicates that
+  Rosetta is running locally on the host. Unfortunately, the CLI 
+  doesn't seem to allow this to be overwritten with a CLI arg.
+- The `network` field should be set to the either `"testnet"` or,
+  `"mainnet"` depending on what value the Rosetta API was initialized with.
+- The blockchain field should be set to `"concordium"`
+- Setting `"max_retries": 32768` makes sure the test doesn't stop 
+  on a tempoary network outage.
 
 Now the test tool can be run:
 
 ```bash
 # Check the correctness of a Rosetta Data API Implementation
-./rosetta-cli --configuration-file ./rosetta-config.json check:data
+./rosetta-cli --configuration-file ./config.json check:data
 ```
 
 Note that this only tests the data returned by the Rosetta
@@ -623,6 +622,14 @@ website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
 ### Rosetta CLI (Docker)
 
 You can also build using the provided docker file in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker)
+
+It uses the default config with the following changes added:
+- The Rosetta address is set to `172.17.0.1` which indicates that
+  Rosetta is running locally on the host.
+- To avoid hard-coding `network_identifier` to any particular value,
+  the `network` field is set to `"rosetta"`,
+  As always, the Rosetta instance must have been started up with the
+  same value.
 
 ### Transfer client
 

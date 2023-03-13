@@ -62,3 +62,5 @@ jq .value.accountKeys your-account-address-here.export > keys.json
 The keys are now stored in clear text in the file `keys.json`.
 
 This is only intended to be used for testing - keys holding actual value should always be stored securely.
+
+A [previous commit](https://github.com/Concordium/concordium-rosetta/tree/853539f8417fd4c917eb30c6d9ea2a4eaac061a2/tools/transfer-client#extracting-keys-from-mobile-wallet) to this readme also described how to extract the keys from the desktop wallet.

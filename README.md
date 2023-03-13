@@ -623,7 +623,7 @@ website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
 
 You can also build using the provided docker file in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker)
 
-It uses the default config with the following changes added:
+It uses the default configuration with the following changes added:
 - The Rosetta address is set to `172.17.0.1` which indicates that
   Rosetta is running locally on the host.
 - To avoid hard-coding `network_identifier` to any particular value,

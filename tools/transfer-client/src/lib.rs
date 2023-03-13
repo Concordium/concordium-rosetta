@@ -6,7 +6,7 @@ use concordium_rust_sdk::{
 };
 use rosetta::models::*;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, convert::TryFrom, fs, path::Path, str::FromStr};
+use std::{collections::BTreeMap, convert::TryFrom, str::FromStr};
 
 #[derive(Deserialize)]
 pub struct Metadata {
@@ -79,11 +79,6 @@ pub fn sign_payload(payload: &SigningPayload, keys: &AccountKeys) -> Result<Sign
 pub fn sign_hash(keys: &AccountKeys, hash: &str) -> Result<TransactionSignature> {
     let tx_hash = TransactionSignHash::from_str(hash).context("cannot parse hash from input")?;
     Ok(keys.sign_transaction_hash(&tx_hash))
-}
-
-pub fn load_keys(path: &Path) -> Result<AccountKeys> {
-    let data = fs::read_to_string(path).context("cannot read file")?;
-    serde_json::from_str(&data).context("cannot parse keys read from file")
 }
 
 pub fn signature_maps_to_signatures(signatures: Vec<SignatureMap>) -> Vec<Signature> {

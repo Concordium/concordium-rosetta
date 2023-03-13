@@ -87,7 +87,7 @@ pub enum ApiError {
 
     // Internal errors.
     #[error("an unexpected internal error has occured {0}")]
-    InternalServerError(#[from] anyhow::Error),
+    InternalServerError(anyhow::Error),
 
     // Proxy errors.
     #[error("client RPC error {0}")]

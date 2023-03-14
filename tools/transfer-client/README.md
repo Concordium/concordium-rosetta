@@ -53,12 +53,6 @@ In the [browser wallet](https://github.com/Concordium/concordium-browser-wallet)
 
 Account Settings -> Export private key -> Export
 
-This will give you a file. You can extract the key portion using [jq](https://stedolan.github.io/jq/), e.g.:
-
-```bash
-jq .value.accountKeys your-account-address-here.export > keys.json
-```
-
-The keys are now stored in clear text in the file `keys.json`.
-
+This will give you a file that can be passed to the `transfer-client` program with the `--keys-file` flag.
+ 
 This is only intended to be used for testing - keys holding actual value should always be stored securely.

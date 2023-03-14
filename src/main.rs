@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
         args.grpc_host, args.grpc_port
     ))?)
     .await
-    .context("cannot connect to node")?;
+    .context("Cannot connect to the node.")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

@@ -112,8 +112,8 @@ impl BlockApi {
 
         let mut special_events = self.query_helper.query_block_special_events(block_id).await?;
 
-        while let Some(e) = special_events.next().await {
-            match e? {
+        while let Some(e) = special_events.next().await.transpose()? {
+            match e {
                 SpecialTransactionOutcome::Mint {
                     mint_baking_reward,
                     mint_finalization_reward,

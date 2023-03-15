@@ -2,14 +2,14 @@ use crate::{
     api::{
         amount::amount_from_uccd,
         error::{ApiError, ApiResult},
-        query::{block_hash_from_string, QueryHelper},
+        query::QueryHelper,
         transaction::*,
     },
     NetworkValidator,
 };
 use concordium_rust_sdk::{
     common::SerdeSerialize,
-    types::{BakerId, SpecialTransactionOutcome},
+    types::{BakerId, SpecialTransactionOutcome, TransactionStatus},
     v2::IntoBlockIdentifier,
 };
 use futures::{stream::StreamExt, TryStreamExt};
@@ -66,16 +66,23 @@ impl BlockApi {
         &self,
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
-        let block_hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
-        let mut summaries = self.query_helper.query_block_item_summary(block_hash).await?;
-        while let Some(t) = summaries.next().await {
-            let transaction = t?;
-            let transaction_hash = transaction.hash.to_string();
-            if transaction_hash == req.transaction_identifier.hash {
-                return Ok(BlockTransactionResponse::new(map_transaction(transaction)));
+        let tx_status =
+            self.query_helper.query_transaction_status(req.transaction_identifier.hash).await?;
+        match tx_status {
+            TransactionStatus::Finalized(finalized_status) => {
+                let tx = finalized_status
+                    .iter()
+                    .next()
+                    .ok_or_else(|| {
+                        ApiError::InternalServerError(anyhow::anyhow!(
+                            "Claimed finalized block is empty."
+                        ))
+                    })?
+                    .1;
+                Ok(BlockTransactionResponse::new(map_transaction(tx.to_owned())))
             }
+            _ => Err(ApiError::NoTransactionsMatched),
         }
-        Err(ApiError::NoTransactionsMatched)
     }
 
     async fn block_transactions(

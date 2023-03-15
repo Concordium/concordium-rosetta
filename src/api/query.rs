@@ -7,7 +7,7 @@ use concordium_rust_sdk::{
     endpoints::{BlocksAtHeightInput, QueryError},
     id::types::AccountAddress,
     types::{
-        hashes::BlockHash,
+        hashes::{BlockHash, TransactionHash},
         queries::{BlockInfo, ConsensusInfo},
         smart_contracts::InstanceInfo,
         *,
@@ -196,6 +196,18 @@ impl QueryHelper {
             [block_hash] => Ok(block_hash),
             _ => Err(ApiError::MultipleBlocksMatched),
         }
+    }
+
+    pub async fn query_transaction_status(
+        &self,
+        hash_string: String,
+    ) -> ApiResult<TransactionStatus> {
+        let hash = TransactionHash::from_str(hash_string.as_str())
+            .map_err(|_| ApiError::NoTransactionsMatched)?;
+        map_query_result(
+            self.client.clone().get_block_item_status(&hash).await,
+            ApiError::NoTransactionsMatched,
+        )
     }
 
     pub async fn query_block_info(

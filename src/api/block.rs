@@ -75,7 +75,7 @@ impl BlockApi {
                     .next()
                     .ok_or_else(|| {
                         ApiError::InternalServerError(anyhow::anyhow!(
-                            "Claimed finalized block is empty."
+                            "claimed finalized block is empty"
                         ))
                     })?
                     .1;

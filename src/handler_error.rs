@@ -356,7 +356,7 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
 pub fn internal_server_error() -> Error {
     Error {
         code:        9100,
-        message:     "an unexpected internal error has occured".to_string(),
+        message:     "an unexpected internal error has occurred".to_string(),
         description: None,
         retriable:   true,
         details:     None,

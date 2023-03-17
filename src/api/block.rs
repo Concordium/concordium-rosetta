@@ -9,7 +9,7 @@ use crate::{
 };
 use concordium_rust_sdk::{
     common::SerdeSerialize,
-    types::{BakerId, SpecialTransactionOutcome, TransactionStatus},
+    types::{BakerId, SpecialTransactionOutcome},
     v2::IntoBlockIdentifier,
 };
 use futures::{stream::StreamExt, TryStreamExt};
@@ -68,20 +68,14 @@ impl BlockApi {
     ) -> ApiResult<BlockTransactionResponse> {
         let tx_status =
             self.query_helper.query_transaction_status(req.transaction_identifier.hash).await?;
-        match tx_status {
-            TransactionStatus::Finalized(finalized_status) => {
-                let tx = finalized_status
-                    .iter()
-                    .next()
-                    .ok_or_else(|| {
-                        ApiError::InternalServerError(anyhow::anyhow!(
-                            "claimed finalized block is empty"
-                        ))
-                    })?
-                    .1;
+        if let Some((bh, tx)) = tx_status.is_finalized() {
+            if req.block_identifier.hash == bh.to_string() {
                 Ok(BlockTransactionResponse::new(map_transaction(tx.to_owned())))
+            } else {
+                Err(ApiError::InvalidBlockTransactionRequest)
             }
-            _ => Err(ApiError::NoTransactionsMatched),
+        } else {
+            Err(ApiError::NoTransactionsMatched)
         }
     }
 

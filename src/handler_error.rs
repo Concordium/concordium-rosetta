@@ -69,6 +69,15 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InvalidBlockTransactionRequest => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("block transaction request".to_string()),
+                        None,
+                        None,
+                        Some("invalid request".to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
                 ApiError::InvalidContractAddress(addr) => reply::with_status(
                     reply::json(&invalid_input_invalid_value_or_identifier_error(
                         Some("contract address".to_string()),
@@ -78,6 +87,17 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InvalidTransactionIdentifier(transaction_identifier, err) => {
+                    reply::with_status(
+                        reply::json(&invalid_input_invalid_value_or_identifier_error(
+                            Some("transaction identifier".to_string()),
+                            None,
+                            Some(transaction_identifier.clone()),
+                            Some(err.to_string()),
+                        )),
+                        StatusCode::BAD_REQUEST,
+                    )
+                }
                 ApiError::InvalidCurrency => reply::with_status(
                     reply::json(&invalid_input_invalid_value_or_identifier_error(
                         Some("currency".to_string()),

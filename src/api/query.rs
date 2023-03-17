@@ -203,7 +203,7 @@ impl QueryHelper {
         hash_string: String,
     ) -> ApiResult<TransactionStatus> {
         let hash = TransactionHash::from_str(hash_string.as_str())
-            .map_err(|_| ApiError::NoTransactionsMatched)?;
+            .map_err(|e| ApiError::InvalidTransactionIdentifier(hash_string, e))?;
         map_query_result(
             self.client.clone().get_block_item_status(&hash).await,
             ApiError::NoTransactionsMatched,

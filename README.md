@@ -566,7 +566,13 @@ Also, the block containing the transaction has to be finalized for the transacti
 
 ### Running Rosetta CLI for testing
 
-To run the rosetta-cli tool you must have a running instance of both the
+We forked the Rosetta CLI tool to make it understand account aliases, i.e. that a 
+transaction affecting the balance of an account affects all aliases of that 
+account as well.
+
+The test will fail if run with the official Rosetta CLI tool.
+
+To run our forked rosetta-cli tool you must have a running instance of both the
 [concordium-node](https://github.com/Concordium/concordium-node) and
 the concordium rosetta API implementation:
 
@@ -596,10 +602,8 @@ cd ./bin
 ```
 
 We need to make the following changes to this configuration:
-- The Rosetta address is set to `172.17.0.1` which indicates that
-  Rosetta is running locally on the host. Unfortunately, the CLI 
-  doesn't seem to allow this to be overwritten with a CLI arg.
-- The `network` field must be set to the value passed to the `--network` parameter when Rosetta was started (i.e. `testnet` in the command above).
+- The `network` field must be set to the value passed to the `--network` parameter 
+  when Rosetta was started (i.e. `testnet` in the command above).
 - The blockchain field should be set to `"concordium"`
 - Setting `"max_retries": 32768` makes sure the test doesn't stop 
   on a tempoary network outage.

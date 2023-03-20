@@ -53,6 +53,6 @@ In the [browser wallet](https://github.com/Concordium/concordium-browser-wallet)
 
 Account Settings -> Export private key -> Export
 
-This will give you a file that can be passed to the `transfer-client` program with the `--keys-file` flag.
+This will give you an _unencrypted_ file that can be passed to the `transfer-client` program with the `--keys-file` flag.
  
 This is only intended to be used for testing - keys holding actual value should always be stored securely.

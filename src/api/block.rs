@@ -2,7 +2,7 @@ use crate::{
     api::{
         amount::amount_from_uccd,
         error::{ApiError, ApiResult},
-        query::{block_hash_from_string, QueryHelper},
+        query::QueryHelper,
         transaction::*,
     },
     NetworkValidator,
@@ -66,16 +66,17 @@ impl BlockApi {
         &self,
         req: BlockTransactionRequest,
     ) -> ApiResult<BlockTransactionResponse> {
-        let block_hash = block_hash_from_string(req.block_identifier.hash.as_str())?;
-        let mut summaries = self.query_helper.query_block_item_summary(block_hash).await?;
-        while let Some(t) = summaries.next().await {
-            let transaction = t?;
-            let transaction_hash = transaction.hash.to_string();
-            if transaction_hash == req.transaction_identifier.hash {
-                return Ok(BlockTransactionResponse::new(map_transaction(transaction)));
+        let tx_status =
+            self.query_helper.query_transaction_status(req.transaction_identifier.hash).await?;
+        if let Some((bh, tx)) = tx_status.is_finalized() {
+            if req.block_identifier.hash == bh.to_string() {
+                Ok(BlockTransactionResponse::new(map_transaction(tx.to_owned())))
+            } else {
+                Err(ApiError::InvalidBlockTransactionRequest)
             }
+        } else {
+            Err(ApiError::NoTransactionsMatched)
         }
-        Err(ApiError::NoTransactionsMatched)
     }
 
     async fn block_transactions(
@@ -112,8 +113,8 @@ impl BlockApi {
 
         let mut special_events = self.query_helper.query_block_special_events(block_id).await?;
 
-        while let Some(e) = special_events.next().await {
-            match e? {
+        while let Some(e) = special_events.next().await.transpose()? {
+            match e {
                 SpecialTransactionOutcome::Mint {
                     mint_baking_reward,
                     mint_finalization_reward,

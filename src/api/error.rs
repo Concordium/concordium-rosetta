@@ -1,4 +1,4 @@
-use concordium_rust_sdk::endpoints::RPCError;
+use concordium_rust_sdk::{endpoints::RPCError, types::hashes::HashFromStrError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -46,8 +46,12 @@ pub enum ApiError {
     InvalidContractAddress(String),
     #[error("invalid currency")]
     InvalidCurrency,
+    #[error("invalid transaction {0}")]
+    InvalidTransactionIdentifier(String, HashFromStrError),
     #[error("invalid amount '{0}'")]
     InvalidAmount(String),
+    #[error("invalid block transaction request")]
+    InvalidBlockTransactionRequest,
     #[error("invalid block identifier")]
     InvalidBlockIdentifier(InvalidBlockIdentifierError),
     #[error("invalid signature '{0}': {1}")]

@@ -7,7 +7,7 @@ use concordium_rust_sdk::{
     endpoints::{BlocksAtHeightInput, QueryError},
     id::types::AccountAddress,
     types::{
-        hashes::BlockHash,
+        hashes::{BlockHash, TransactionHash},
         queries::{BlockInfo, ConsensusInfo},
         smart_contracts::InstanceInfo,
         *,
@@ -43,10 +43,7 @@ impl QueryHelper {
                 let acc_id = v2::AccountIdentifier::Address(addr);
                 match self.client.clone().get_account_info(&acc_id, &block_hash).await {
                     Ok(i) => i.response.account_amount,
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
+                    Err(err) => handle_query_error(err)?,
                 }
             }
             Address::Contract(addr) => {
@@ -61,10 +58,7 @@ impl QueryHelper {
                             ..
                         } => amount,
                     },
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
+                    Err(err) => handle_query_error(err)?,
                 }
             }
             Address::BakingRewardAccount => match self.query_tokenomics_info(&block_hash).await? {
@@ -108,17 +102,11 @@ impl QueryHelper {
                         None => Amount::from_ccd(0),
                         Some(s) => s.transaction_fees_earned,
                     },
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
+                    Err(err) => handle_query_error(err)?,
                 },
                 None => match self.client.clone().get_passive_delegation_info(&block_hash).await {
                     Ok(i) => i.response.current_payday_transaction_fees_earned,
-                    Err(err) => match err {
-                        QueryError::RPCError(err) => return Err(err.into()),
-                        QueryError::NotFound => Amount::from_micro_ccd(0),
-                    },
+                    Err(err) => handle_query_error(err)?,
                 },
             },
         };
@@ -210,6 +198,18 @@ impl QueryHelper {
         }
     }
 
+    pub async fn query_transaction_status(
+        &self,
+        hash_string: String,
+    ) -> ApiResult<TransactionStatus> {
+        let hash = TransactionHash::from_str(hash_string.as_str())
+            .map_err(|e| ApiError::InvalidTransactionIdentifier(hash_string, e))?;
+        map_query_result(
+            self.client.clone().get_block_item_status(&hash).await,
+            ApiError::NoTransactionsMatched,
+        )
+    }
+
     pub async fn query_block_info(
         &self,
         block_id: Option<Box<PartialBlockIdentifier>>,
@@ -223,14 +223,14 @@ impl QueryHelper {
                 }
                 (None, Some(hash)) => {
                     let block_hash = block_hash_from_string(hash.as_str())?;
-                    self.query_block_info_by_hash(&block_hash).await
+                    self.query_block_info_by_hash(block_hash).await
                 }
                 (Some(height), Some(hash)) => {
                     let block_hash_string = block_hash_from_string(hash.as_str())?;
                     let block_hash_height = self.query_block_hash_from_height(height).await?;
 
                     if block_hash_string == block_hash_height {
-                        self.query_block_info_by_hash(&block_hash_string).await
+                        self.query_block_info_by_hash(block_hash_string).await
                     } else {
                         Err(ApiError::InvalidBlockIdentifier(
                             InvalidBlockIdentifierError::InconsistentValues,
@@ -241,6 +241,17 @@ impl QueryHelper {
                     Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
                 }
             },
+        }
+    }
+}
+
+pub fn handle_query_error(err: QueryError) -> ApiResult<Amount> {
+    if QueryError::is_not_found(&err) {
+        Ok(Amount::from_micro_ccd(0))
+    } else {
+        match err {
+            QueryError::RPCError(err) => Err(err.into()),
+            QueryError::NotFound => Ok(Amount::from_micro_ccd(0)),
         }
     }
 }

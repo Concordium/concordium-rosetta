@@ -69,6 +69,15 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InvalidBlockTransactionRequest => reply::with_status(
+                    reply::json(&invalid_input_invalid_value_or_identifier_error(
+                        Some("block transaction request".to_string()),
+                        None,
+                        None,
+                        Some("invalid request".to_string()),
+                    )),
+                    StatusCode::BAD_REQUEST,
+                ),
                 ApiError::InvalidContractAddress(addr) => reply::with_status(
                     reply::json(&invalid_input_invalid_value_or_identifier_error(
                         Some("contract address".to_string()),
@@ -78,6 +87,17 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     )),
                     StatusCode::BAD_REQUEST,
                 ),
+                ApiError::InvalidTransactionIdentifier(transaction_identifier, err) => {
+                    reply::with_status(
+                        reply::json(&invalid_input_invalid_value_or_identifier_error(
+                            Some("transaction identifier".to_string()),
+                            None,
+                            Some(transaction_identifier.clone()),
+                            Some(err.to_string()),
+                        )),
+                        StatusCode::BAD_REQUEST,
+                    )
+                }
                 ApiError::InvalidCurrency => reply::with_status(
                     reply::json(&invalid_input_invalid_value_or_identifier_error(
                         Some("currency".to_string()),
@@ -206,12 +226,10 @@ pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
                     ))),
                     StatusCode::NOT_FOUND,
                 ),
-                ApiError::JsonEncodingFailed(field_name, err) => reply::with_status(
-                    reply::json(&internal_json_encoding_failed_error(
-                        Some(field_name.clone()),
-                        Some(err.to_string()),
-                    )),
-                    StatusCode::BAD_REQUEST,
+                // We explicitly ignore the error message as it should not be passed to the user
+                ApiError::InternalServerError(_) => reply::with_status(
+                    reply::json(&internal_server_error()),
+                    StatusCode::INTERNAL_SERVER_ERROR,
                 ),
                 ApiError::ClientRpcError(err) => reply::with_status(
                     reply::json(&proxy_client_rpc_error(Some(err.to_string()))),
@@ -333,22 +351,6 @@ pub fn identifier_not_resolved_multiple_matches_error(identifier_type: Option<St
     }
 }
 
-pub fn internal_json_encoding_failed_error(
-    field_name: Option<String>,
-    err: Option<String>,
-) -> Error {
-    Error {
-        code:        9000,
-        message:     "internal error: JSON encoding failed".to_string(),
-        description: Some("JSON encoding failed.".to_string()),
-        retriable:   false,
-        details:     key_value_pairs(&[
-            key_value_pair("field", field_name),
-            key_value_pair("message", err),
-        ]),
-    }
-}
-
 pub fn proxy_client_rpc_error(err: Option<String>) -> Error {
     Error {
         code:        10000,
@@ -368,5 +370,15 @@ pub fn proxy_client_query_error(err: Option<String>) -> Error {
         ),
         retriable:   true,
         details:     key_value_pairs(&[key_value_pair("message", err)]),
+    }
+}
+
+pub fn internal_server_error() -> Error {
+    Error {
+        code:        9100,
+        message:     "an unexpected internal error has occurred".to_string(),
+        description: None,
+        retriable:   true,
+        details:     None,
     }
 }

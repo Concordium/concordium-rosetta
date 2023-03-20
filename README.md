@@ -578,7 +578,7 @@ To install the rosetta-cli tool that can run tests follow the steps
 below:
 
 ```bash
-# Clone our Rosetta-CLI clone
+# Clone our Rosetta-CLI fork
 git clone https://github.com/Concordium/rosetta-cli
 
 cd rosetta-cli
@@ -599,8 +599,7 @@ We need to make the following changes to this configuration:
 - The Rosetta address is set to `172.17.0.1` which indicates that
   Rosetta is running locally on the host. Unfortunately, the CLI 
   doesn't seem to allow this to be overwritten with a CLI arg.
-- The `network` field should be set to the either `"testnet"` or,
-  `"mainnet"` depending on what value the Rosetta API was initialized with.
+- The `network` field must be set to the value passed to the `--network` parameter when Rosetta was started (i.e. `testnet` in the command above).
 - The blockchain field should be set to `"concordium"`
 - Setting `"max_retries": 32768` makes sure the test doesn't stop 
   on a tempoary network outage.

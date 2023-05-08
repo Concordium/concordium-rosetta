@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Set minimum supported Rust version to `1.64`.
+
 ## 1.0.0
 - Use GRPCv2 API instead of the GRPCv1 API.
 - Changed default value for input flag `grpc-port` to 20000, since that is the default GRPCv2 port for mainnet.

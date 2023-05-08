@@ -25,12 +25,12 @@ struct TransactionRejectedMetadata {
 
 #[derive(SerdeSerialize)]
 struct ModuleDeployedMetadata {
-    module_ref: smart_contracts::ModuleRef,
+    module_ref: smart_contracts::ModuleReference,
 }
 
 #[derive(SerdeSerialize)]
 struct ContractInitializedMetadata {
-    module_ref: smart_contracts::ModuleRef,
+    module_ref: smart_contracts::ModuleReference,
     address:    ContractAddress,
     init_name:  smart_contracts::OwnedContractName,
     events:     Vec<smart_contracts::ContractEvent>,

@@ -302,7 +302,7 @@ impl ConstructionApi {
                 }
                 Ok(v) => v,
             });
-            let sig = match hex::decode(&sig_hex_bytes) {
+            let sig = match hex::decode(sig_hex_bytes) {
                 Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),

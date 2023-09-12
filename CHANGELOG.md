@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Set minimum supported Rust version to `1.64`.
+## 1.1.0
+
+- Set minimum supported Rust version to `1.66`.
+- Support P6.
 
 ## 1.0.0
 - Use GRPCv2 API instead of the GRPCv1 API.

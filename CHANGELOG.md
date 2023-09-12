@@ -4,7 +4,7 @@
 
 ## 1.1.0
 
-- Set minimum supported Rust version to `1.65`.
+- Set minimum supported Rust version to `1.66`.
 - Support P6.
 
 ## 1.0.0

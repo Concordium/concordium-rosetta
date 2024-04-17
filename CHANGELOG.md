@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 1.1.0
+
+- Set minimum supported Rust version to `1.66`.
+- Support P6.
+
+## 1.0.0
+- Use GRPCv2 API instead of the GRPCv1 API.
+- Changed default value for input flag `grpc-port` to 20000, since that is the default GRPCv2 port for mainnet.
+- Removed the now redundant input flag `grpc-token`. 
 - Bump Rosetta specification to v1.4.15.
 
 ## 0.7.0

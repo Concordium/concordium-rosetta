@@ -94,7 +94,7 @@ impl NetworkApi {
                     handler_error::invalid_input_inconsistent_value_error(None, None),
                     handler_error::identifier_not_resolved_no_matches_error(None),
                     handler_error::identifier_not_resolved_multiple_matches_error(None),
-                    handler_error::internal_json_encoding_failed_error(None, None),
+                    handler_error::internal_server_error(),
                     handler_error::proxy_client_rpc_error(None),
                     handler_error::proxy_client_query_error(None),
                 ],
@@ -112,8 +112,8 @@ impl NetworkApi {
 
     pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
         self.validator.validate_network_identifier(*req.network_identifier)?;
-        let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
-        let peer_list = self.query_helper.client.clone().peer_list(false).await?;
+        let consensus_status = self.query_helper.query_consensus_info().await?;
+        let peer_list = self.query_helper.client.clone().get_peers_info().await?.peers;
         Ok(NetworkStatusResponse {
             // Defining "current" block as last finalized block.
             current_block_identifier: Box::new(BlockIdentifier {
@@ -138,8 +138,8 @@ impl NetworkApi {
                 peer_list
                     .iter()
                     .map(|p| Peer {
-                        peer_id:  p.node_id.to_string(),
-                        metadata: Some(json!({ "ip": p.ip, "port": p.port })),
+                        peer_id:  p.peer_id.0.clone(),
+                        metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
                     })
                     .collect(),
             ),

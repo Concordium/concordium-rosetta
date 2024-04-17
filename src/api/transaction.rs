@@ -25,12 +25,12 @@ struct TransactionRejectedMetadata {
 
 #[derive(SerdeSerialize)]
 struct ModuleDeployedMetadata {
-    module_ref: smart_contracts::ModuleRef,
+    module_ref: smart_contracts::ModuleReference,
 }
 
 #[derive(SerdeSerialize)]
 struct ContractInitializedMetadata {
-    module_ref: smart_contracts::ModuleRef,
+    module_ref: smart_contracts::ModuleReference,
     address:    ContractAddress,
     init_name:  smart_contracts::OwnedContractName,
     events:     Vec<smart_contracts::ContractEvent>,
@@ -265,7 +265,7 @@ pub fn contract_address_string(contract_addr: &ContractAddress) -> String {
     format!("{}{}_{}", ACCOUNT_CONTRACT_PREFIX, contract_addr.index, contract_addr.subindex)
 }
 
-pub fn map_transaction(info: &BlockItemSummary) -> Transaction {
+pub fn map_transaction(info: BlockItemSummary) -> Transaction {
     let (operations, extra_metadata) = match &info.details {
         BlockItemSummaryDetails::AccountTransaction(details) => {
             let (ops, metadata) = operations_and_metadata_from_account_transaction_details(details);

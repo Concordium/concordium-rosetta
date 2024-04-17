@@ -3,7 +3,6 @@
 **/Dockerfile
 **/Jenkinsfile
 **/LICENSE
-**/*.md
 **/*.json
 **/*.deb
 **/node_modules

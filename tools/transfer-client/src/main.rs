@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
-use concordium_rust_sdk::types::transactions::ExactSizeTransactionSigner;
+use concordium_rust_sdk::types::{transactions::ExactSizeTransactionSigner, WalletAccount};
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
@@ -55,7 +55,7 @@ fn main() -> Result<()> {
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = load_keys(&args.keys_file)?;
+    let sender_keys = WalletAccount::from_json_file(&args.keys_file)?;
     let operations = test_transfer_operations(args.sender_addr, args.receiver_addr, args.amount);
 
     // Perform transfer.
@@ -99,7 +99,7 @@ fn main() -> Result<()> {
     }
 
     let sigs =
-        signature_maps_to_signatures(sign_payloads(payloads_response.payloads, &sender_keys)?);
+        signature_maps_to_signatures(sign_payloads(payloads_response.payloads, &sender_keys.keys)?);
 
     let combine_response = call_combine(
         client.clone(),

@@ -9,11 +9,11 @@
 # - The value of `CONCORDIUM_ROSETTA_PORT` only determines the port exposed to the host.
 #   The internal port is hard-coded to 8080.
 #   The default value of the exposed port is still 8080.
-#   Don't change this when running with profile 'check:data' as the Rosetta CLI expects to use this port on the host.
+#   Don't change this when running with profile 'check-data' as the Rosetta CLI expects to use this port on the host.
 #
 # The image containing the application is set using `ROSETTA_IMAGE`.
-# If this value isn't provided, it will default to an image that doesn't exist in the public repo,
-# which will cause Compose to build the image from source.
+# If this value isn't provided, it will default to an image that doesn't exist publicly ("concordium-rosetta:test).
+# This will cause Compose to build the image from source.
 # Note that the image is cached locally so will be used without rebuild in subsequent runs, even if the source code has changed.
 # Delete the image or change `ROSETTA_IMAGE` to rebuild.
 #
@@ -21,23 +21,23 @@
 #
 # Example:
 #
-#   ROSETTA_IMAGE=concordium/rosetta:0.7.0-0 \
+#   ROSETTA_IMAGE=concordium/rosetta:1.0.0-0 \
 #   CONCORDIUM_ROSETTA_GRPC_HOST=node.mainnet.concordium.example.com \
 #   CONCORDIUM_ROSETTA_NETWORK=mainnet \
-#   docker-compose up -d
+#   docker compose up -d
 #
 # For testing the implementation, an extra service `rosetta-cli-check-data` may be included.
 # This is a custom fork of the official Rosetta CLI that understands Concordium account aliases (see './tools/rosetta-cli-docker').
-# Run the deployment with Compose profile `check:data` to enable this service.
+# Run the deployment with Compose profile `check-data` to enable this service.
 # The baked in configuration of the tool expects the following:
 # - Rosetta is exposed on port 8080 on the host network.
 # - The network is set to "rosetta".
 #
 # Example:
-#   ROSETTA_IMAGE=concordium/rosetta:0.7.0-0 \
+#   ROSETTA_IMAGE=concordium/rosetta:1.0.0-0 \
 #   CONCORDIUM_ROSETTA_GRPC_HOST=node.mainnet.concordium.example.com \
 #   CONCORDIUM_ROSETTA_NETWORK=rosetta \
-#   docker-compose --profile=check:data up -d
+#   docker compose --profile=check-data up -d
 
 version: '3'
 services:
@@ -46,20 +46,19 @@ services:
     build:
       context: .
       args:
-        build_image: ${ROSETTA_BUILD_IMAGE-rust:1.62-slim-buster}
+        build_image: ${ROSETTA_BUILD_IMAGE-rust:1.66-slim-buster}
         base_image: ${ROSETTA_BASE_IMAGE-debian:buster-slim}
-    image: ${ROSETTA_IMAGE-concordium/rosetta:test}
+    image: ${ROSETTA_IMAGE-concordium-rosetta:test}
     environment:
     - CONCORDIUM_ROSETTA_GRPC_HOST=${CONCORDIUM_ROSETTA_GRPC_HOST-172.17.0.1}
     - CONCORDIUM_ROSETTA_GRPC_PORT
-    - CONCORDIUM_ROSETTA_GRPC_TOKEN
     - CONCORDIUM_ROSETTA_NETWORK
     - CONCORDIUM_ROSETTA_PORT=8080
-    ports: # alternative: use "network_mode: host"
+    ports:
     - "${CONCORDIUM_ROSETTA_PORT-8080}:8080"
     stop_signal: SIGKILL
   rosetta-cli-check-data:
-    profiles: [check:data]
+    profiles: [ check-data ]
     container_name: rosetta-cli-check-data
     build:
       context: ./tools/rosetta-cli-docker
@@ -72,4 +71,4 @@ services:
     depends_on:
     - rosetta
     command:
-    - check:data
+    - "check:data"

@@ -10,7 +10,7 @@ It's not meant to be used to do real transfers as there are other tools that are
 
 The tool is specifically built to integrate with the Concordium Rosetta implementation;
 implementations for other blockchains are not supported.
-The main Concordium-specific parts are key handling and the [signature index quirk](/README.md#construction_api)
+The main Concordium-specific parts are key handling and the [signature index quirk](/README.md#construction-api)
 in the `combine` endpoint.
 
 ## Usage
@@ -35,7 +35,7 @@ The expected JSON format of the keys file is
       "keys": {
         <key-index>: {
           "signKey": ...,
-          "verifyKey": ...,
+          "verifyKey": ...
         },
         ...
       },

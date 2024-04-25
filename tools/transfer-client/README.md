@@ -24,7 +24,10 @@ The application has the following CLI parameters:
 - `--receiver`: Address of the account receiving the transfer.
 - `--amount`: Amount of µCCD to transfer.
 - `--keys-file`: Path of JSON file containing the signing keys for the sender account.
-- `--memo-hex`: Optional hex-encoded memo to attach to the transfer transaction.
+- `--memo-hex`: Optional hex-encoded message to attach to the transfer transaction as a memo.
+- `--memo-string`: Optional string to attach to the transfer transaction as a memo. The string is encoded as CBOR.
+
+The options `--memo-hex` and `--memo-string` are mutually exclusive.
 
 The expected JSON format of the keys file is
 

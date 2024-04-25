@@ -32,20 +32,23 @@ The expected JSON format of the keys file is
 
 ```
 {
-  "keys": {
-    <credential-index>: {
-      "keys": {
-        <key-index>: {
-          "signKey": ...,
-          "verifyKey": ...,
+  "address": ...,
+  "accountKeys": {
+    "keys": {
+      <credential-index>: {
+        "keys": {
+          <key-index>: {
+            "signKey": ...,
+            "verifyKey": ...,
+          },
+          ...
         },
-        ...
+        "threshold": <key-threshold>
       },
-      "threshold": <key-threshold>
+      ...
     },
-    ...
-  },
-  "threshold": <credential-threshold>
+    "threshold": <credential-threshold>
+  }
 }
 ```
 

@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
-use concordium_rust_sdk::types::{transactions::ExactSizeTransactionSigner, Memo};
+use concordium_rust_sdk::types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount};
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
@@ -81,7 +81,7 @@ fn main() -> Result<()> {
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = load_keys(&keys_file)?;
+    let sender_keys = WalletAccount::from_json_file(&keys_file)?;
     let sender_addr = args.sender_addr;
     let receiver_addr = args.receiver_addr;
     let amount = args.amount;
@@ -96,7 +96,6 @@ fn main() -> Result<()> {
         network_id.clone(),
         preprocess_response.options, // options from preprocess response must be passed directly
     )?;
-
     let metadata = serde_json::from_value::<Metadata>(metadata_response.metadata)?;
     let payload_metadata = serde_json::to_value(&Payload {
         account_nonce: metadata.account_nonce,
@@ -129,7 +128,7 @@ fn main() -> Result<()> {
     }
 
     let sigs =
-        signature_maps_to_signatures(sign_payloads(payloads_response.payloads, &sender_keys)?);
+        signature_maps_to_signatures(sign_payloads(payloads_response.payloads, &sender_keys.keys)?);
 
     let combine_response = call_combine(
         client.clone(),
@@ -175,8 +174,6 @@ fn call_preprocess(
             network_identifier: Box::new(network_id),
             operations,
             metadata: None,
-            max_fee: None,
-            suggested_fee_multiplier: None,
         })
         .send()?
         .json()

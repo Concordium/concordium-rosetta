@@ -14,9 +14,9 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 ### Versions
 
-- Rosetta spec version: 1.4.10.
-- Supported Concordium node version: 3.0.x.
-- Supported Rust toolchain version: 1.54+.
+- Rosetta spec version: 1.4.15.
+- Supported Concordium node version: 6.0+.
+- Supported Rust toolchain version: 1.66+.
 
 ## Build and run
 
@@ -28,7 +28,7 @@ The repository uses *nested* git submodules. Make sure that all submodules are c
 git submodule update --init --recursive
 ```
 
-**IMPORTANT:** This must be done after the initial clone as well as after you've switched between branches.
+**IMPORTANT:** This must be done after the initial clone as well as after switching branch.
 
 *Build*
 
@@ -39,8 +39,7 @@ The application accepts the following parameters:
   Only requests with network identifier using this value will be accepted (see [below](#Identifiers)).
 - `--port`: The port that HTTP requests are to be served on (default: `8080`).
 - `--grpc-host`: Host address of a node with accessible gRPC interface (default: `localhost`).
-- `--grpc-port`: Port of the node's gRPC interface (default: `10000`).
-- `--grpc-token`: Access token of the node's gRPC endpoint (default: `rpcadmin`).
+- `--grpc-port`: Port of the node's gRPC interface, should normally be 20000 for mainnet and 20001 for testnet (default: `20000`).
 
 ### Docker
 
@@ -50,7 +49,7 @@ The application accepts the following parameters:
 
 ```shell
 docker build \
-  --build-arg=build_image=rust:1.54-slim-buster \
+  --build-arg=build_image=rust:1.66-slim-buster \
   --build-arg=base_image=debian:buster-slim \
   --tag=concordium-rosetta \
   --pull \
@@ -59,9 +58,20 @@ docker build \
 
 *Run*
 
+Exposing port:
+
 ```shell
-docker run --rm concordium-rosetta
+docker run --rm -p 8080:8080 concordium-rosetta <args...>
 ```
+
+Host network:
+
+```shell
+docker run --rm --network=host concordium-rosetta <args...>
+```
+
+See also [`docker-compose.yaml`](./docker-compose.yaml) for an easy way of
+building and/or deploying an instance with sensible defaults using Docker Compose.
 
 ## Rosetta
 
@@ -108,8 +118,8 @@ All applicable endpoints except for the
   but its value is ignored.
   All blocks contain a synthetic first transaction with pseudo-hash `tokenomics` (think of Bitcoin's "coinbase" transaction)
   containing operations for minting and rewards.
-  These operations reference the special internal "baker-" and "finalization reward" accounts with the pseudo-addresses
-  `baking_reward_account` and `finalization_reward_account`, respectively.
+  These operations include references to the certain special internal reward and delegation accrue accounts.
+  See `account_identifier` in the [identifiers](#Identifiers) section for details.
   Likewise, almost all regular transactions have a "fee" operation.
 
 - [Mempool](https://www.rosetta-api.org/docs/MempoolApi.html):
@@ -200,8 +210,16 @@ This implementation imposes the following restrictions on these identifiers:
   This means that all amounts must be given in µCCD. The `metadata` field is ignored.
 
 - `account_identifier`: Only the `address` field is applicable.
+  The field supports the following kinds of values:
+  - Account address in Base58Check format.
+  - The special "addresses" `baking_reward_account`, `finalization_reward_account`
+    for the virtual baking- and finalization reward accounts.
+  - The special "addresses" `foundation_accrue_account`, `pool_accrue_account:<pool>`, and `pool_accrue_account:passive`
+    for the delegation accrue accounts for the foundation account, delegation pool `<pool>`,
+    and passive the delegation pool, respectively.
+  - Contract address with format `contract:<index>_<subindex>`.
 
-Identifier strings are generally expected in standard formats (hex for hashes, Base58Check for account addresses etc.).
+Identifier strings are generally expected in standard formats (i.e. hex for hashes, Base58Check for account addresses etc.).
 No prefixes such as "0x" may be added.
 
 ### Operations
@@ -544,23 +562,83 @@ The bottom line is that the only way to confirm that a transaction is successful
 is to check the hash against the chain.
 Also, the block containing the transaction has to be finalized for the transaction to be as well.
 
-## Tools
+## Testing
+
+### Running Rosetta CLI for testing
+
+We forked the Rosetta CLI tool to make it understand account aliases, i.e. that a 
+transaction affecting the balance of an account affects all aliases of that 
+account as well.
+
+The test will fail if run with the official Rosetta CLI tool.
+
+To run our forked rosetta-cli tool you must have a running instance of both the
+[concordium-node](https://github.com/Concordium/concordium-node) and
+the concordium rosetta API implementation:
+
+```bash
+concordium-rosetta --network testnet
+```
+
+To install the rosetta-cli tool that can run tests follow the steps
+below:
+
+```bash
+# Clone our Rosetta-CLI fork
+git clone https://github.com/Concordium/rosetta-cli
+
+cd rosetta-cli
+
+# Build the binary
+go build .
+```
+
+The default config file can be generated like this:
+
+```bash
+# Create the config file
+cd ./bin
+./rosetta-cli configuration:create ./config.json
+```
+
+We need to make the following changes to this configuration:
+- The `network` field must be set to the value passed to the `--network` parameter 
+  when Rosetta was started (i.e. `testnet` in the command above).
+- The blockchain field should be set to `"concordium"`
+- Setting `"max_retries": 32768` makes sure the test doesn't stop 
+  on a tempoary network outage.
+
+Now the test tool can be run:
+
+```bash
+# Check the correctness of a Rosetta Data API Implementation
+./rosetta-cli --configuration-file ./config.json check:data
+```
+
+Note that this only tests the data returned by the Rosetta
+API implementation is valid. It does not test interaction
+on chain, such as transactions. We test that with a different
+[tool](https://github.com/Concordium/concordium-rosetta#transfer-client).
+There is more info on the [Rosetta-API
+website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
+
+### Rosetta CLI (Docker)
+
+You can also build using the provided docker file in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker)
+
+It uses the default configuration with the following changes added:
+- The Rosetta address is set to `172.17.0.1` which indicates that
+  Rosetta is running locally on the host.
+- To avoid hard-coding `network_identifier` to any particular value,
+  the `network` field is set to `"rosetta"`,
+  As always, the Rosetta instance must have been started up with the
+  same value.
 
 ### Transfer client
 
-The [`transfer-client`](tools/transfer-client) tool (used in [example](#Example) above) is a simple client
+The [`transfer-client`](tools/transfer-client) tool (used in [example](#Examples) above) is a simple client
 that uses the Rosetta implementation to make a CCD transfer from one account to another.
 The transfer may optionally include a memo.
-
-For comparison, a similar tool [`transfer-client-direct`](tools/transfer-client-direct) does the same thing
-except that it uses the SDK directly instead of going through a Rosetta server.
-
-### Query account
-
-The [`query-account`](tools/query-account) tool traverses the chain,
-looking for transactions related to a given account.
-
-The intent is to provide a way for testers to exercise the Data API.
 
 ## Resources
 

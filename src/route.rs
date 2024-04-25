@@ -65,7 +65,7 @@ fn block_transaction(
 
 fn construction_preprocess(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("preprocess")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -75,7 +75,7 @@ fn construction_preprocess(
 
 fn construction_metadata(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("metadata")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -85,7 +85,7 @@ fn construction_metadata(
 
 fn construction_payloads(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("payloads")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -95,7 +95,7 @@ fn construction_payloads(
 
 fn construction_parse(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("parse")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -105,7 +105,7 @@ fn construction_parse(
 
 fn construction_combine(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("combine")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -115,7 +115,7 @@ fn construction_combine(
 
 fn construction_submit(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("submit")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -125,7 +125,7 @@ fn construction_submit(
 
 fn construction_hash(
     api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::path("hash")
         .and(warp::path::end())
         .and(with_construction_api(api))
@@ -165,7 +165,7 @@ pub fn root(
     account_api: AccountApi,
     block_api: BlockApi,
     construction_api: ConstructionApi,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::post()
         .and(
             network(network_api)

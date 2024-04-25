@@ -12,10 +12,11 @@ use crate::{
 };
 use concordium_rust_sdk::{
     common::{
-        types::{CredentialIndex, KeyIndex, TransactionSignature, TransactionTime},
+        types::{
+            Amount as CCAmount, CredentialIndex, KeyIndex, TransactionSignature, TransactionTime,
+        },
         SerdeDeserialize, SerdeSerialize,
     },
-    constants::DEFAULT_NETWORK_ID,
     id::types::AccountAddress,
     types::{
         transactions::{
@@ -92,23 +93,18 @@ impl ConstructionApi {
         req: ConstructionPreprocessRequest,
     ) -> ApiResult<ConstructionPreprocessResponse> {
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
-        if req.max_fee.is_some() {
-            // TODO can query field name from serde?
-            return Err(ApiError::UnsupportedFieldPresent("max_fee".to_string()));
-        }
-        if req.suggested_fee_multiplier.is_some() {
-            return Err(ApiError::UnsupportedFieldPresent("suggested_fee_multiplier".to_string()));
-        }
         let options = match transaction_from_operations(&req.operations)? {
             ParsedTransaction::Transfer(transfer_tx) => ConstructionOptions {
                 sender: transfer_tx.sender_address,
             },
         };
         Ok(ConstructionPreprocessResponse {
-            options:              Some(
-                serde_json::to_value(&options)
-                    .map_err(|err| ApiError::JsonEncodingFailed("options".to_string(), err))?,
-            ),
+            options:              Some(serde_json::to_value(&options).map_err(|err| {
+                ApiError::InternalServerError(anyhow::anyhow!(
+                    "JSON encoding of field 'options' failed: {}",
+                    err
+                ))
+            })?),
             required_public_keys: Some(vec![AccountIdentifier::new(options.sender.to_string())]),
         })
     }
@@ -126,12 +122,10 @@ impl ConstructionApi {
             Some(v) => serde_json::from_value::<ConstructionOptions>(v)
                 .map_err(|_| ApiError::InvalidConstructionOptions)?,
         };
-        let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
+        let consensus_status = self.query_helper.query_consensus_info().await?;
         let sender_info = self
             .query_helper
-            .client
-            .clone()
-            .get_account_info(opts.sender, &consensus_status.last_finalized_block)
+            .query_account_info_by_address(opts.sender, &consensus_status.last_finalized_block)
             .await?;
         // TODO Should include account's credential keys? Would enable signature
         // verification later on.
@@ -161,7 +155,7 @@ impl ConstructionApi {
         let (builder, account_address) = match parsed_transaction {
             ParsedTransaction::Transfer(tx) => {
                 let to_address = tx.receiver_address;
-                let amount = tx.amount_uccd.into();
+                let amount = CCAmount::from_micro_ccd(tx.amount_uccd);
                 let payload = match metadata.memo {
                     None => Payload::Transfer {
                         to_address,
@@ -191,7 +185,12 @@ impl ConstructionApi {
                 header:  builder.header.clone(),
                 payload: builder.encoded.clone(),
             })
-            .map_err(|err| ApiError::JsonEncodingFailed("unsigned_transaction".to_string(), err))?,
+            .map_err(|err| {
+                ApiError::InternalServerError(anyhow::anyhow!(
+                    "JSON encoding of field 'unsigned_transaction' failed: {}",
+                    err
+                ))
+            })?,
             payloads:             vec![SigningPayload {
                 address:            None, // deprecated
                 account_identifier: Some(Box::new(AccountIdentifier::new(
@@ -303,7 +302,7 @@ impl ConstructionApi {
                 }
                 Ok(v) => v,
             });
-            let sig = match hex::decode(&sig_hex_bytes) {
+            let sig = match hex::decode(sig_hex_bytes) {
                 Err(_) => {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
@@ -326,7 +325,12 @@ impl ConstructionApi {
             header:    unsigned_tx.header,
             payload:   unsigned_tx.payload.encode(),
         })
-        .map_err(|err| ApiError::JsonEncodingFailed("signed_transaction".to_string(), err))?;
+        .map_err(|err| {
+            ApiError::InternalServerError(anyhow::anyhow!(
+                "JSON encoding of field 'signed_transaction' failed: {}",
+                err
+            ))
+        })?;
         Ok(ConstructionCombineResponse {
             signed_transaction: tx,
         })
@@ -339,18 +343,10 @@ impl ConstructionApi {
         self.network_validator.validate_network_identifier(*req.network_identifier)?;
 
         let block_item = parse_block_item(req.signed_transaction.as_str())?;
-        let success = self
-            .query_helper
-            .client
-            .clone()
-            .send_transaction(DEFAULT_NETWORK_ID, &block_item)
-            .await?;
-        if !success {
-            // TODO Verify signatures in this case?
-            return Err(ApiError::TransactionNotAccepted);
-        }
+        let transaction_hash =
+            self.query_helper.client.clone().send_block_item(&block_item).await?;
         Ok(TransactionIdentifierResponse::new(TransactionIdentifier::new(
-            block_item.hash().to_string(),
+            transaction_hash.to_string(),
         )))
     }
 
@@ -462,7 +458,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i128,
+            amount.micro_ccd() as i128,
             None,
         ),
         Payload::TransferWithMemo {
@@ -472,7 +468,7 @@ fn operations_from_transaction(
         } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
-            amount.microgtu as i128,
+            amount.micro_ccd() as i128,
             Some(memo.clone()),
         ),
         _ => Err(ApiError::UnsupportedOperationType(transaction_type_to_operation_type(Some(

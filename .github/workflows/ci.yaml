@@ -12,8 +12,8 @@ on:
   workflow_dispatch: # allow manual trigger
 
 env:
-  RUST_FMT: nightly-2021-06-09-x86_64-unknown-linux-gnu
-  RUST_CLIPPY: 1.54
+  RUST_TOOLCHAIN_FMT: nightly-2023-04-01-x86_64-unknown-linux-gnu
+  RUST_TOOLCHAIN: 1.66
 
 jobs:
   fmt:
@@ -23,14 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_FMT }}
-          override: true
-          components: rustfmt
+        run: |
+          rustup override set "${{ env.RUST_TOOLCHAIN_FMT }}"
+          rustup component add rustfmt
       - name: Format
         run: |
           cargo fmt -- --color=always --check
@@ -51,18 +48,19 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
+      - name: Install protobuf
+        run: |
+          wget https://github.com/protocolbuffers/protobuf/releases/download/v3.15.3/protoc-3.15.3-linux-x86_64.zip
+          unzip protoc-3.15.3-linux-x86_64.zip
+          sudo mv ./bin/protoc /usr/bin/protoc
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ env.RUST_CLIPPY }}
-          override: true
-          target: ${{ env.TARGET }}
-          components: rustfmt, clippy
+        run: |
+          rustup override set "${{ env.RUST_TOOLCHAIN }}"
+          rustup component add clippy
       - name: Clippy
         run: |
           cargo clippy --color=always --tests --benches -- -Dclippy::all

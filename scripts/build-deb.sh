@@ -3,8 +3,10 @@
 set -euxo pipefail
 
 # Script for packaging a compiled 'concordium-rosetta' Linux binary into a Debian package.
-# The script expects the path of the binary to be passed as an argument. Any following arguments are ignored.
-# A debian package is written to a file named 'concordium-rosetta_<version>.deb' in the current working dir,
+# The script expects the path of the binary to be passed as an argument.
+# Any following arguments are silently ignored.
+# A debian package file named 'concordium-rosetta_<version>.deb' is left
+# in the current working directory,
 # where <version> is obtained by invoking the binary with arg '--version'.
 
 # -- PARAMETERS -- #
@@ -13,15 +15,15 @@ target_file="${1}"
 
 # -- BUILD -- #
 
-# Setup temp build dir.
-build_dir="$(mktemp -d)"
-package_dir="${build_dir}"
+# Setup temp package dir.
+package_dir="$(mktemp -d)"
 mkdir -p "${package_dir}"
 
 # Copy binary file.
 mkdir -p "${package_dir}/usr/bin"
 cp "${target_file}" "${package_dir}/usr/bin/"
 
+# Prepare package in package directory.
 (
 cd "${package_dir}"
 
@@ -44,5 +46,8 @@ Description: Rosetta implementation for the Concordium blockchain.
 EOF
 )
 
+# Assemble contents of package directory into package in the current one.
 dpkg-deb --build "${package_dir}" .
-rm -rf "${build_dir}"
+
+# Clean up.
+rm -rf "${package_dir}"

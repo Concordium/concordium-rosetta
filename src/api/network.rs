@@ -50,6 +50,7 @@ impl NetworkApi {
                     },
                 ],
                 operation_types:           vec![
+                    OPERATION_TYPE_UNKNOWN.to_string(),
                     OPERATION_TYPE_FEE.to_string(),
                     OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
                     OPERATION_TYPE_MINT_FINALIZATION_REWARD.to_string(),
@@ -75,6 +76,13 @@ impl NetworkApi {
                     OPERATION_TYPE_TRANSFER_WITH_SCHEDULE.to_string(),
                     OPERATION_TYPE_UPDATE_CREDENTIALS.to_string(),
                     OPERATION_TYPE_REGISTER_DATA.to_string(),
+                    OPERATION_TYPE_PAYDAY_FOUNDATION_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_TRANSACTION_FEES_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_BAKING_REWARD.to_string(),
+                    OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD.to_string(),
+                    OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
+                    OPERATION_TYPE_CONFIGURE_BAKER.to_string(),
+                    OPERATION_TYPE_CONFIGURE_DELEGATION.to_string(),
                 ],
                 errors:                    vec![
                     handler_error::invalid_input_unsupported_field_error(None),
@@ -86,9 +94,9 @@ impl NetworkApi {
                     handler_error::invalid_input_inconsistent_value_error(None, None),
                     handler_error::identifier_not_resolved_no_matches_error(None),
                     handler_error::identifier_not_resolved_multiple_matches_error(None),
+                    handler_error::internal_server_error(),
                     handler_error::proxy_client_rpc_error(None),
                     handler_error::proxy_client_query_error(None),
-                    handler_error::proxy_transaction_rejected(),
                 ],
                 historical_balance_lookup: true,
                 timestamp_start_index:     None, /* not populated as the genesis block has a
@@ -104,18 +112,20 @@ impl NetworkApi {
 
     pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
         self.validator.validate_network_identifier(*req.network_identifier)?;
-        let consensus_status = self.query_helper.client.clone().get_consensus_status().await?;
-        let peer_list = self.query_helper.client.clone().peer_list(false).await?;
+        let consensus_status = self.query_helper.query_consensus_info().await?;
+        let peer_list = self.query_helper.client.clone().get_peers_info().await?.peers;
         Ok(NetworkStatusResponse {
             // Defining "current" block as last finalized block.
             current_block_identifier: Box::new(BlockIdentifier {
                 index: consensus_status.last_finalized_block_height.height as i64,
                 hash:  consensus_status.last_finalized_block.to_string(),
             }),
-            current_block_timestamp:  consensus_status
-                .last_finalized_time
-                .map(|t| t.timestamp_millis())
-                .unwrap_or(-1),
+            current_block_timestamp:  self
+                .query_helper
+                .query_block_info_by_hash(&consensus_status.last_finalized_block)
+                .await?
+                .block_slot_time
+                .timestamp_millis(),
             genesis_block_identifier: Box::new(BlockIdentifier {
                 index: 0,
                 hash:  consensus_status.genesis_block.to_string(),
@@ -124,13 +134,15 @@ impl NetworkApi {
                                              * blocks */
             sync_status:              None, /* the connected node's sync status is not easily
                                              * available and thus currently not exposed here */
-            peers:                    peer_list
-                .iter()
-                .map(|p| Peer {
-                    peer_id:  p.node_id.to_string(),
-                    metadata: Some(json!({ "ip": p.ip, "port": p.port })),
-                })
-                .collect(),
+            peers:                    Some(
+                peer_list
+                    .iter()
+                    .map(|p| Peer {
+                        peer_id:  p.peer_id.0.clone(),
+                        metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
+                    })
+                    .collect(),
+            ),
         })
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
-    api::{amount::amount_from_uccd, error::ApiResult, query::QueryHelper},
+    api::{amount::amount_from_uccd, error::ApiResult},
     validate::network::NetworkValidator,
-    AccountValidator,
+    AccountValidator, QueryHelper,
 };
 use rosetta::models::*;
 use std::ops::Deref;
@@ -41,7 +41,7 @@ impl AccountApi {
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            vec![amount_from_uccd(amount.microgtu as i128)],
+            vec![amount_from_uccd(amount.micro_ccd() as i128)],
         ))
     }
 }

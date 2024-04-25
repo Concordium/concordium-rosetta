@@ -14,11 +14,11 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use clap::Parser;
-use concordium_rust_sdk::endpoints::Client;
+use concordium_rust_sdk::v2::{Client, Endpoint};
 use env_logger::{Builder, Env};
 use rosetta::models::NetworkIdentifier;
 
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(
     author = "Concordium Foundation",
     about = "A server implementing the Rosetta API for the Concordium blockchain.",
@@ -32,35 +32,29 @@ struct Args {
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
-    network:    String,
+    network:   String,
     #[clap(
         long = "port",
         env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
-    port:       u16,
+    port:      u16,
     #[clap(
         long = "grpc-host",
         env = "CONCORDIUM_ROSETTA_GRPC_HOST",
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:  String,
+    grpc_host: String,
     #[clap(
         long = "grpc-port",
         env = "CONCORDIUM_ROSETTA_GRPC_PORT",
-        help = "Port of the node's gRPC endpoint.",
-        default_value = "10000"
+        help = "Port of the node's gRPC (API v2) endpoint. For testnet you should normally use \
+                20001",
+        default_value = "20000"
     )]
-    grpc_port:  u16,
-    #[clap(
-        long = "grpc-token",
-        env = "CONCORDIUM_ROSETTA_GRPC_TOKEN",
-        help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin"
-    )]
-    grpc_token: String,
+    grpc_port: u16,
 }
 
 #[tokio::main]
@@ -72,13 +66,12 @@ async fn main() -> Result<()> {
     Builder::from_env(Env::default().default_filter_or("info")).init();
 
     // Initialize gRPC and client.
-    let endpoint = tonic::transport::Endpoint::from_shared(format!(
+    let client = Client::new(Endpoint::from_shared(format!(
         "http://{}:{}",
         args.grpc_host, args.grpc_port
-    ))
-    .context("invalid host and/or port")?;
-    let client =
-        Client::connect(endpoint, args.grpc_token).await.context("cannot connect to node")?;
+    ))?)
+    .await
+    .context("Cannot connect to the node.")?;
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {

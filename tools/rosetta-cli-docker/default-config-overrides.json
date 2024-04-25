@@ -1,0 +1,9 @@
+{
+ "network": {
+  "blockchain": "concordium",
+  "network": "rosetta"
+ },
+ "online_url": "http://172.17.0.1:8080",
+  "max_retries": 32768,
+  "max_online_connections": 32
+}

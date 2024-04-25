@@ -24,6 +24,7 @@ pipeline {
                       --build-arg base_image="${base_image}" \
                       --label base_image="${base_image}" \
                       --tag="${image_name}" \
+                      --pull \
                       .
                     docker push "${image_name}"
                 '''.stripIndent()
@@ -40,13 +41,11 @@ pipeline {
                         --build-arg=build_image="${build_image}" \
                         --pull \
                         .
-
                     # Extract debian package from docker image into './out'.
                     # The file will have owner 'root' because docker volumes cannot be mounted as anything else
                     # (see 'https://github.com/moby/moby/issues/2259').
                     mkdir -p ./out
-                    docker run --rm --volume="$(pwd)/out:/out" build sh -c 'cp /build/concordium-rosetta*.deb /out'
-
+                    docker run --rm --volume="$(pwd)/out:/out" build
                     aws s3 cp \
                         ./out/concordium-rosetta*.deb \
                         s3://distribution.concordium.software/tools/linux/ \

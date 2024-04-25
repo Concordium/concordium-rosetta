@@ -9,7 +9,7 @@ use concordium_rust_sdk::{
         transactions::{
             construct, construct::GivenEnergy, cost, BlockItem, ExactSizeTransactionSigner, Payload,
         },
-        Memo,
+        Memo, WalletAccount,
     },
 };
 use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
@@ -27,54 +27,51 @@ struct Args {
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:        String,
+    grpc_host:           String,
     #[clap(
         long = "grpc-port",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
-    grpc_port:        u16,
+    grpc_port:           u16,
     #[clap(
         long = "grpc-token",
         help = "Access token of the node's gRPC endpoint.",
         default_value = "rpcadmin"
     )]
-    grpc_token:       String,
-    #[clap(long = "sender", help = "Address of the account sending the transfer.")]
-    sender_address:   AccountAddress,
-    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_address: AccountAddress,
-    #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:           Amount,
+    grpc_token:          String,
     #[clap(
-        long = "keys-file",
-        help = "Path of file containing the signing keys for the sender account."
+        long = "sender-account-file",
+        help = "Path of file containing the address and keys for the sender account."
     )]
-    sender_keys_file: PathBuf,
+    sender_account_file: PathBuf,
+    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
+    receiver_address:    AccountAddress,
+    #[clap(long = "amount", help = "Amount of CCD to transfer.")]
+    amount:              Amount,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",
         group = "memo"
     )]
-    memo_hex:         Option<String>,
+    memo_hex:            Option<String>,
     #[clap(
         long = "memo-string",
         help = "Memo string to attach (CBOR-encoded) to the transaction.",
         group = "memo"
     )]
-    memo_str:         Option<String>,
+    memo_str:            Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
-    let sender_keys_file = args.sender_keys_file;
+    let sender_account_file = args.sender_account_file;
     let grpc_host = args.grpc_host;
     let grpc_port = args.grpc_port;
     let grpc_token = args.grpc_token;
     let to_address = args.receiver_address;
-    let from_address = args.sender_address;
     let amount = args.amount;
     let memo_bytes = match (args.memo_hex, args.memo_str) {
         (None, None) => None,
@@ -89,10 +86,9 @@ async fn main() -> Result<()> {
     let memo = memo_bytes.map(Memo::try_from).transpose()?;
 
     // Load sender keys.
-    let sender_keys_json =
-        fs::read_to_string(&sender_keys_file).context("cannot read keys file")?;
-    let sender_keys: AccountKeys =
-        serde_json::from_str(&sender_keys_json).context("cannot parse keys loaded from file")?;
+    let sender_account = WalletAccount::from_json_file(sender_account_file)?;
+    let from_address = sender_account.address;
+    let sender_keys = sender_account.keys;
 
     // Configure client.
     let client = Client::connect(format!("http://{}:{}", grpc_host, grpc_port), grpc_token)

@@ -17,36 +17,34 @@ use transfer_client::*;
 )]
 struct Args {
     #[clap(long = "url", help = "URL of Rosetta server.", default_value = "http://localhost:8080")]
-    url:           String,
+    url:                 String,
     #[clap(
         long = "network",
         help = "Network name. Used in network identifier.",
         default_value = "testnet"
     )]
-    network:       String,
-    #[clap(long = "sender", help = "Address of the account sending the transfer.")]
-    sender_addr:   String,
-    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_addr: String,
-    #[clap(long = "amount", help = "Amount of μCCD to transfer.")]
-    amount:        i64,
+    network:             String,
     #[clap(
-        long = "keys-file",
-        help = "Path of file containing the signing keys for the sender account."
+        long = "sender-account-file",
+        help = "Path of file containing the address and keys for the sender account."
     )]
-    keys_file:     PathBuf,
+    sender_account_file: PathBuf,
+    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
+    receiver_addr:       String,
+    #[clap(long = "amount", help = "Amount of μCCD to transfer.")]
+    amount:              i64,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",
         group = "memo"
     )]
-    memo_hex:      Option<String>,
+    memo_hex:            Option<String>,
     #[clap(
         long = "memo-string",
         help = "Memo string to attach (CBOR-encoded) to the transaction.",
         group = "memo"
     )]
-    memo_str:      Option<String>,
+    memo_str:            Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -55,7 +53,7 @@ fn main() -> Result<()> {
 
     let url = args.url;
     let network = args.network;
-    let keys_file = args.keys_file;
+    let sender_account_file = args.sender_account_file;
 
     let memo_bytes = match (args.memo_hex, args.memo_str) {
         (None, None) => None,
@@ -77,11 +75,11 @@ fn main() -> Result<()> {
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = WalletAccount::from_json_file(keys_file)?;
-    let sender_addr = args.sender_addr;
+    let sender_account = WalletAccount::from_json_file(sender_account_file)?;
     let receiver_addr = args.receiver_addr;
     let amount = args.amount;
-    let operations = test_transfer_operations(sender_addr, receiver_addr, amount);
+    let operations =
+        test_transfer_operations(sender_account.address.to_string(), receiver_addr, amount);
 
     // Perform transfer.
     let preprocess_response =
@@ -95,7 +93,7 @@ fn main() -> Result<()> {
     let metadata = serde_json::from_value::<Metadata>(metadata_response.metadata)?;
     let payload_metadata = serde_json::to_value(&Payload {
         account_nonce: metadata.account_nonce,
-        signature_count: sender_keys.num_keys(),
+        signature_count: sender_account.num_keys(),
         expiry_unix_millis: Utc::now().add(Duration::hours(2)).timestamp_millis() as u64,
         memo,
     })?;
@@ -123,8 +121,10 @@ fn main() -> Result<()> {
         return Err(anyhow!("failed comparison of unsigned parse"));
     }
 
-    let sigs =
-        signature_maps_to_signatures(sign_payloads(payloads_response.payloads, &sender_keys.keys)?);
+    let sigs = signature_maps_to_signatures(sign_payloads(
+        payloads_response.payloads,
+        &sender_account.keys,
+    )?);
 
     let combine_response = call_combine(
         client.clone(),

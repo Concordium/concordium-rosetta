@@ -77,7 +77,7 @@ fn main() -> Result<()> {
     let client = Client::builder().connection_verbose(true).build()?;
 
     // Set up and load test data.
-    let sender_keys = WalletAccount::from_json_file(&keys_file)?;
+    let sender_keys = WalletAccount::from_json_file(keys_file)?;
     let sender_addr = args.sender_addr;
     let receiver_addr = args.receiver_addr;
     let amount = args.amount;

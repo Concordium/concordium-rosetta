@@ -566,13 +566,14 @@ Also, the block containing the transaction has to be finalized for the transacti
 
 ### Rosetta CLI tool
 
-The Rosetta team maintains a CLI that includes commands for verifying that the implementation produces valid results.
+The Rosetta team maintains a [CLI tool](https://github.com/coinbase/mesh-cli) that includes commands
+for verifying that the implementation produces valid results.
 This includes consistency checks of the balance of all accounts,
 i.e. that all changes in balances are accounted for in transactions.
 
 The test will fail if run with the official Rosetta CLI tool because it doesn't understand how Concordium does account aliases.
-We therefore forked the tool to make it accept that a transaction affecting the balance of an
-account affects all aliases of that account as well.
+We therefore [forked](https://github.com/Concordium/rosetta-cli) the tool to make it accept
+that a transaction affecting the balance of an account affects all aliases of that account as well.
 
 To run the test you need a running instance of both the
 [concordium-node](https://github.com/Concordium/concordium-node) and

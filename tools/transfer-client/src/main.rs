@@ -68,10 +68,6 @@ fn main() -> Result<()> {
         (Some(_), Some(_)) => unreachable!(),
     };
     let memo = memo_bytes.map(Memo::try_from).transpose()?;
-    // let memo = match memo_bytes {
-    //     None => None,
-    //     Some(m) => Some(Memo::try_from(m)?),
-    // };
 
     // Constants.
     let network_id = NetworkIdentifier::new("concordium".to_string(), network);

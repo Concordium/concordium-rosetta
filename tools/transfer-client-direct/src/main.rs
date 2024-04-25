@@ -87,10 +87,6 @@ async fn main() -> Result<()> {
         (Some(_), Some(_)) => unreachable!(),
     };
     let memo = memo_bytes.map(Memo::try_from).transpose()?;
-    // let memo = match memo_bytes {
-    //     None => None,
-    //     Some(m) => Some(Memo::try_from(m)?),
-    // };
 
     // Load sender keys.
     let sender_keys_json =

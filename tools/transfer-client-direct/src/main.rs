@@ -10,7 +10,7 @@ use concordium_rust_sdk::{
         },
         Memo, WalletAccount,
     },
-    v2::{Client, Endpoint, AccountIdentifier},
+    v2::{AccountIdentifier, Client, Endpoint},
 };
 use std::{convert::TryFrom, ops::Add, path::PathBuf};
 
@@ -93,7 +93,10 @@ async fn main() -> Result<()> {
         client.clone().get_consensus_info().await.context("cannot resolve latest block")?;
     let sender_info = client
         .clone()
-        .get_account_info(&AccountIdentifier::Address(from_address), &consensus_info.last_finalized_block)
+        .get_account_info(
+            &AccountIdentifier::Address(from_address),
+            &consensus_info.last_finalized_block,
+        )
         .await
         .context("cannot resolve next nonce of sender account")?;
 

@@ -3,7 +3,7 @@ use chrono::{Duration, Utc};
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::Amount as ConcordiumAmount,
-    types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount}
+    types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount},
 };
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
@@ -81,8 +81,11 @@ fn main() -> Result<()> {
     let sender_account = WalletAccount::from_json_file(sender_account_file)?;
     let receiver_addr = args.receiver_addr;
     let amount = args.amount;
-    let operations =
-        test_transfer_operations(sender_account.address.to_string(), receiver_addr, amount.micro_ccd as i64);
+    let operations = test_transfer_operations(
+        sender_account.address.to_string(),
+        receiver_addr,
+        amount.micro_ccd as i64,
+    );
 
     // Perform transfer.
     let preprocess_response =

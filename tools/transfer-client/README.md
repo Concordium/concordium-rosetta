@@ -22,7 +22,7 @@ The application has the following CLI parameters:
 - `--network`: Network name to be used in network identifier (default: `testnet`).
 - `--sender-account-file`: Path of JSON file containing the address and keys for the sender account.
 - `--receiver`: Address of the account receiving the transfer.
-- `--amount`: Amount of µCCD to transfer.
+- `--amount`: Amount of CCD to transfer.
 - `--memo-hex`: Optional hex-encoded message to attach to the transfer transaction as a memo.
 - `--memo-string`: Optional string to attach to the transfer transaction as a memo. The string is encoded as CBOR.
 

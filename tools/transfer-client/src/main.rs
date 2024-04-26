@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
-use concordium_rust_sdk::types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount};
+use concordium_rust_sdk::{
+    common::types::Amount as ConcordiumAmount,
+    types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount}
+};
 use reqwest::{blocking::*, Url};
 use rosetta::models::*;
 use serde_json::value::Value;
@@ -32,7 +35,7 @@ struct Args {
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_addr:       String,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:              Amount,
+    amount:              ConcordiumAmount,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",
@@ -79,7 +82,7 @@ fn main() -> Result<()> {
     let receiver_addr = args.receiver_addr;
     let amount = args.amount;
     let operations =
-        test_transfer_operations(sender_account.address.to_string(), receiver_addr, amount);
+        test_transfer_operations(sender_account.address.to_string(), receiver_addr, amount.micro_ccd as i64);
 
     // Perform transfer.
     let preprocess_response =

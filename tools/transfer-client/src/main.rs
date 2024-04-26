@@ -31,8 +31,8 @@ struct Args {
     sender_account_file: PathBuf,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
     receiver_addr:       String,
-    #[clap(long = "amount", help = "Amount of μCCD to transfer.")]
-    amount:              i64,
+    #[clap(long = "amount", help = "Amount of CCD to transfer.")]
+    amount:              Amount,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",

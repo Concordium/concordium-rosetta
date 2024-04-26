@@ -3,16 +3,16 @@ use chrono::{Duration, Utc};
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::{Amount, TransactionTime},
-    endpoints::Client,
-    id::types::{AccountAddress, AccountKeys},
+    id::types::AccountAddress,
     types::{
         transactions::{
             construct, construct::GivenEnergy, cost, BlockItem, ExactSizeTransactionSigner, Payload,
         },
         Memo, WalletAccount,
     },
+    v2::{Client, Endpoint, AccountIdentifier},
 };
-use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
+use std::{convert::TryFrom, ops::Add, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -34,12 +34,6 @@ struct Args {
         default_value = "10000"
     )]
     grpc_port:           u16,
-    #[clap(
-        long = "grpc-token",
-        help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin"
-    )]
-    grpc_token:          String,
     #[clap(
         long = "sender-account-file",
         help = "Path of file containing the address and keys for the sender account."
@@ -70,7 +64,6 @@ async fn main() -> Result<()> {
     let sender_account_file = args.sender_account_file;
     let grpc_host = args.grpc_host;
     let grpc_port = args.grpc_port;
-    let grpc_token = args.grpc_token;
     let to_address = args.receiver_address;
     let amount = args.amount;
     let memo_bytes = match (args.memo_hex, args.memo_str) {
@@ -91,16 +84,16 @@ async fn main() -> Result<()> {
     let sender_keys = sender_account.keys;
 
     // Configure client.
-    let client = Client::connect(format!("http://{}:{}", grpc_host, grpc_port), grpc_token)
+    let client = Client::new(Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))?)
         .await
-        .context("cannot connect to node")?;
+        .context("Cannot connect to the node.")?;
 
     // Configure and send transfer.
-    let consensus_status =
-        client.clone().get_consensus_status().await.context("cannot resolve latest block")?;
+    let consensus_info =
+        client.clone().get_consensus_info().await.context("cannot resolve latest block")?;
     let sender_info = client
         .clone()
-        .get_account_info(from_address, &consensus_status.last_finalized_block)
+        .get_account_info(&AccountIdentifier::Address(from_address), &consensus_info.last_finalized_block)
         .await
         .context("cannot resolve next nonce of sender account")?;
 
@@ -117,7 +110,7 @@ async fn main() -> Result<()> {
     };
     let pre_tx = construct::make_transaction(
         from_address,
-        sender_info.account_nonce,
+        sender_info.response.account_nonce,
         TransactionTime::from_seconds(Utc::now().add(Duration::hours(2)).timestamp_millis() as u64), /* TODO Make configurable. */
         GivenEnergy::Add {
             num_sigs: sender_keys.num_keys(),

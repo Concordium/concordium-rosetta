@@ -6,7 +6,7 @@ use concordium_rust_sdk::{
 };
 use rosetta::models::*;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, convert::TryFrom, str::FromStr};
+use std::{collections::BTreeMap, str::FromStr};
 
 #[derive(Deserialize)]
 pub struct Metadata {
@@ -19,18 +19,6 @@ pub struct Payload {
     pub signature_count:    u32,
     pub expiry_unix_millis: u64,
     pub memo:               Option<Memo>,
-}
-
-pub fn parse_memo(memo_hex: Option<String>) -> Result<Option<Memo>> {
-    let memo = match memo_hex {
-        None => None,
-        Some(s) => {
-            let bs = hex::decode(s)?;
-            let m = Memo::try_from(bs)?;
-            Some(m)
-        }
-    };
-    Ok(memo)
 }
 
 type SignatureMap = BTreeMap<CredentialIndex, BTreeMap<KeyIndex, Signature>>;

@@ -20,30 +20,35 @@ The application has the following CLI parameters:
 
 - `--url`: URL of the Rosetta server (default: `http://localhost:8080`).
 - `--network`: Network name to be used in network identifier (default: `testnet`).
-- `--sender`: Address of the account sending the transfer.
+- `--sender-account-file`: Path of JSON file containing the address and keys for the sender account.
 - `--receiver`: Address of the account receiving the transfer.
-- `--amount`: Amount of µCCD to transfer.
-- `--keys-file`: Path of JSON file containing the signing keys for the sender account.
-- `--memo-hex`: Optional hex-encoded memo to attach to the transfer transaction.
+- `--amount`: Amount of CCD to transfer.
+- `--memo-hex`: Optional hex-encoded message to attach to the transfer transaction as a memo.
+- `--memo-string`: Optional string to attach to the transfer transaction as a memo. The string is encoded as CBOR.
+
+The options `--memo-hex` and `--memo-string` are mutually exclusive.
 
 The expected JSON format of the keys file is
 
 ```
 {
-  "keys": {
-    <credential-index>: {
-      "keys": {
-        <key-index>: {
-          "signKey": ...,
-          "verifyKey": ...
+  "address": ...,
+  "accountKeys": {
+    "keys": {
+      <credential-index>: {
+        "keys": {
+          <key-index>: {
+            "signKey": ...,
+            "verifyKey": ...
+          },
+          ...
         },
-        ...
+        "threshold": <key-threshold>
       },
-      "threshold": <key-threshold>
+      ...
     },
-    ...
-  },
-  "threshold": <credential-threshold>
+    "threshold": <credential-threshold>
+  }
 }
 ```
 

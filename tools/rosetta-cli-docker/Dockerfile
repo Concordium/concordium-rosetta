@@ -4,7 +4,7 @@ ARG base_image
 # Build stage.
 FROM ${build_image} AS build
 ARG repo=https://github.com/Concordium/rosetta-cli.git
-ARG branch
+ARG branch=concordium
 # Make anything contained in the context root folder available to the build.
 # This may be used to build from a local subrepo 'rosetta-cli':
 #   --build-arg=repo=file:///tmp/rosetta-cli

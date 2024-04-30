@@ -564,17 +564,26 @@ Also, the block containing the transaction has to be finalized for the transacti
 
 ## Testing
 
-### Running Rosetta CLI for testing
+### Rosetta CLI tool
 
-We forked the Rosetta CLI tool to make it understand account aliases, i.e. that a 
-transaction affecting the balance of an account affects all aliases of that 
-account as well.
+The Rosetta team maintains a [CLI tool](https://github.com/coinbase/mesh-cli) that includes commands
+for verifying that the implementation produces valid results.
+This includes consistency checks of the balance of all accounts,
+i.e. that all changes in balances are accounted for in transactions.
 
-The test will fail if run with the official Rosetta CLI tool.
+The test will fail if run with the official Rosetta CLI tool because it doesn't understand how Concordium does account aliases.
+We therefore [forked](https://github.com/Concordium/rosetta-cli) the tool to make it accept
+that a transaction affecting the balance of an account affects all aliases of that account as well.
 
-To run our forked rosetta-cli tool you must have a running instance of both the
+To run the test you need a running instance of both the
 [concordium-node](https://github.com/Concordium/concordium-node) and
-the concordium rosetta API implementation:
+the Conocordium Rosetta.
+
+The easiest way to run Rosetta and the tool is by using the [provided](./docker-compose.yaml) Docker Compose deployment
+with the profile `check-data` enabled.
+See the following sections for alternative methods.
+
+#### Build and run (direct)
 
 ```bash
 concordium-rosetta --network testnet
@@ -606,7 +615,7 @@ We need to make the following changes to this configuration:
   when Rosetta was started (i.e. `testnet` in the command above).
 - The blockchain field should be set to `"concordium"`
 - Setting `"max_retries": 32768` makes sure the test doesn't stop 
-  on a tempoary network outage.
+  on a temporary network outage.
 
 Now the test tool can be run:
 
@@ -619,10 +628,10 @@ Note that this only tests the data returned by the Rosetta
 API implementation is valid. It does not test interaction
 on chain, such as transactions. We test that with a different
 [tool](https://github.com/Concordium/concordium-rosetta#transfer-client).
-There is more info on the [Rosetta-API
-website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
+There is more info on the
+[Rosetta-API website](https://www.rosetta-api.org/docs/rosetta_cli.html#checkdata-1).
 
-### Rosetta CLI (Docker)
+#### Build and run (Docker)
 
 You can also build using the provided docker file in [`tools/rosetta-cli-docker`](./tools/rosetta-cli-docker)
 

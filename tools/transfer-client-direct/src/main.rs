@@ -3,16 +3,16 @@ use chrono::{Duration, Utc};
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::{Amount, TransactionTime},
-    endpoints::Client,
-    id::types::{AccountAddress, AccountKeys},
+    id::types::AccountAddress,
     types::{
         transactions::{
             construct, construct::GivenEnergy, cost, BlockItem, ExactSizeTransactionSigner, Payload,
         },
-        Memo,
+        Memo, WalletAccount,
     },
+    v2::{AccountIdentifier, Client, Endpoint},
 };
-use std::{convert::TryFrom, fs, ops::Add, path::PathBuf};
+use std::{convert::TryFrom, ops::Add, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -27,64 +27,76 @@ struct Args {
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:        String,
+    grpc_host:           String,
     #[clap(
         long = "grpc-port",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
-    grpc_port:        u16,
+    grpc_port:           u16,
     #[clap(
-        long = "grpc-token",
-        help = "Access token of the node's gRPC endpoint.",
-        default_value = "rpcadmin"
+        long = "sender-account-file",
+        help = "Path of file containing the address and keys for the sender account."
     )]
-    grpc_token:       String,
-    #[clap(long = "sender", help = "Address of the account sending the transfer.")]
-    sender_address:   AccountAddress,
+    sender_account_file: PathBuf,
     #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_address: AccountAddress,
+    receiver_address:    AccountAddress,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:           Amount,
+    amount:              Amount,
     #[clap(
-        long = "keys-file",
-        help = "Path of file containing the signing keys for the sender account."
+        long = "memo-hex",
+        help = "Hex-encoded memo to attach to the transaction.",
+        group = "memo"
     )]
-    sender_keys_file: PathBuf,
-    #[clap(long = "memo-hex", help = "Hex-encoded memo to attach to the transfer transaction.")]
-    memo_hex:         Option<String>,
+    memo_hex:            Option<String>,
+    #[clap(
+        long = "memo-string",
+        help = "Memo string to attach (CBOR-encoded) to the transaction.",
+        group = "memo"
+    )]
+    memo_str:            Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse CLI args.
     let args = Args::parse();
-    let sender_keys_file = args.sender_keys_file;
+    let sender_account_file = args.sender_account_file;
     let grpc_host = args.grpc_host;
     let grpc_port = args.grpc_port;
-    let grpc_token = args.grpc_token;
     let to_address = args.receiver_address;
-    let from_address = args.sender_address;
     let amount = args.amount;
-    let memo = args.memo_hex;
+    let memo_bytes = match (args.memo_hex, args.memo_str) {
+        (None, None) => None,
+        (Some(hex), None) => Some(hex::decode(hex)?),
+        (None, Some(str)) => {
+            let mut buf = Vec::new();
+            serde_cbor::to_writer(&mut buf, &serde_cbor::Value::Text(str))?;
+            Some(buf)
+        }
+        (Some(_), Some(_)) => unreachable!(),
+    };
+    let memo = memo_bytes.map(Memo::try_from).transpose()?;
 
     // Load sender keys.
-    let sender_keys_json =
-        fs::read_to_string(&sender_keys_file).context("cannot read keys file")?;
-    let sender_keys: AccountKeys =
-        serde_json::from_str(&sender_keys_json).context("cannot parse keys loaded from file")?;
+    let sender_account = WalletAccount::from_json_file(sender_account_file)?;
+    let from_address = sender_account.address;
+    let sender_keys = sender_account.keys;
 
     // Configure client.
-    let client = Client::connect(format!("http://{}:{}", grpc_host, grpc_port), grpc_token)
+    let client = Client::new(Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))?)
         .await
-        .context("cannot connect to node")?;
+        .context("Cannot connect to the node.")?;
 
     // Configure and send transfer.
-    let consensus_status =
-        client.clone().get_consensus_status().await.context("cannot resolve latest block")?;
+    let consensus_info =
+        client.clone().get_consensus_info().await.context("cannot resolve latest block")?;
     let sender_info = client
         .clone()
-        .get_account_info(from_address, &consensus_status.last_finalized_block)
+        .get_account_info(
+            &AccountIdentifier::Address(from_address),
+            &consensus_info.last_finalized_block,
+        )
         .await
         .context("cannot resolve next nonce of sender account")?;
 
@@ -93,15 +105,15 @@ async fn main() -> Result<()> {
             to_address,
             amount,
         },
-        Some(memo) => Payload::TransferWithMemo {
+        Some(m) => Payload::TransferWithMemo {
             to_address,
             amount,
-            memo: Memo::try_from(hex::decode(memo)?)?,
+            memo: m,
         },
     };
     let pre_tx = construct::make_transaction(
         from_address,
-        sender_info.account_nonce,
+        sender_info.response.account_nonce,
         TransactionTime::from_seconds(Utc::now().add(Duration::hours(2)).timestamp_millis() as u64), /* TODO Make configurable. */
         GivenEnergy::Add {
             num_sigs: sender_keys.num_keys(),

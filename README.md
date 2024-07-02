@@ -16,7 +16,7 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 - Rosetta spec version: 1.4.15.
 - Supported Concordium node version: 6.0+.
-- Supported Rust toolchain version: 1.70+.
+- Supported Rust toolchain version: 1.73+.
 
 ## Build and run
 
@@ -49,7 +49,7 @@ The application accepts the following parameters:
 
 ```shell
 docker build \
-  --build-arg=build_image=rust:1.70-slim-buster \
+  --build-arg=build_image=rust:1.73-slim-buster \
   --build-arg=base_image=debian:buster-slim \
   --tag=concordium-rosetta \
   --pull \

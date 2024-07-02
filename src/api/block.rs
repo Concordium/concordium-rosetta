@@ -52,7 +52,7 @@ impl BlockApi {
                 timestamp:               block_info.block_slot_time.timestamp_millis(),
                 transactions:            self.block_transactions(block_info.block_hash).await?,
                 metadata:                Some(
-                    serde_json::to_value(&BlockMetadata {
+                    serde_json::to_value(BlockMetadata {
                         baker_id: block_info.block_baker,
                     })
                     .unwrap(),

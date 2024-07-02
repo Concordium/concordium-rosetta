@@ -226,7 +226,7 @@ impl ConstructionApi {
 
         let (operations, memo) = operations_from_transaction(&header, &payload)?;
         let metadata = memo.map(|m| {
-            serde_json::to_value(&MemoMetadata {
+            serde_json::to_value(MemoMetadata {
                 memo: Some(m),
             })
             .unwrap()
@@ -367,7 +367,7 @@ fn parse_operation(op: &Operation) -> ApiResult<ParsedOperation> {
         Ok(TransactionType::Transfer) => {
             // Covers transfers with and without memo.
             let amount_uccd = match op.amount.as_deref() {
-                Some(a) => uccd_from_amount(a.deref()),
+                Some(a) => uccd_from_amount(a),
                 None => Err(ApiError::RequiredFieldMissing("amount".to_string())),
             }?;
             let account_address = match op.account.clone() {

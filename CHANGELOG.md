@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Updated the Concordium Rust SDK to support the changes introduced in protocol 7.
 
 ## 1.1.0
 
@@ -10,7 +11,7 @@
 ## 1.0.0
 - Use GRPCv2 API instead of the GRPCv1 API.
 - Changed default value for input flag `grpc-port` to 20000, since that is the default GRPCv2 port for mainnet.
-- Removed the now redundant input flag `grpc-token`. 
+- Removed the now redundant input flag `grpc-token`.
 - Bump Rosetta specification to v1.4.15.
 
 ## 0.7.0
@@ -79,6 +80,6 @@
 
 - Fix bug where an error description was empty.
 
-## 0.1.0 
+## 0.1.0
 
 - Initial release.

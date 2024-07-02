@@ -16,7 +16,7 @@ A great way to install the toolchain is via [rustup](https://rustup.rs/).
 
 - Rosetta spec version: 1.4.15.
 - Supported Concordium node version: 6.0+.
-- Supported Rust toolchain version: 1.66+.
+- Supported Rust toolchain version: 1.70+.
 
 ## Build and run
 
@@ -49,7 +49,7 @@ The application accepts the following parameters:
 
 ```shell
 docker build \
-  --build-arg=build_image=rust:1.66-slim-buster \
+  --build-arg=build_image=rust:1.70-slim-buster \
   --build-arg=base_image=debian:buster-slim \
   --tag=concordium-rosetta \
   --pull \
@@ -167,19 +167,19 @@ All applicable endpoints are supported to construct and submit transfer transact
 - [`combine`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructioncombine):
   Implemented with the caveat that the provided signatures must be prepended with some extra values that are necessary
   but don't fit well into the API:
-  An account has a set of credentials, each of which has a set of key pairs. For the combined signature to be valid, 
+  An account has a set of credentials, each of which has a set of key pairs. For the combined signature to be valid,
   the credential and key indexes of these signatures have to be provided.
   The signature string `<signature>` should thus be provided as `<cred_idx>:<key_idx>/<signature>`,
   where `<cred_idx>` and `<key_idx>` are the credential- and key index, respectively.
   The specified `signature_type` thus covers the `<signature>` part of `hex_bytes`.
   The provided signatures are not verified as that would require retrieving the registered keys of the account from the chain.
   The endpoint must be offline, so this is not allowed.
-  
+
 - [`submit`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionsubmit):
   Fully implemented. If the node rejects the transaction, an error with no details is returned.
   The server could test for a few possible reasons (validate signatures, check balance, etc.),
   but the node itself doesn't provide any explanation for the rejection.
-  
+
 - [`parse`](https://www.rosetta-api.org/docs/ConstructionApi.html#constructionparse):
   Fully implemented.
 
@@ -331,7 +331,7 @@ The request/response flow of the command is a sequence of calls to the Construct
 
 3. Call `payloads` to construct the transaction.
    The memo is passed as part of the metadata along with `account_nonce` obtained from the previous call
-   as well as expiry time and signature count. 
+   as well as expiry time and signature count.
 
    Request:
    ```json
@@ -611,10 +611,10 @@ cd ./bin
 ```
 
 We need to make the following changes to this configuration:
-- The `network` field must be set to the value passed to the `--network` parameter 
+- The `network` field must be set to the value passed to the `--network` parameter
   when Rosetta was started (i.e. `testnet` in the command above).
 - The blockchain field should be set to `"concordium"`
-- Setting `"max_retries": 32768` makes sure the test doesn't stop 
+- Setting `"max_retries": 32768` makes sure the test doesn't stop
   on a temporary network outage.
 
 Now the test tool can be run:

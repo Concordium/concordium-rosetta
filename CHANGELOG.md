@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Updated the Concordium Rust SDK to support the changes introduced in protocol 7.
+- Set minimum supported Rust version to `1.70`.
 
 ## 1.1.0
 

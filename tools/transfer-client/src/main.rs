@@ -97,7 +97,7 @@ fn main() -> Result<()> {
         preprocess_response.options, // options from preprocess response must be passed directly
     )?;
     let metadata = serde_json::from_value::<Metadata>(metadata_response.metadata)?;
-    let payload_metadata = serde_json::to_value(&Payload {
+    let payload_metadata = serde_json::to_value(Payload {
         account_nonce: metadata.account_nonce,
         signature_count: sender_account.num_keys(),
         expiry_unix_millis: Utc::now().add(Duration::hours(2)).timestamp_millis() as u64,

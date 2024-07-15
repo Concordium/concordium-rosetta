@@ -39,7 +39,7 @@ pub fn sign_payload(payload: &SigningPayload, keys: &AccountKeys) -> Result<Sign
                 *cred_idx,
                 sigs.iter()
                     .map(|(key_idx, sig)| {
-                        let public_key = keys.keys[cred_idx].keys[key_idx].public;
+                        let public_key = keys.keys[cred_idx].keys[key_idx].public();
                         let public_key_hex = hex::encode(public_key);
                         let sig_hex = format!(
                             "{}:{}/{}",

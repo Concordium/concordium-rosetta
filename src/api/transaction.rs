@@ -384,7 +384,7 @@ fn operations_and_metadata_from_account_transaction_details(
             memo,
         } => (
             simple_transfer_operations(details, amount, to),
-            Some(serde_json::to_value(&MemoMetadata {
+            Some(serde_json::to_value(MemoMetadata {
                 memo: Some(memo.clone()),
             })),
         ),
@@ -478,7 +478,7 @@ fn operations_and_metadata_from_account_transaction_details(
             memo,
         } => (
             encrypted_transfer_operations(details, removed, added),
-            Some(serde_json::to_value(&MemoMetadata {
+            Some(serde_json::to_value(MemoMetadata {
                 memo: Some(memo.clone()),
             })),
         ),
@@ -521,7 +521,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.micro_ccd()).sum()),
                 to,
             ),
-            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+            Some(serde_json::to_value(TransferredWithScheduleMetadata {
                 amounts: amount
                     .iter()
                     .map(|(t, a)| TimestampedAmount {
@@ -542,7 +542,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 &Amount::from_micro_ccd(amount.iter().map(|(_, a)| a.micro_ccd()).sum()),
                 to,
             ),
-            Some(serde_json::to_value(&TransferredWithScheduleMetadata {
+            Some(serde_json::to_value(TransferredWithScheduleMetadata {
                 amounts: amount
                     .iter()
                     .map(|(t, a)| TimestampedAmount {
@@ -858,7 +858,7 @@ fn operations_and_metadata_from_account_creation_details(
         amount:               None,
         coin_change:          None,
         metadata:             Some(
-            serde_json::to_value(&AccountCreatedMetadata {
+            serde_json::to_value(AccountCreatedMetadata {
                 credential_type: match details.credential_type {
                     CredentialType::Initial => "initial".to_string(),
                     CredentialType::Normal => "normal".to_string(),
@@ -1046,20 +1046,28 @@ fn account_transaction_operation<T: SerdeSerialize>(
 
 pub fn transaction_type_from_operation_type(type_: &str) -> ApiResult<TransactionType> {
     match type_ {
+        #[allow(deprecated)]
         OPERATION_TYPE_ADD_BAKER => Ok(TransactionType::AddBaker),
         OPERATION_TYPE_DEPLOY_MODULE => Ok(TransactionType::DeployModule),
+        #[allow(deprecated)]
         OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER => Ok(TransactionType::EncryptedAmountTransfer),
         OPERATION_TYPE_INIT_CONTRACT => Ok(TransactionType::InitContract),
         OPERATION_TYPE_REGISTER_DATA => Ok(TransactionType::RegisterData),
+        #[allow(deprecated)]
         OPERATION_TYPE_REMOVE_BAKER => Ok(TransactionType::RemoveBaker),
         OPERATION_TYPE_TRANSFER => Ok(TransactionType::Transfer),
+        #[allow(deprecated)]
         OPERATION_TYPE_TRANSFER_TO_ENCRYPTED => Ok(TransactionType::TransferToEncrypted),
         OPERATION_TYPE_TRANSFER_TO_PUBLIC => Ok(TransactionType::TransferToPublic),
         OPERATION_TYPE_TRANSFER_WITH_SCHEDULE => Ok(TransactionType::TransferWithSchedule),
+        #[allow(deprecated)]
         OPERATION_TYPE_UPDATE_BAKER_KEYS => Ok(TransactionType::UpdateBakerKeys),
-        OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS => {
+        OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS =>
+        {
+            #[allow(deprecated)]
             Ok(TransactionType::UpdateBakerRestakeEarnings)
         }
+        #[allow(deprecated)]
         OPERATION_TYPE_UPDATE_BAKER_STAKE => Ok(TransactionType::UpdateBakerStake),
         OPERATION_TYPE_UPDATE_CONTRACT => Ok(TransactionType::Update),
         OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS => Ok(TransactionType::UpdateCredentialKeys),
@@ -1072,24 +1080,32 @@ pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> Str
     let res = match type_ {
         None => OPERATION_TYPE_UNKNOWN,
         Some(t) => match t {
+            #[allow(deprecated)]
             TransactionType::AddBaker => OPERATION_TYPE_ADD_BAKER,
             TransactionType::DeployModule => OPERATION_TYPE_DEPLOY_MODULE,
+            #[allow(deprecated)]
             TransactionType::EncryptedAmountTransfer => OPERATION_TYPE_ENCRYPTED_AMOUNT_TRANSFER,
+            #[allow(deprecated)]
             TransactionType::EncryptedAmountTransferWithMemo => OPERATION_TYPE_TRANSFER,
             TransactionType::InitContract => OPERATION_TYPE_INIT_CONTRACT,
             TransactionType::RegisterData => OPERATION_TYPE_REGISTER_DATA,
+            #[allow(deprecated)]
             TransactionType::RemoveBaker => OPERATION_TYPE_REMOVE_BAKER,
             TransactionType::Transfer => OPERATION_TYPE_TRANSFER,
+            #[allow(deprecated)]
             TransactionType::TransferToEncrypted => OPERATION_TYPE_TRANSFER_TO_ENCRYPTED,
             TransactionType::TransferToPublic => OPERATION_TYPE_TRANSFER_TO_PUBLIC,
             TransactionType::TransferWithMemo => OPERATION_TYPE_TRANSFER,
             TransactionType::TransferWithScheduleAndMemo => OPERATION_TYPE_TRANSFER,
             TransactionType::TransferWithSchedule => OPERATION_TYPE_TRANSFER_WITH_SCHEDULE,
             TransactionType::Update => OPERATION_TYPE_UPDATE_CONTRACT,
+            #[allow(deprecated)]
             TransactionType::UpdateBakerKeys => OPERATION_TYPE_UPDATE_BAKER_KEYS,
+            #[allow(deprecated)]
             TransactionType::UpdateBakerRestakeEarnings => {
                 OPERATION_TYPE_UPDATE_BAKER_RESTAKE_EARNINGS
             }
+            #[allow(deprecated)]
             TransactionType::UpdateBakerStake => OPERATION_TYPE_UPDATE_BAKER_STAKE,
             TransactionType::UpdateCredentialKeys => OPERATION_TYPE_UPDATE_CREDENTIAL_KEYS,
             TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,

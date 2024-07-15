@@ -1,4 +1,4 @@
-rust_default_toolchain = 1.66
+rust_default_toolchain = 1.73
 rust_fmt_toolchain = nightly-2021-06-09
 cargo_default = cargo +$(rust_default_toolchain)
 cargo_fmt = cargo +$(rust_fmt_toolchain)

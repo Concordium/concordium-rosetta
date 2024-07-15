@@ -46,7 +46,7 @@ services:
     build:
       context: .
       args:
-        build_image: ${ROSETTA_BUILD_IMAGE-rust:1.66-slim-buster}
+        build_image: ${ROSETTA_BUILD_IMAGE-rust:1.73-slim-buster}
         base_image: ${ROSETTA_BASE_IMAGE-debian:buster-slim}
     image: ${ROSETTA_IMAGE-concordium-rosetta:test}
     environment:

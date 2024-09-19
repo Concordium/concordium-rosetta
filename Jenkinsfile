@@ -39,6 +39,7 @@ pipeline {
                         -t build \
                         --target=build \
                         --build-arg=build_image="${build_image}" \
+                        --build-arg=base_image="${base_image}" \
                         --pull \
                         .
                     # Extract debian package from docker image into './out'.

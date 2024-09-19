@@ -603,6 +603,16 @@ fn operations_and_metadata_from_account_transaction_details(
                 .iter()
                 .enumerate()
                 .map(|(i, event)| match event {
+                    BakerEvent::DelegationRemoved {
+                        delegator_id,
+                    } => normal_account_transaction_operation(
+                        i as i64,
+                        details,
+                        None,
+                        Some(&DelegationRemovedMetadata {
+                            delegator_id: *delegator_id,
+                        }),
+                    ),
                     BakerEvent::BakerAdded {
                         data,
                     } => normal_account_transaction_operation(
@@ -757,6 +767,16 @@ fn operations_and_metadata_from_account_transaction_details(
                 .iter()
                 .enumerate()
                 .map(|(i, event)| match event {
+                    DelegationEvent::BakerRemoved {
+                        baker_id,
+                    } => normal_account_transaction_operation(
+                        i as i64,
+                        details,
+                        None,
+                        Some(&BakerRemovedMetadata {
+                            baker_id: *baker_id,
+                        }),
+                    ),
                     DelegationEvent::DelegationAdded {
                         delegator_id,
                     } => normal_account_transaction_operation(

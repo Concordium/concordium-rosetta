@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
+
 - Updated the Concordium Rust SDK to support the changes introduced in protocol 7.
 - Set minimum supported Rust version to `1.73`.
 

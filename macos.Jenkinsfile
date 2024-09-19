@@ -6,7 +6,7 @@ pipeline {
             steps {
                 sh '''\
                     # Set up Rust toolchain.
-                    rustup default 1.62 # TODO parameterize
+                    rustup default 1.73 # TODO parameterize
 
                     # Build binary and run it to get version.
                     version="$(cargo run --release -- --version | awk '{print $2}')"

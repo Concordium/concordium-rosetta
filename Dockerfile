@@ -1,5 +1,5 @@
 # Build and base images are assumed to be based on the same major version of Debian.
-ARG build_image="rust:1.73-slim-buster"
+ARG build_image
 ARG base_image="debian:buster-slim"
 
 # Build stage.

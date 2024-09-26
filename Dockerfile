@@ -17,7 +17,7 @@ RUN cargo build --release
 # Set '--user="$(id -u):$(id -g)"' to make the result file owned by the calling user.
 # The mounted folder on the host must already exist and be owned by the same user for this to work.
 WORKDIR /out
-RUN [ "/build/scripts/build-deb.sh", "/build/target/release/concordium-rosetta" ]
+ENTRYPOINT [ "/build/scripts/build-deb.sh", "/build/target/release/concordium-rosetta" ]
 
 # Copy binary to slim image.
 FROM ${base_image}

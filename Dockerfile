@@ -1,6 +1,6 @@
 # Build and base images are assumed to be based on the same major version of Debian.
 ARG build_image
-ARG base_image
+ARG base_image="debian:buster-slim"
 
 # Build stage.
 FROM ${build_image} AS build
@@ -17,7 +17,7 @@ RUN cargo build --release
 # Set '--user="$(id -u):$(id -g)"' to make the result file owned by the calling user.
 # The mounted folder on the host must already exist and be owned by the same user for this to work.
 WORKDIR /out
-ENTRYPOINT [ "/build/scripts/build-deb.sh", "/build/target/release/concordium-rosetta" ]
+RUN [ "/build/scripts/build-deb.sh", "/build/target/release/concordium-rosetta" ]
 
 # Copy binary to slim image.
 FROM ${base_image}

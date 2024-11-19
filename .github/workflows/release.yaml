@@ -10,7 +10,7 @@ on:
 env:
   RUST_IMAGE_TAG: '1.73.0'
   OUTFOLDER: "s3://distribution.concordium.software/tools"
-  IAM_ROLE: "arn:aws:iam::192549843005:role/github_rosetta" 
+  IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
 
 permissions:
   id-token: write

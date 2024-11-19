@@ -103,7 +103,7 @@ jobs:
       
 
       - name: Check if version exist in s3
-        run: |
+        run: |-
           $ErrorActionPreference='Continue'
           $output = aws s3 ls ${{ env.OUTFILE }}
           $ec = $LastExitCode
@@ -114,6 +114,7 @@ jobs:
           elseif ( $ec -ne "1" ){
               echo "$output"
           }
+        shell: cmd
 
       - name: Build
         run: |

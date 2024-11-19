@@ -111,7 +111,7 @@ jobs:
               echo "Objects found ${{ env.OUTFILE }}"
               exit 1
           }
-          elseif () $ec -ne "1"){
+          elseif ( $ec -ne "1"){
               echo "$output"
           }
 

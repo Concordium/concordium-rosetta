@@ -32,7 +32,6 @@ jobs:
           if [ ! "1.2.0" = "$CARGO_VERSION" ] ; then
               echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
               exit 1
-            fi
           fi
           echo "OUTFILE_SHORT=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_ENV
 

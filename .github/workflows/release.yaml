@@ -105,8 +105,8 @@ jobs:
       - name: Check if version exist in s3
         run: |
           set +e
-          $output=aws s3 ls "${{ env.OUTFILE }}"
-          ec=$?
+          $output = aws s3 ls "${{ env.OUTFILE }}"
+          $ec = $LastExitCode
           if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"
               exit 1

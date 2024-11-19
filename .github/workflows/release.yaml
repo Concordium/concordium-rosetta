@@ -25,11 +25,11 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
           submodules: recursive
-          
+
       - name: Get the rosetta version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")
-          echo "OUTFILE_SHORT=${{ env.OUTFOLDER }}/windows/concordium-rosetta-${ CARGO_VERSION }" >> $GITHUB_ENV
+          echo "OUTFILE_SHORT=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_ENV
 
   release-rosetta-macos:
     runs-on: macos-latest

@@ -36,7 +36,7 @@ jobs:
               echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
               exit 1
           fi
-          echo "outfile=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_OUTPUT
+          echo "outfile=${{ env.OUTFOLDER }}/windows/concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
 
   release-rosetta-macos:
     needs: rosetta-version

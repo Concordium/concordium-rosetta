@@ -19,6 +19,8 @@ permissions:
 jobs:
   rosetta-version:
     runs-on: ubuntu-latest
+    outputs:
+      OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,18 +29,21 @@ jobs:
           submodules: recursive
 
       - name: Get the rosetta version
+        id: version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")
           if [ ! "1.2.0" = "$CARGO_VERSION" ] ; then
               echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
               exit 1
           fi
-          echo "OUTFILE_SHORT=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_ENV
+          echo "outfile=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_OUTPUT
 
   release-rosetta-macos:
     needs: rosetta-version
     runs-on: macos-latest
     environment: release
+    env:
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -53,9 +58,6 @@ jobs:
           role-to-assume: ${{ env.IAM_ROLE }}
           role-session-name: ReleaseRosettaSession
       
-      - name: Get the rosetta version
-        run: |
-          echo "OUTFILE=${{ env.OUTFILE_SHORT }}" >> $GITHUB_ENV
 
       - name: Check if version exist in s3
         run: |
@@ -83,6 +85,8 @@ jobs:
     runs-on: windows-latest
     needs: rosetta-version
     environment: release
+    env:
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -97,10 +101,6 @@ jobs:
           role-to-assume: ${{ env.IAM_ROLE }}
           role-session-name: ReleaseRosettaSession
       
-      - name: Get the rosetta version
-        run: |
-          CARGO_VERSION=$(yq .package.version "Cargo.toml")
-          echo "OUTFILE=${{ env.OUTFILE_SHORT }}.exe" >> $GITHUB_ENV
 
       - name: Check if version exist in s3
         run: |

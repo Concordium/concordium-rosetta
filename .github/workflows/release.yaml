@@ -8,7 +8,7 @@ on:
       - "*.*.*"
 
 env:
-  RUST_IMAGE_TAG: '1.73.0'
+  RUST_IMAGE_TAG: '1.73'
   OUTFOLDER: "s3://distribution.concordium.software/tools"
   IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
 
@@ -37,8 +37,7 @@ jobs:
       - name: Get the rosetta version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")
-          echo "ROSETTA_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-          echo "OUTFILE=${{ env.OUTFOLDER }}/macos/concordium-rosetta-${{ env.ROSATTE_VERSION }}" >> $GITHUB_ENV
+          echo "OUTFILE=${{ env.OUTFOLDER }}/macos/concordium-rosetta-${CARGO_VERSION}}" >> $GITHUB_ENV
 
       - name: Check if version exist in s3
         run: |
@@ -60,5 +59,48 @@ jobs:
       - name: Publish
         run: |
           echo ${{ env.OUTFILE }}
-          ls ./target/release/
+#          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
+
+  release-rosetta-windows:
+    runs-on: windows-latest
+    environment: release
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: "eu-west-1"
+          role-to-assume: ${{ env.IAM_ROLE }}
+          role-session-name: ReleaseRosettaSession
+      
+      - name: Get the rosetta version
+        run: |
+          CARGO_VERSION=$(yq .package.version "Cargo.toml")
+          echo "OUTFILE=${{ env.OUTFOLDER }}/windows/concordium-rosetta-${ CARGO_VERSION }.exe" >> $GITHUB_ENV
+
+      - name: Check if version exist in s3
+        run: |
+          set +e
+          output=$(aws s3 ls "${{ env.OUTFILE }}")
+          ec=$?
+          if [ $ec -eq "0" ]; then
+              echo "Objects found ${{ env.OUTFILE }}"
+              exit 1
+          elif [ $ec -ne "1"]; then
+              echo "$output"
+          fi
+
+      - name: Build
+        run: |
+          rustup default ${{ env.RUST_IMAGE_TAG }}
+          cargo run --release -- --version
+
+      - name: Publish
+        run: |
+          echo ${{ env.OUTFILE }}
 #          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 

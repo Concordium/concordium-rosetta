@@ -67,7 +67,7 @@ jobs:
           if [ $ec -eq "0" ]; then
               echo "Objects found ${{ env.OUTFILE }}"
               exit 1
-          elif [ $ec -ne "1"]; then
+          elif [ $ec -ne "1" ]; then
               echo "$output"
           fi
 
@@ -105,7 +105,7 @@ jobs:
       - name: Check if version exist in s3
         run: |
           set +e
-          $output = aws s3 ls "${{ env.OUTFILE }}"
+          $output = aws s3 ls ${{ env.OUTFILE }}
           $ec = $LastExitCode
           if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"

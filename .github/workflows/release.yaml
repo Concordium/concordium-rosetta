@@ -114,7 +114,7 @@ jobs:
           elseif ( $ec -ne "1" ){
               echo "$output"
           }
-        shell: cmd
+        shell: powershell
 
       - name: Build
         run: |

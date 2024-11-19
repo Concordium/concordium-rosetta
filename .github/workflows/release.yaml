@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: |
           rustup default ${{ env.RUST_IMAGE_TAG }}
-          cargo run --release
+          cargo run --release --network Mainnet
 
       - name: Publish
         run: |

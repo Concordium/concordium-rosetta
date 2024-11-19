@@ -86,7 +86,7 @@ jobs:
     needs: rosetta-version
     environment: release
     env:
-      OUTFILE: ${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+      OUTFILE: "${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -107,12 +107,13 @@ jobs:
           set +e
           output=$(aws s3 ls "${{ env.OUTFILE }}")
           ec=$?
-          if [ $ec -eq "0" ]; then
+          if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"
               exit 1
-          elif [ $ec -ne "1"]; then
+          }
+          elseif () $ec -ne "1"){
               echo "$output"
-          fi
+          }
 
       - name: Build
         run: |

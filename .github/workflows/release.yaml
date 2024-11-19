@@ -104,8 +104,10 @@ jobs:
 
       - name: Check if version exist in s3
         run: |
-          Set-PSDebug -Trace 1
+          try {
           $output = aws s3 ls ${{ env.OUTFILE }}
+          }
+          catch {
           $ec = $LastExitCode
           if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"
@@ -113,7 +115,7 @@ jobs:
           }
           elseif ( $ec -ne "1" ){
               echo "$output"
-          }
+          }}
 
       - name: Build
         run: |

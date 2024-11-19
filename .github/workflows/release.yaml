@@ -104,10 +104,7 @@ jobs:
 
       - name: Check if version exist in s3
         run: |
-          try {
-          $output = aws s3 ls ${{ env.OUTFILE }}
-          }
-          catch {
+          $output = aws s3 ls ${{ env.OUTFILE }} -ErrorAction SilentlyContinue
           $ec = $LastExitCode
           if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"
@@ -115,7 +112,7 @@ jobs:
           }
           elseif ( $ec -ne "1" ){
               echo "$output"
-          }}
+          }
 
       - name: Build
         run: |

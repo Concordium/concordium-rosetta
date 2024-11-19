@@ -38,48 +38,48 @@ jobs:
           fi
           echo "outfile=${{ env.OUTFOLDER }}/windows/concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
 
-  release-rosetta-macos:
-    needs: rosetta-version
-    runs-on: macos-latest
-    environment: release
-    env:
-      OUTFILE: ${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          submodules: recursive
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: "eu-west-1"
-          role-to-assume: ${{ env.IAM_ROLE }}
-          role-session-name: ReleaseRosettaSession
-      
-
-      - name: Check if version exist in s3
-        run: |
-          set +e
-          output=$(aws s3 ls "${{ env.OUTFILE }}")
-          ec=$?
-          if [ $ec -eq "0" ]; then
-              echo "Objects found ${{ env.OUTFILE }}"
-              exit 1
-          elif [ $ec -ne "1" ]; then
-              echo "$output"
-          fi
-
-      - name: Build
-        run: |
-          rustup default ${{ env.RUST_IMAGE_TAG }}
-          cargo run --release -- --version
-
-      - name: Publish
-        run: |
-          echo ${{ env.OUTFILE }}
-#          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
+#  release-rosetta-macos:
+#    needs: rosetta-version
+#    runs-on: macos-latest
+#    environment: release
+#    env:
+#      OUTFILE: ${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ github.ref_name }}
+#          submodules: recursive
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: "eu-west-1"
+#          role-to-assume: ${{ env.IAM_ROLE }}
+#          role-session-name: ReleaseRosettaSession
+#      
+#
+#      - name: Check if version exist in s3
+#        run: |
+#          set +e
+#          output=$(aws s3 ls "${{ env.OUTFILE }}")
+#          ec=$?
+#          if [ $ec -eq "0" ]; then
+#              echo "Objects found ${{ env.OUTFILE }}"
+#              exit 1
+#          elif [ $ec -ne "1" ]; then
+#              echo "$output"
+#          fi
+#
+#      - name: Build
+#        run: |
+#          rustup default ${{ env.RUST_IMAGE_TAG }}
+#          cargo run --release -- --version
+#
+#      - name: Publish
+#        run: |
+#          echo ${{ env.OUTFILE }}
+##          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
 
   release-rosetta-windows:
     runs-on: windows-latest
@@ -105,7 +105,7 @@ jobs:
       - name: Check if version exist in s3
         run: |
           $ErrorActionPreference = 'SilentlyContinue'
-          $output = aws s3 ls ${{ env.OUTFILE }}
+          $output = aws s3 ls ${{ env.OUTFILE }} -ErrorAction SilentlyContinue
           $ec = $LastExitCode
           if ( $ec -eq "0" ){
               echo "Objects found ${{ env.OUTFILE }}"

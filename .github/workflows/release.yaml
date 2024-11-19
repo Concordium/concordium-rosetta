@@ -29,9 +29,15 @@ jobs:
       - name: Get the rosetta version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")
+          if [ ! "1.2.0" = "$CARGO_VERSION" ] ; then
+              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
+              exit 1
+            fi
+          fi
           echo "OUTFILE_SHORT=${{ env.OUTFOLDER }}/windows/concordium-rosetta-$CARGO_VERSION" >> $GITHUB_ENV
 
   release-rosetta-macos:
+    needs: rosetta-version
     runs-on: macos-latest
     environment: release
     steps:
@@ -76,6 +82,7 @@ jobs:
 
   release-rosetta-windows:
     runs-on: windows-latest
+    needs: rosetta-version
     environment: release
     steps:
       - name: Checkout Repository

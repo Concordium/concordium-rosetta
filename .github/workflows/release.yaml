@@ -104,7 +104,7 @@ jobs:
 
       - name: Check if version exist in s3
         run: |
-          SetPSDebug -Trace 1
+          Set-PSDebug -Trace 1
           $output = aws s3 ls ${{ env.OUTFILE }}
           $ec = $LastExitCode
           if ( $ec -eq "0" ){

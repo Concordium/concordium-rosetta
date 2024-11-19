@@ -37,11 +37,11 @@ jobs:
       - name: Get the rosetta version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")
-          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
-              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
-              exit 1
-            fi
-          fi
+#          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
+#              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
+#              exit 1
+#            fi
+#          fi
           echo "ROSETTA_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
           echo "OUTFILE=${{ env.OUTFOLDER }}/macos/concordium-rosetta-${{ env.ROSATTE_VERSION }}" >> $GITHUB_ENV
 

@@ -20,6 +20,12 @@ jobs:
   rosetta-version:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+          
       - name: Get the rosetta version
         run: |
           CARGO_VERSION=$(yq .package.version "Cargo.toml")

@@ -131,12 +131,12 @@ jobs:
     environment: release
     steps:
 
-      - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_TOKEN }}
-        uses: docker/login-action@v3
-        with:
-          username: 'concordium'
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #- name: Login to Docker Hub
+      #  if: ${{ secrets.DOCKERHUB_TOKEN }}
+      #  uses: docker/login-action@v3
+      #  with:
+      #    username: 'concordium'
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Checkout Repository
         uses: actions/checkout@v4

@@ -181,7 +181,7 @@ jobs:
     needs: rosetta-version
     environment: release
     env:
-      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.deb
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -218,4 +218,4 @@ jobs:
         run: |
           echo ${{ env.OUTFILE }}
           ls ./target/release/
-#          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }}
+#          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }}

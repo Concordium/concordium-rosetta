@@ -9,7 +9,6 @@ on:
 
 env:
   RUST_IMAGE_TAG: '1.73'
-  OUTFOLDER: "s3://distribution.concordium.software/tools"
   IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
   BASE_IMAGE: "debian:bullseye-slim"
 
@@ -22,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
+      OUTFOLDER: "s3://distribution.concordium.software/tools"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -181,7 +181,7 @@ jobs:
     needs: rosetta-version
     environment: release
     env:
-      OUTFILE: ${{env.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.deb
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.deb
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

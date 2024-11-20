@@ -11,6 +11,7 @@ env:
   RUST_IMAGE_TAG: '1.73'
   OUTFOLDER: "s3://distribution.concordium.software/tools"
   IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
+  BASE_IMAGE: "debian:bullseye-slim"
 
 permissions:
   id-token: write
@@ -80,47 +81,101 @@ jobs:
 #        run: |
 #          echo ${{ env.OUTFILE }}
 ##          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
-
-  release-rosetta-windows:
-    runs-on: windows-latest
-    needs: rosetta-version
+#
+#  release-rosetta-windows:
+#    runs-on: windows-latest
+#    needs: rosetta-version
+#    environment: release
+#    env:
+#      OUTFILE: "${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ github.ref_name }}
+#          submodules: recursive
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: "eu-west-1"
+#          role-to-assume: ${{ env.IAM_ROLE }}
+#          role-session-name: ReleaseRosettaSession
+#      
+#
+#      - name: Check if version exist in s3
+#        run: |-
+#          set +e
+#          output=$(aws s3 ls "${{ env.OUTFILE }}")
+#          ec=$?
+#          if [ $ec -eq "0" ]; then
+#              echo "Objects found ${{ env.OUTFILE }}"
+#              exit 1
+#          elif [ $ec -ne "1" ]; then
+#              echo "$output"
+#          fi
+#        shell: bash
+#
+#      - name: Build
+#        run: |
+#          rustup default ${{ env.RUST_IMAGE_TAG }}
+#          cargo run --release -- --version
+#
+#      - name: Publish
+#        run: |
+#          echo ${{ env.OUTFILE }}
+##          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }} 
+  release-rosetta-docker:
+    runs-on: ubuntu-latest
     environment: release
-    env:
-      OUTFILE: "${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
     steps:
+
+#      - name: Login to Docker Hub
+#        if: ${{ secrets.DOCKERHUB_TOKEN }}
+#        uses: docker/login-action@v3
+#        with:
+#          username: 'concordium'
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
           submodules: recursive
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: "eu-west-1"
-          role-to-assume: ${{ env.IAM_ROLE }}
-          role-session-name: ReleaseRosettaSession
       
-
-      - name: Check if version exist in s3
-        run: |-
-          set +e
-          output=$(aws s3 ls "${{ env.OUTFILE }}")
-          ec=$?
-          if [ $ec -eq "0" ]; then
-              echo "Objects found ${{ env.OUTFILE }}"
+      - name: Set image tag if correctly formatted
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          TAG_VERSION=${TAG##${{ inputs.SERVICE_NAME }}/}
+          if [ -n "Cargo.toml" ] ; then
+            CARGO_VERSION=$(yq .package.version "cargo.toml")
+            if [ ! "$TAG_VERSION" = "$CARGO_VERSION" ] ; then
+              echo "::error::$CARGO_VERSION does not match $TAG_VERSION."
               exit 1
-          elif [ $ec -ne "1" ]; then
-              echo "$output"
+            fi
           fi
-        shell: bash
-
-      - name: Build
+          echo "FULL_IMAGE_TAG=concordium/rosetta:${TAG_VERSION}" >> $GITHUB_ENV
+      
+      - name: Check if image exist
         run: |
-          rustup default ${{ env.RUST_IMAGE_TAG }}
-          cargo run --release -- --version
+          set +e
+          docker manifest inspect ${{ env.FULL_IMAGE_TAG }}
+          EXITCODE=$?
+          if [ $EXITCODE -eq "0" ]; then
+            echo "Error: ${{ env.FULL_IMAGE_TAG }} already exist"
+            exit 1
+          fi
 
-      - name: Publish
-        run: |
-          echo ${{ env.OUTFILE }}
-#          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }} 
+      - name: Build and push docker image
+        if: ${{ secrets.DOCKERHUB_TOKEN }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.DOCKER_CONTEXT }}
+          file: ${{ inputs.DOCKER_FILE_PATH }}
+          tags: ${{ env.FULL_IMAGE_TAG }}
+          no-cache: true
+          push: false
+          build-args: |
+            base_image="${{ env.BASE_IMAGE }}"
+            build_image="rust:${{ env.RUST_IMAGE_TAG }}-slim-bullseye"

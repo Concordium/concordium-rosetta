@@ -44,7 +44,7 @@ jobs:
     runs-on: macos-latest
     environment: release
     env:
-      OUTFILE: ${{env.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
     needs: rosetta-version
     environment: release
     env:
-      OUTFILE: "${{env.OUTFOLDER}}/windows/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
+      OUTFILE: "${{needs.rosetta-version.outputs.OUTFOLDER}}/windows/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

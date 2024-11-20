@@ -149,7 +149,7 @@ jobs:
         run: |
           TAG_VERSION=${TAG##${{ inputs.SERVICE_NAME }}/}
           if [ -n "Cargo.toml" ] ; then
-            CARGO_VERSION=$(yq .package.version "cargo.toml")
+            CARGO_VERSION=$(yq .package.version "Cargo.toml")
             if [ ! "$TAG_VERSION" = "$CARGO_VERSION" ] ; then
               echo "::error::$CARGO_VERSION does not match $TAG_VERSION."
               exit 1

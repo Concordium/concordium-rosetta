@@ -217,5 +217,5 @@ jobs:
       - name: Publish
         run: |
           echo ${{ env.OUTFILE }}
-          ls ./target/release/concordium-rosetta.deb
+          ls ./target/release/
 #          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }}

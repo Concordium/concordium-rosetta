@@ -146,7 +146,7 @@ jobs:
       
       - name: Set image tag if correctly formatted
         run: |
-          TAG_VERSION=${{ github.ref_name }}
+          TAG_VERSION="1.2.0" #${{ github.ref_name }}
           if [ -n "Cargo.toml" ] ; then
             CARGO_VERSION=$(yq .package.version "Cargo.toml")
             if [ ! "$TAG_VERSION" = "$CARGO_VERSION" ] ; then

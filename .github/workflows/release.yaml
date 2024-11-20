@@ -176,5 +176,5 @@ jobs:
           no-cache: true
           push: false
           build-args: |
-            base_image="${{ env.BASE_IMAGE }}"
-            build_image="rust:${{ env.RUST_IMAGE_TAG }}-slim-bullseye"
+            base_image=${{ env.BASE_IMAGE }}
+            build_image=rust:${{ env.RUST_IMAGE_TAG }}-slim-bullseye

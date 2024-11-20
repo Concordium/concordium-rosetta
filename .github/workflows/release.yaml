@@ -168,11 +168,10 @@ jobs:
           fi
 
       - name: Build and push docker image
-        if: ${{ secrets.DOCKERHUB_TOKEN }}
         uses: docker/build-push-action@v6
         with:
-          context: ${{ inputs.DOCKER_CONTEXT }}
-          file: ${{ inputs.DOCKER_FILE_PATH }}
+          context: '.'
+          file: Dockerfile
           tags: ${{ env.FULL_IMAGE_TAG }}
           no-cache: true
           push: false

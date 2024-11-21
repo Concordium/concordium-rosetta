@@ -2,8 +2,6 @@ name: Build and Push rosetta
 
 on:
   push:
-    branches:
-      - ekw/SRE-999/release-rosetta
     tags:
       - "*.*.*"
 
@@ -17,112 +15,112 @@ permissions:
   contents: read
 
 jobs:
-#  rosetta-version:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
-#      OUTFOLDER: "s3://distribution.concordium.software/tools"
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v4
-#        with:
-#          ref: ${{ github.ref_name }}
-#          submodules: recursive
-#
-#      - name: Get the rosetta version
-#        id: version
-#        run: |
-#          CARGO_VERSION=$(yq .package.version "Cargo.toml")
-#          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
-#              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
-#              exit 1
-#          fi
-#          echo "outfile=concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
-#
-#  release-rosetta-macos:
-#    needs: rosetta-version
-#    runs-on: macos-latest
-#    environment: release
-#    env:
-#      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v4
-#        with:
-#          ref: ${{ github.ref_name }}
-#          submodules: recursive
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: "eu-west-1"
-#          role-to-assume: ${{ env.IAM_ROLE }}
-#          role-session-name: ReleaseRosettaSession
-#      
-#
-#      - name: Check if version exist in s3
-#        run: |
-#          set +e
-#          output=$(aws s3 ls "${{ env.OUTFILE }}")
-#          ec=$?
-#          if [ $ec -eq "0" ]; then
-#              echo "Objects found ${{ env.OUTFILE }}"
-#              exit 1
-#          elif [ $ec -ne "1" ]; then
-#              echo "$output"
-#          fi
-#
-#      - name: Build
-#        run: |
-#          rustup default ${{ env.RUST_IMAGE_TAG }}
-#          cargo run --release -- --version
-#
-#      - name: Publish
-#        run: |
-#          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
-#
-#  release-rosetta-windows:
-#    runs-on: windows-latest
-#    needs: rosetta-version
-#    environment: release
-#    env:
-#      OUTFILE: "${{needs.rosetta-version.outputs.OUTFOLDER}}/windows/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v4
-#        with:
-#          ref: ${{ github.ref_name }}
-#          submodules: recursive
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: "eu-west-1"
-#          role-to-assume: ${{ env.IAM_ROLE }}
-#          role-session-name: ReleaseRosettaSession
-#      
-#
-#      - name: Check if version exist in s3
-#        run: |-
-#          set +e
-#          output=$(aws s3 ls "${{ env.OUTFILE }}")
-#          ec=$?
-#          if [ $ec -eq "0" ]; then
-#              echo "Objects found ${{ env.OUTFILE }}"
-#              exit 1
-#          elif [ $ec -ne "1" ]; then
-#              echo "$output"
-#          fi
-#        shell: bash
-#
-#      - name: Build
-#        run: |
-#          rustup default ${{ env.RUST_IMAGE_TAG }}
-#          cargo run --release -- --version
-#
-#      - name: Publish
-#        run: |
-#          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }}
+  rosetta-version:
+    runs-on: ubuntu-latest
+    outputs:
+      OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
+      OUTFOLDER: "s3://distribution.concordium.software/tools"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Get the rosetta version
+        id: version
+        run: |
+          CARGO_VERSION=$(yq .package.version "Cargo.toml")
+          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
+              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
+              exit 1
+          fi
+          echo "outfile=concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
+
+  release-rosetta-macos:
+    needs: rosetta-version
+    runs-on: macos-latest
+    environment: release
+    env:
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: "eu-west-1"
+          role-to-assume: ${{ env.IAM_ROLE }}
+          role-session-name: ReleaseRosettaSession
+      
+
+      - name: Check if version exist in s3
+        run: |
+          set +e
+          output=$(aws s3 ls "${{ env.OUTFILE }}")
+          ec=$?
+          if [ $ec -eq "0" ]; then
+              echo "Objects found ${{ env.OUTFILE }}"
+              exit 1
+          elif [ $ec -ne "1" ]; then
+              echo "$output"
+          fi
+
+      - name: Build
+        run: |
+          rustup default ${{ env.RUST_IMAGE_TAG }}
+          cargo run --release -- --version
+
+      - name: Publish
+        run: |
+          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }} 
+
+  release-rosetta-windows:
+    runs-on: windows-latest
+    needs: rosetta-version
+    environment: release
+    env:
+      OUTFILE: "${{needs.rosetta-version.outputs.OUTFOLDER}}/windows/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}.exe"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: "eu-west-1"
+          role-to-assume: ${{ env.IAM_ROLE }}
+          role-session-name: ReleaseRosettaSession
+      
+
+      - name: Check if version exist in s3
+        run: |-
+          set +e
+          output=$(aws s3 ls "${{ env.OUTFILE }}")
+          ec=$?
+          if [ $ec -eq "0" ]; then
+              echo "Objects found ${{ env.OUTFILE }}"
+              exit 1
+          elif [ $ec -ne "1" ]; then
+              echo "$output"
+          fi
+        shell: bash
+
+      - name: Build
+        run: |
+          rustup default ${{ env.RUST_IMAGE_TAG }}
+          cargo run --release -- --version
+
+      - name: Publish
+        run: |
+          aws s3 cp ./target/release/concordium-rosetta.exe ${{ env.OUTFILE }}
 
   release-rosetta-docker:
     runs-on: ubuntu-latest
@@ -146,7 +144,7 @@ jobs:
           TAG_VERSION=${{ github.ref_name }}
           if [ -n "Cargo.toml" ] ; then
             CARGO_VERSION=$(yq .package.version "Cargo.toml")
-            if [ ! "1.2.0" = "$CARGO_VERSION" ] ; then
+            if [ ! "$TAG_VERSION" = "$CARGO_VERSION" ] ; then
               echo "::error::$CARGO_VERSION does not match $TAG_VERSION."
               exit 1
             fi
@@ -168,51 +166,51 @@ jobs:
         with:
           context: '.'
           file: Dockerfile
-          tags: ${{ env.FULL_IMAGE_TAG }}-dev
+          tags: ${{ env.FULL_IMAGE_TAG }}
           no-cache: true
           push: true
           build-args: |
             base_image=${{ env.BASE_IMAGE }}
             build_image=rust:${{ env.RUST_IMAGE_TAG }}-slim-bullseye
 
-#  release-rosetta-linux:
-#    runs-on: ubuntu-latest
-#    needs: rosetta-version
-#    environment: release
-#    env:
-#      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v4
-#        with:
-#          ref: ${{ github.ref_name }}
-#          submodules: recursive
-#
-#      - name: Configure AWS Credentials
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: "eu-west-1"
-#          role-to-assume: ${{ env.IAM_ROLE }}
-#          role-session-name: ReleaseRosettaSession
-#      
-#
-#      - name: Check if version exist in s3
-#        run: |-
-#          set +e
-#          output=$(aws s3 ls "${{ env.OUTFILE }}")
-#          ec=$?
-#          if [ $ec -eq "0" ]; then
-#              echo "Objects found ${{ env.OUTFILE }}"
-#              exit 1
-#          elif [ $ec -ne "1" ]; then
-#              echo "$output"
-#          fi
-#
-#      - name: Build
-#        run: |
-#          rustup default ${{ env.RUST_IMAGE_TAG }}
-#          cargo run --release -- --version
-#
-#      - name: Publish
-#        run: |
-#          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }}
+  release-rosetta-linux:
+    runs-on: ubuntu-latest
+    needs: rosetta-version
+    environment: release
+    env:
+      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/linux/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          submodules: recursive
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: "eu-west-1"
+          role-to-assume: ${{ env.IAM_ROLE }}
+          role-session-name: ReleaseRosettaSession
+      
+
+      - name: Check if version exist in s3
+        run: |-
+          set +e
+          output=$(aws s3 ls "${{ env.OUTFILE }}")
+          ec=$?
+          if [ $ec -eq "0" ]; then
+              echo "Objects found ${{ env.OUTFILE }}"
+              exit 1
+          elif [ $ec -ne "1" ]; then
+              echo "$output"
+          fi
+
+      - name: Build
+        run: |
+          rustup default ${{ env.RUST_IMAGE_TAG }}
+          cargo run --release -- --version
+
+      - name: Publish
+        run: |
+          aws s3 cp ./target/release/concordium-rosetta ${{ env.OUTFILE }}

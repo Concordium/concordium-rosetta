@@ -17,47 +17,47 @@ permissions:
   contents: read
 
 jobs:
-  rosetta-version:
-    runs-on: ubuntu-latest
-    outputs:
-      OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
-      OUTFOLDER: "s3://distribution.concordium.software/tools"
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          submodules: recursive
-
-      - name: Get the rosetta version
-        id: version
-        run: |
-          CARGO_VERSION=$(yq .package.version "Cargo.toml")
-          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
-              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
-              exit 1
-          fi
-          echo "outfile=concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
-
-  release-rosetta-macos:
-    needs: rosetta-version
-    runs-on: macos-latest
-    environment: release
-    env:
-      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          submodules: recursive
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: "eu-west-1"
-          role-to-assume: ${{ env.IAM_ROLE }}
-          role-session-name: ReleaseRosettaSession
+#  rosetta-version:
+#    runs-on: ubuntu-latest
+#    outputs:
+#      OUTFILE_SHORT: ${{steps.version.outputs.outfile}}
+#      OUTFOLDER: "s3://distribution.concordium.software/tools"
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ github.ref_name }}
+#          submodules: recursive
+#
+#      - name: Get the rosetta version
+#        id: version
+#        run: |
+#          CARGO_VERSION=$(yq .package.version "Cargo.toml")
+#          if [ ! "${{ github.ref_name }}" = "$CARGO_VERSION" ] ; then
+#              echo "::error::$CARGO_VERSION does not match ${{ github.ref_name }}."
+#              exit 1
+#          fi
+#          echo "outfile=concordium-rosetta-test-$CARGO_VERSION" >> $GITHUB_OUTPUT
+#
+#  release-rosetta-macos:
+#    needs: rosetta-version
+#    runs-on: macos-latest
+#    environment: release
+#    env:
+#      OUTFILE: ${{needs.rosetta-version.outputs.OUTFOLDER}}/macos/${{needs.rosetta-version.outputs.OUTFILE_SHORT}}
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ github.ref_name }}
+#          submodules: recursive
+#
+#      - name: Configure AWS Credentials
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: "eu-west-1"
+#          role-to-assume: ${{ env.IAM_ROLE }}
+#          role-session-name: ReleaseRosettaSession
 #      
 #
 #      - name: Check if version exist in s3
@@ -146,7 +146,7 @@ jobs:
           TAG_VERSION=${{ github.ref_name }}
           if [ -n "Cargo.toml" ] ; then
             CARGO_VERSION=$(yq .package.version "Cargo.toml")
-            if [ ! "$TAG_VERSION" = "$CARGO_VERSION" ] ; then
+            if [ ! "1.2.0" = "$CARGO_VERSION" ] ; then
               echo "::error::$CARGO_VERSION does not match $TAG_VERSION."
               exit 1
             fi

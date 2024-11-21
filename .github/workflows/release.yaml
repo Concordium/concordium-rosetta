@@ -2,6 +2,8 @@ name: Build and Push rosetta
 
 on:
   push:
+    branches:
+      - ekw/SRE-999/release-rosetta
     tags:
       - "*.*.*"
 

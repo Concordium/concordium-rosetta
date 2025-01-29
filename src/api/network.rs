@@ -31,12 +31,13 @@ impl NetworkApi {
 
     pub async fn network_options(&self, req: NetworkRequest) -> ApiResult<NetworkOptionsResponse> {
         self.validator.validate_network_identifier(*req.network_identifier)?;
+        let node_version = self.query_helper.query_node_version().await?;
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
-                rosetta_version:    ROSETTA_VERSION.to_string(),
-                node_version:       NODE_VERSION.to_string(),
+                rosetta_version: ROSETTA_VERSION.to_string(),
+                node_version,
                 middleware_version: Some(SERVER_VERSION.to_string()),
-                metadata:           None,
+                metadata: None,
             }),
             allow:   Box::new(Allow {
                 operation_statuses:        vec![
@@ -83,6 +84,8 @@ impl NetworkApi {
                     OPERATION_TYPE_BLOCK_ACCRUE_REWARD.to_string(),
                     OPERATION_TYPE_CONFIGURE_BAKER.to_string(),
                     OPERATION_TYPE_CONFIGURE_DELEGATION.to_string(),
+                    OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION.to_string(),
+                    OPERATION_TYPE_VALIDATOR_SUSPENDED.to_string(),
                 ],
                 errors:                    vec![
                     handler_error::invalid_input_unsupported_field_error(None),

@@ -27,6 +27,12 @@ struct BlockMetadata {
     baker_id: Option<BakerId>,
 }
 
+/// Metadata for a validator suspended or validator primed for suspension event.
+#[derive(SerdeSerialize)]
+pub struct ValidatorEventMetadata {
+    baker_id: BakerId,
+}
+
 impl BlockApi {
     pub fn new(network_validator: NetworkValidator, query_helper: QueryHelper) -> Self {
         Self {
@@ -529,6 +535,51 @@ impl BlockApi {
                         });
                     }
                 }
+                SpecialTransactionOutcome::ValidatorPrimedForSuspension {
+                    baker_id,
+                    account,
+                } => res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION
+                        .to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        account.to_string(),
+                    ))),
+                    amount:               None,
+                    coin_change:          None,
+                    metadata:             Some(
+                        serde_json::to_value(ValidatorEventMetadata {
+                            baker_id,
+                        })
+                        .unwrap(),
+                    ),
+                }),
+                SpecialTransactionOutcome::ValidatorSuspended {
+                    baker_id,
+                    account,
+                } => res.push(Operation {
+                    operation_identifier: Box::new(OperationIdentifier::new(next_index(
+                        &mut index_offset,
+                    ))),
+                    related_operations:   None,
+                    _type:                OPERATION_TYPE_VALIDATOR_SUSPENDED.to_string(),
+                    status:               Some(OPERATION_STATUS_OK.to_string()),
+                    account:              Some(Box::new(AccountIdentifier::new(
+                        account.to_string(),
+                    ))),
+                    amount:               None,
+                    coin_change:          None,
+                    metadata:             Some(
+                        serde_json::to_value(ValidatorEventMetadata {
+                            baker_id,
+                        })
+                        .unwrap(),
+                    ),
+                }),
             }
         }
         Ok(res)

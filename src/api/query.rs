@@ -122,6 +122,11 @@ impl QueryHelper {
         )
     }
 
+    pub async fn query_node_version(&self) -> ApiResult<String> {
+        let node_info = self.client.clone().get_node_info().await?;
+        Ok(node_info.version.to_string())
+    }
+
     pub async fn query_account_info_by_address(
         &self,
         addr: AccountAddress,

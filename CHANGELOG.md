@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased changes
+
+- Support protocol version 8:
+  - The `configure_baker` operation can have metadata with the `suspended` boolean, indicating
+    when a validator is manually suspended or resumed.
+  - New `validator_primed_for_suspension` and `validator_suspended` operation types indicate when
+    a validator is primed for suspension or suspended automatically as part of the tokenomics
+    transaction.
+
 ## 1.2.0
 
 - Updated the Concordium Rust SDK to support the changes introduced in protocol 7.

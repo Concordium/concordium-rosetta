@@ -37,11 +37,6 @@ struct ContractInitializedMetadata {
 }
 
 #[derive(SerdeSerialize)]
-struct ContractUpdateIssuedMetadata {
-    // TODO Include 'effects'.
-}
-
-#[derive(SerdeSerialize)]
 // TODO Name "transferred" for consistency?
 pub struct MemoMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -114,6 +109,12 @@ struct BakerSetBakingRewardCommissionMetadata {
 struct BakerSetFinalizationRewardCommissionMetadata {
     baker_id: BakerId,
     finalization_reward_commission: String,
+}
+
+#[derive(SerdeSerialize)]
+struct BakerSuspensionMetadata {
+    baker_id:  BakerId,
+    suspended: bool,
 }
 
 #[derive(SerdeSerialize)]
@@ -258,6 +259,8 @@ pub const OPERATION_TYPE_PAYDAY_FINALIZATION_REWARD: &str = "payday_finalization
 pub const OPERATION_TYPE_BLOCK_ACCRUE_REWARD: &str = "block_accrue_reward";
 pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
 pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
+pub const OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION: &str = "validator_primed_for_suspension";
+pub const OPERATION_TYPE_VALIDATOR_SUSPENDED: &str = "validator_suspended";
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
@@ -754,6 +757,28 @@ fn operations_and_metadata_from_account_transaction_details(
                             baker_id: *baker_id,
                             finalization_reward_commission: finalization_reward_commission
                                 .to_string(),
+                        }),
+                    ),
+                    BakerEvent::BakerSuspended {
+                        baker_id,
+                    } => normal_account_transaction_operation(
+                        i as i64,
+                        details,
+                        None,
+                        Some(&BakerSuspensionMetadata {
+                            baker_id:  *baker_id,
+                            suspended: true,
+                        }),
+                    ),
+                    BakerEvent::BakerResumed {
+                        baker_id,
+                    } => normal_account_transaction_operation(
+                        i as i64,
+                        details,
+                        None,
+                        Some(&BakerSuspensionMetadata {
+                            baker_id:  *baker_id,
+                            suspended: false,
                         }),
                     ),
                 })

@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+## 1.3.0
+
 - Support protocol version 8:
   - The `configure_baker` operation can have metadata with the `suspended` boolean, indicating
     when a validator is manually suspended or resumed.

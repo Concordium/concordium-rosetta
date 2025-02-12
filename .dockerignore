@@ -1,7 +1,6 @@
 **/.*
 **/target
 **/Dockerfile
-**/Jenkinsfile
 **/LICENSE
 **/*.json
 **/*.deb

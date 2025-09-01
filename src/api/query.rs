@@ -25,9 +25,7 @@ pub struct QueryHelper {
 
 impl QueryHelper {
     pub fn new(client: Client) -> Self {
-        Self {
-            client,
-        }
+        Self { client }
     }
 
     pub async fn query_account_balance(
@@ -41,51 +39,43 @@ impl QueryHelper {
         let amount = match address {
             Address::Account(addr) => {
                 let acc_id = v2::AccountIdentifier::Address(addr);
-                match self.client.clone().get_account_info(&acc_id, &block_hash).await {
+                match self
+                    .client
+                    .clone()
+                    .get_account_info(&acc_id, &block_hash)
+                    .await
+                {
                     Ok(i) => i.response.account_amount,
                     Err(err) => handle_query_error(err)?,
                 }
             }
             Address::Contract(addr) => {
-                match self.client.clone().get_instance_info(addr, &block_hash).await {
+                match self
+                    .client
+                    .clone()
+                    .get_instance_info(addr, &block_hash)
+                    .await
+                {
                     Ok(i) => match i.response {
-                        InstanceInfo::V0 {
-                            amount,
-                            ..
-                        } => amount,
-                        InstanceInfo::V1 {
-                            amount,
-                            ..
-                        } => amount,
+                        InstanceInfo::V0 { amount, .. } => amount,
+                        InstanceInfo::V1 { amount, .. } => amount,
                     },
                     Err(err) => handle_query_error(err)?,
                 }
             }
             Address::BakingRewardAccount => match self.query_tokenomics_info(&block_hash).await? {
-                RewardsOverview::V0 {
-                    data,
-                } => data.baking_reward_account,
-                RewardsOverview::V1 {
-                    common,
-                    ..
-                } => common.baking_reward_account,
+                RewardsOverview::V0 { data } => data.baking_reward_account,
+                RewardsOverview::V1 { common, .. } => common.baking_reward_account,
             },
             Address::FinalizationRewardAccount => {
                 match self.query_tokenomics_info(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        data,
-                    } => data.finalization_reward_account,
-                    RewardsOverview::V1 {
-                        common,
-                        ..
-                    } => common.finalization_reward_account,
+                    RewardsOverview::V0 { data } => data.finalization_reward_account,
+                    RewardsOverview::V1 { common, .. } => common.finalization_reward_account,
                 }
             }
             Address::FoundationAccrueAccount => {
                 match self.query_tokenomics_info(&block_hash).await? {
-                    RewardsOverview::V0 {
-                        ..
-                    } => {
+                    RewardsOverview::V0 { .. } => {
                         return Err(ApiError::InvalidAccountAddress(
                             ACCOUNT_ACCRUE_FOUNDATION.to_string(),
                         ))
@@ -104,7 +94,12 @@ impl QueryHelper {
                     },
                     Err(err) => handle_query_error(err)?,
                 },
-                None => match self.client.clone().get_passive_delegation_info(&block_hash).await {
+                None => match self
+                    .client
+                    .clone()
+                    .get_passive_delegation_info(&block_hash)
+                    .await
+                {
                     Ok(i) => i.response.current_payday_transaction_fees_earned,
                     Err(err) => handle_query_error(err)?,
                 },
@@ -134,7 +129,11 @@ impl QueryHelper {
     ) -> ApiResult<AccountInfo> {
         let acc_id = v2::AccountIdentifier::Address(addr);
         map_query_result(
-            self.client.clone().get_account_info(&acc_id, block_id).await.map(|x| x.response),
+            self.client
+                .clone()
+                .get_account_info(&acc_id, block_id)
+                .await
+                .map(|x| x.response),
             ApiError::NoAccountsMatched,
         )
     }
@@ -144,7 +143,11 @@ impl QueryHelper {
         block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<BlockInfo> {
         map_query_result(
-            self.client.clone().get_block_info(block_id).await.map(|x| x.response),
+            self.client
+                .clone()
+                .get_block_info(block_id)
+                .await
+                .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )
     }
@@ -154,7 +157,11 @@ impl QueryHelper {
         block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<impl Stream<Item = ApiResult<BlockItemSummary>>> {
         let mapped_stream = map_query_result(
-            self.client.clone().get_block_transaction_events(block_id).await.map(|x| x.response),
+            self.client
+                .clone()
+                .get_block_transaction_events(block_id)
+                .await
+                .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )?;
         Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
@@ -165,7 +172,11 @@ impl QueryHelper {
         block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<impl Stream<Item = ApiResult<SpecialTransactionOutcome>>> {
         let mapped_stream = map_query_result(
-            self.client.clone().get_block_special_events(block_id).await.map(|x| x.response),
+            self.client
+                .clone()
+                .get_block_special_events(block_id)
+                .await
+                .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )?;
         Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
@@ -176,7 +187,11 @@ impl QueryHelper {
         block_id: impl IntoBlockIdentifier,
     ) -> ApiResult<RewardsOverview> {
         map_query_result(
-            self.client.clone().get_tokenomics_info(block_id).await.map(|x| x.response),
+            self.client
+                .clone()
+                .get_tokenomics_info(block_id)
+                .await
+                .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )
     }
@@ -193,7 +208,10 @@ impl QueryHelper {
             },
         };
         let blocks = map_query_result(
-            self.client.clone().get_blocks_at_height(&block_height).await,
+            self.client
+                .clone()
+                .get_blocks_at_height(&block_height)
+                .await,
             ApiError::NoBlocksMatched,
         )?;
         match blocks[..] {
@@ -220,7 +238,10 @@ impl QueryHelper {
         block_id: Option<Box<PartialBlockIdentifier>>,
     ) -> ApiResult<BlockInfo> {
         match block_id {
-            None => self.query_block_info_by_hash(v2::BlockIdentifier::LastFinal).await,
+            None => {
+                self.query_block_info_by_hash(v2::BlockIdentifier::LastFinal)
+                    .await
+            }
             Some(bid) => match (bid.index, bid.hash) {
                 (Some(height), None) => {
                     let block_hash = self.query_block_hash_from_height(height).await?;
@@ -242,9 +263,9 @@ impl QueryHelper {
                         ))
                     }
                 }
-                (None, None) => {
-                    Err(ApiError::InvalidBlockIdentifier(InvalidBlockIdentifierError::NoValues))
-                }
+                (None, None) => Err(ApiError::InvalidBlockIdentifier(
+                    InvalidBlockIdentifierError::NoValues,
+                )),
             },
         }
     }
@@ -313,8 +334,9 @@ pub fn account_address_from_string(addr: &str) -> ApiResult<Address> {
                 if pool == POOL_PASSIVE {
                     return Ok(Address::PoolAccrueAccount(None));
                 }
-                let baker_id =
-                    pool.parse().map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
+                let baker_id = pool
+                    .parse()
+                    .map_err(|_| ApiError::InvalidAccountAddress(addr.to_string()))?;
                 Ok(Address::PoolAccrueAccount(Some(baker_id)))
             } else if let Some(contract_addr) = addr.strip_prefix(ACCOUNT_CONTRACT_PREFIX) {
                 // TODO Improve error reporting (see parsing of signature string).

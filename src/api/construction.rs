@@ -32,7 +32,7 @@ use std::{collections::BTreeMap, ops::Deref, str::FromStr};
 #[derive(Clone)]
 pub struct ConstructionApi {
     network_validator: NetworkValidator,
-    query_helper:      QueryHelper,
+    query_helper: QueryHelper,
 }
 
 #[derive(SerdeSerialize, SerdeDeserialize)]
@@ -47,15 +47,15 @@ struct MetadataResponseMetadata {
 
 #[derive(SerdeDeserialize)]
 struct PayloadRequestMetadata {
-    account_nonce:      Nonce,
-    signature_count:    u32,
+    account_nonce: Nonce,
+    signature_count: u32,
     expiry_unix_millis: u64, // using milliseconds for consistency with block timestamp field
-    memo:               Option<Memo>,
+    memo: Option<Memo>,
 }
 
 struct ParsedTransferOperation {
     account_address: AccountAddress,
-    amount_uccd:     i128,
+    amount_uccd: i128,
 }
 
 enum ParsedOperation {
@@ -63,9 +63,9 @@ enum ParsedOperation {
 }
 
 struct ParsedTransferTransaction {
-    sender_address:   AccountAddress,
+    sender_address: AccountAddress,
     receiver_address: AccountAddress,
-    amount_uccd:      u64,
+    amount_uccd: u64,
 }
 
 enum ParsedTransaction {
@@ -76,7 +76,7 @@ enum ParsedTransaction {
 // with empty signature set..?
 #[derive(SerdeSerialize, SerdeDeserialize)]
 struct UnsignedTransaction {
-    header:  TransactionHeader,
+    header: TransactionHeader,
     payload: EncodedPayload,
 }
 
@@ -92,14 +92,15 @@ impl ConstructionApi {
         &self,
         req: ConstructionPreprocessRequest,
     ) -> ApiResult<ConstructionPreprocessResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         let options = match transaction_from_operations(&req.operations)? {
             ParsedTransaction::Transfer(transfer_tx) => ConstructionOptions {
                 sender: transfer_tx.sender_address,
             },
         };
         Ok(ConstructionPreprocessResponse {
-            options:              Some(serde_json::to_value(&options).map_err(|err| {
+            options: Some(serde_json::to_value(&options).map_err(|err| {
                 ApiError::InternalServerError(anyhow::anyhow!(
                     "JSON encoding of field 'options' failed: {}",
                     err
@@ -113,7 +114,8 @@ impl ConstructionApi {
         &self,
         req: ConstructionMetadataRequest,
     ) -> ApiResult<ConstructionMetadataResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         if req.public_keys.is_some() {
             return Err(ApiError::UnsupportedFieldPresent("public_keys".to_string()));
         }
@@ -130,7 +132,7 @@ impl ConstructionApi {
         // TODO Should include account's credential keys? Would enable signature
         // verification later on.
         Ok(ConstructionMetadataResponse {
-            metadata:      serde_json::to_value(MetadataResponseMetadata {
+            metadata: serde_json::to_value(MetadataResponseMetadata {
                 account_nonce: sender_info.account_nonce,
             })
             .unwrap(),
@@ -142,7 +144,8 @@ impl ConstructionApi {
         &self,
         req: ConstructionPayloadsRequest,
     ) -> ApiResult<ConstructionPayloadsResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         if req.public_keys.is_some() {
             return Err(ApiError::UnsupportedFieldPresent("public_keys".to_string()));
         }
@@ -157,10 +160,7 @@ impl ConstructionApi {
                 let to_address = tx.receiver_address;
                 let amount = CCAmount::from_micro_ccd(tx.amount_uccd);
                 let payload = match metadata.memo {
-                    None => Payload::Transfer {
-                        to_address,
-                        amount,
-                    },
+                    None => Payload::Transfer { to_address, amount },
                     Some(memo) => Payload::TransferWithMemo {
                         to_address,
                         amount,
@@ -173,7 +173,7 @@ impl ConstructionApi {
                     TransactionTime::from_seconds(metadata.expiry_unix_millis / 1000),
                     GivenEnergy::Add {
                         num_sigs: metadata.signature_count,
-                        energy:   cost::SIMPLE_TRANSFER,
+                        energy: cost::SIMPLE_TRANSFER,
                     },
                     payload,
                 );
@@ -182,7 +182,7 @@ impl ConstructionApi {
         };
         Ok(ConstructionPayloadsResponse {
             unsigned_transaction: serde_json::to_string(&UnsignedTransaction {
-                header:  builder.header.clone(),
+                header: builder.header.clone(),
                 payload: builder.encoded.clone(),
             })
             .map_err(|err| {
@@ -191,17 +191,14 @@ impl ConstructionApi {
                     err
                 ))
             })?,
-            payloads:             vec![SigningPayload {
-                address:            None, // deprecated
+            payloads: vec![SigningPayload {
+                address: None, // deprecated
                 account_identifier: Some(Box::new(AccountIdentifier::new(
                     account_address.to_string(),
                 ))),
-                hex_bytes:          compute_transaction_sign_hash(
-                    &builder.header,
-                    &builder.encoded,
-                )
-                .to_string(),
-                signature_type:     Some(SignatureType::Ed25519),
+                hex_bytes: compute_transaction_sign_hash(&builder.header, &builder.encoded)
+                    .to_string(),
+                signature_type: Some(SignatureType::Ed25519),
             }],
         })
     }
@@ -210,14 +207,19 @@ impl ConstructionApi {
         &self,
         req: ConstructionParseRequest,
     ) -> ApiResult<ConstructionParseResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
 
         let (header, encoded_payload, signature) = if !req.signed {
             let unsigned_tx = decode_unsigned_transaction(req.transaction.as_str())?;
             (unsigned_tx.header, unsigned_tx.payload, None)
         } else {
             let signed_tx = decode_signed_transaction(req.transaction.as_str())?;
-            (signed_tx.header, signed_tx.payload, Some(signed_tx.signature))
+            (
+                signed_tx.header,
+                signed_tx.payload,
+                Some(signed_tx.signature),
+            )
         };
         let payload = match encoded_payload.decode() {
             Err(_) => return Err(ApiError::InvalidEncodedPayload),
@@ -225,12 +227,7 @@ impl ConstructionApi {
         };
 
         let (operations, memo) = operations_from_transaction(&header, &payload)?;
-        let metadata = memo.map(|m| {
-            serde_json::to_value(MemoMetadata {
-                memo: Some(m),
-            })
-            .unwrap()
-        });
+        let metadata = memo.map(|m| serde_json::to_value(MemoMetadata { memo: Some(m) }).unwrap());
         match signature {
             None => Ok(ConstructionParseResponse {
                 operations,
@@ -256,7 +253,8 @@ impl ConstructionApi {
         &self,
         req: ConstructionCombineRequest,
     ) -> ApiResult<ConstructionCombineResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         let unsigned_tx = decode_unsigned_transaction(req.unsigned_transaction.as_str())?;
         let mut signatures: BTreeMap<
             CredentialIndex,
@@ -313,17 +311,16 @@ impl ConstructionApi {
             };
 
             let cred_signatures = signatures.entry(cred_idx).or_default();
-            cred_signatures.insert(key_idx, concordium_rust_sdk::common::types::Signature {
-                sig,
-            });
+            cred_signatures.insert(
+                key_idx,
+                concordium_rust_sdk::common::types::Signature { sig },
+            );
         }
 
         let tx = serde_json::to_string(&AccountTransaction {
-            signature: TransactionSignature {
-                signatures,
-            },
-            header:    unsigned_tx.header,
-            payload:   unsigned_tx.payload.encode(),
+            signature: TransactionSignature { signatures },
+            header: unsigned_tx.header,
+            payload: unsigned_tx.payload.encode(),
         })
         .map_err(|err| {
             ApiError::InternalServerError(anyhow::anyhow!(
@@ -340,25 +337,31 @@ impl ConstructionApi {
         &self,
         req: ConstructionSubmitRequest,
     ) -> ApiResult<TransactionIdentifierResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
 
         let block_item = parse_block_item(req.signed_transaction.as_str())?;
-        let transaction_hash =
-            self.query_helper.client.clone().send_block_item(&block_item).await?;
-        Ok(TransactionIdentifierResponse::new(TransactionIdentifier::new(
-            transaction_hash.to_string(),
-        )))
+        let transaction_hash = self
+            .query_helper
+            .client
+            .clone()
+            .send_block_item(&block_item)
+            .await?;
+        Ok(TransactionIdentifierResponse::new(
+            TransactionIdentifier::new(transaction_hash.to_string()),
+        ))
     }
 
     pub async fn hash(
         &self,
         req: ConstructionHashRequest,
     ) -> ApiResult<TransactionIdentifierResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         let block_item = parse_block_item(req.signed_transaction.as_str())?;
-        Ok(TransactionIdentifierResponse::new(TransactionIdentifier::new(
-            block_item.hash().to_string(),
-        )))
+        Ok(TransactionIdentifierResponse::new(
+            TransactionIdentifier::new(block_item.hash().to_string()),
+        ))
     }
 }
 
@@ -374,7 +377,9 @@ fn parse_operation(op: &Operation) -> ApiResult<ParsedOperation> {
                 None => Err(ApiError::RequiredFieldMissing("account".to_string())),
                 Some(a) => match account_address_from_identifier(a.deref())? {
                     Address::Account(addr) => Ok(addr),
-                    _ => Err(ApiError::InvalidAccountAddress(a.deref().address.to_string())),
+                    _ => Err(ApiError::InvalidAccountAddress(
+                        a.deref().address.to_string(),
+                    )),
                 },
             }?;
             Ok(ParsedOperation::Transfer(ParsedTransferOperation {
@@ -421,9 +426,9 @@ fn parse_transfer_transaction(
         ));
     }
     Ok(ParsedTransaction::Transfer(ParsedTransferTransaction {
-        sender_address:   sender.account_address,
+        sender_address: sender.account_address,
         receiver_address: receiver.account_address,
-        amount_uccd:      receiver.amount_uccd as u64, // casting from positive i64 to u64
+        amount_uccd: receiver.amount_uccd as u64, // casting from positive i64 to u64
     }))
 }
 
@@ -432,7 +437,9 @@ fn transaction_from_operations(ops: &[Operation]) -> ApiResult<ParsedTransaction
 }
 
 fn parse_block_item(signed_transaction: &str) -> ApiResult<BlockItem<EncodedPayload>> {
-    Ok(BlockItem::AccountTransaction(decode_signed_transaction(signed_transaction)?))
+    Ok(BlockItem::AccountTransaction(decode_signed_transaction(
+        signed_transaction,
+    )?))
 }
 
 fn decode_unsigned_transaction(unsigned_transaction: &str) -> ApiResult<UnsignedTransaction> {
@@ -452,10 +459,7 @@ fn operations_from_transaction(
     payload: &Payload,
 ) -> ApiResult<(Vec<Operation>, Option<Memo>)> {
     match payload {
-        Payload::Transfer {
-            to_address,
-            amount,
-        } => operations_from_transfer_transaction(
+        Payload::Transfer { to_address, amount } => operations_from_transfer_transaction(
             &header.sender,
             to_address,
             amount.micro_ccd() as i128,
@@ -471,9 +475,9 @@ fn operations_from_transaction(
             amount.micro_ccd() as i128,
             Some(memo.clone()),
         ),
-        _ => Err(ApiError::UnsupportedOperationType(transaction_type_to_operation_type(Some(
-            payload.transaction_type(),
-        )))),
+        _ => Err(ApiError::UnsupportedOperationType(
+            transaction_type_to_operation_type(Some(payload.transaction_type())),
+        )),
     }
 }
 
@@ -487,27 +491,23 @@ fn operations_from_transfer_transaction(
         vec![
             Operation {
                 operation_identifier: Box::new(OperationIdentifier::new(0)),
-                related_operations:   None,
-                _type:                OPERATION_TYPE_TRANSFER.to_string(),
-                status:               None,
-                account:              Some(Box::new(AccountIdentifier::new(
-                    sender_addr.to_string(),
-                ))),
-                amount:               Some(Box::new(amount_from_uccd(-amount_uccd))),
-                coin_change:          None,
-                metadata:             None,
+                related_operations: None,
+                _type: OPERATION_TYPE_TRANSFER.to_string(),
+                status: None,
+                account: Some(Box::new(AccountIdentifier::new(sender_addr.to_string()))),
+                amount: Some(Box::new(amount_from_uccd(-amount_uccd))),
+                coin_change: None,
+                metadata: None,
             },
             Operation {
                 operation_identifier: Box::new(OperationIdentifier::new(1)),
-                related_operations:   None,
-                _type:                OPERATION_TYPE_TRANSFER.to_string(),
-                status:               None,
-                account:              Some(Box::new(AccountIdentifier::new(
-                    receiver_addr.to_string(),
-                ))),
-                amount:               Some(Box::new(amount_from_uccd(amount_uccd))),
-                coin_change:          None,
-                metadata:             None,
+                related_operations: None,
+                _type: OPERATION_TYPE_TRANSFER.to_string(),
+                status: None,
+                account: Some(Box::new(AccountIdentifier::new(receiver_addr.to_string()))),
+                amount: Some(Box::new(amount_from_uccd(amount_uccd))),
+                coin_change: None,
+                metadata: None,
             },
         ],
         memo,

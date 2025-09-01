@@ -11,5 +11,7 @@ pub fn amount_from_uccd(v: i128) -> Amount {
 
 pub fn uccd_from_amount(v: &Amount) -> ApiResult<i128> {
     validate_currency(v.currency.deref())?;
-    v.value.parse().map_err(|_| ApiError::InvalidAmount(v.value.clone()))
+    v.value
+        .parse()
+        .map_err(|_| ApiError::InvalidAmount(v.value.clone()))
 }

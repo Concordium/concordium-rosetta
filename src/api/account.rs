@@ -10,7 +10,7 @@ use std::ops::Deref;
 pub struct AccountApi {
     account_validator: AccountValidator,
     network_validator: NetworkValidator,
-    query_helper:      QueryHelper,
+    query_helper: QueryHelper,
 }
 
 impl AccountApi {
@@ -30,7 +30,8 @@ impl AccountApi {
         &self,
         req: AccountBalanceRequest,
     ) -> ApiResult<AccountBalanceResponse> {
-        self.network_validator.validate_network_identifier(*req.network_identifier)?;
+        self.network_validator
+            .validate_network_identifier(*req.network_identifier)?;
         self.account_validator.validate_currencies(req.currencies)?;
         let (block_info, amount) = self
             .query_helper

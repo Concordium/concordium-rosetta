@@ -32,14 +32,14 @@ struct Args {
                 'mainnet'. Only requests with network identifier using this value will be \
                 accepted (see docs for details)."
     )]
-    network:   String,
+    network: String,
     #[clap(
         long = "port",
         env = "CONCORDIUM_ROSETTA_PORT",
         help = "The port that HTTP requests are to be served on.",
         default_value = "8080"
     )]
-    port:      u16,
+    port: u16,
     #[clap(
         long = "grpc-host",
         env = "CONCORDIUM_ROSETTA_GRPC_HOST",
@@ -75,21 +75,29 @@ async fn main() -> Result<()> {
 
     // Set up handlers.
     let network_validator = NetworkValidator::new(NetworkIdentifier {
-        blockchain:             "concordium".to_string(),
-        network:                args.network,
+        blockchain: "concordium".to_string(),
+        network: args.network,
         sub_network_identifier: None,
     });
     let account_validator = AccountValidator {};
     let query_helper = QueryHelper::new(client);
     let network_api = NetworkApi::new(network_validator.clone(), query_helper.clone());
-    let account_api =
-        AccountApi::new(account_validator.clone(), network_validator.clone(), query_helper.clone());
+    let account_api = AccountApi::new(
+        account_validator.clone(),
+        network_validator.clone(),
+        query_helper.clone(),
+    );
     let block_api = BlockApi::new(network_validator.clone(), query_helper.clone());
     let construction_api = ConstructionApi::new(network_validator.clone(), query_helper.clone());
 
     // Configure and start web server.
-    warp::serve(route::root(network_api, account_api, block_api, construction_api))
-        .run(([0, 0, 0, 0], args.port))
-        .await;
+    warp::serve(route::root(
+        network_api,
+        account_api,
+        block_api,
+        construction_api,
+    ))
+    .run(([0, 0, 0, 0], args.port))
+    .await;
     Ok(())
 }

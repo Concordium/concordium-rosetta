@@ -19,35 +19,42 @@ use transfer_client::*;
     version
 )]
 struct Args {
-    #[clap(long = "url", help = "URL of Rosetta server.", default_value = "http://localhost:8080")]
-    url:                 String,
+    #[clap(
+        long = "url",
+        help = "URL of Rosetta server.",
+        default_value = "http://localhost:8080"
+    )]
+    url: String,
     #[clap(
         long = "network",
         help = "Network name. Used in network identifier.",
         default_value = "testnet"
     )]
-    network:             String,
+    network: String,
     #[clap(
         long = "sender-account-file",
         help = "Path of file containing the address and keys for the sender account."
     )]
     sender_account_file: PathBuf,
-    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_addr:       String,
+    #[clap(
+        long = "receiver",
+        help = "Address of the account receiving the transfer."
+    )]
+    receiver_addr: String,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:              ConcordiumAmount,
+    amount: ConcordiumAmount,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",
         group = "memo"
     )]
-    memo_hex:            Option<String>,
+    memo_hex: Option<String>,
     #[clap(
         long = "memo-string",
         help = "Memo string to attach (CBOR-encoded) to the transaction.",
         group = "memo"
     )]
-    memo_str:            Option<String>,
+    memo_str: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -88,8 +95,12 @@ fn main() -> Result<()> {
     );
 
     // Perform transfer.
-    let preprocess_response =
-        call_preprocess(client.clone(), &base_url, network_id.clone(), operations.clone())?;
+    let preprocess_response = call_preprocess(
+        client.clone(),
+        &base_url,
+        network_id.clone(),
+        operations.clone(),
+    )?;
     let metadata_response = call_metadata(
         client.clone(),
         &base_url,
@@ -110,7 +121,10 @@ fn main() -> Result<()> {
         operations.clone(),
         payload_metadata,
     )?;
-    println!("unsigned transaction: {}", &payloads_response.unsigned_transaction);
+    println!(
+        "unsigned transaction: {}",
+        &payloads_response.unsigned_transaction
+    );
     let parse_unsigned_response = call_parse(
         client.clone(),
         &base_url,
@@ -156,9 +170,16 @@ fn main() -> Result<()> {
         return Err(anyhow!("failed comparison of signed parse"));
     }
 
-    let submit_response =
-        call_submit(client, &base_url, network_id, combine_response.signed_transaction)?;
-    println!("submit done: hash={}", submit_response.transaction_identifier.hash);
+    let submit_response = call_submit(
+        client,
+        &base_url,
+        network_id,
+        combine_response.signed_transaction,
+    )?;
+    println!(
+        "submit done: hash={}",
+        submit_response.transaction_identifier.hash
+    );
     Ok(())
 }
 
@@ -291,52 +312,52 @@ fn test_transfer_operations(
     amount: i64,
 ) -> Vec<Operation> {
     let currency = Box::new(Currency {
-        symbol:   "CCD".to_string(),
+        symbol: "CCD".to_string(),
         decimals: 6,
         metadata: None,
     });
     vec![
         Operation {
             operation_identifier: Box::new(OperationIdentifier {
-                index:         0,
+                index: 0,
                 network_index: None,
             }),
-            related_operations:   None,
-            _type:                "transfer".to_string(),
-            status:               None,
-            account:              Some(Box::new(AccountIdentifier {
-                address:     sender_addr,
+            related_operations: None,
+            _type: "transfer".to_string(),
+            status: None,
+            account: Some(Box::new(AccountIdentifier {
+                address: sender_addr,
                 sub_account: None,
-                metadata:    None,
+                metadata: None,
             })),
-            amount:               Some(Box::new(Amount {
-                value:    (-amount).to_string(),
+            amount: Some(Box::new(Amount {
+                value: (-amount).to_string(),
                 currency: currency.clone(),
                 metadata: None,
             })),
-            coin_change:          None,
-            metadata:             None,
+            coin_change: None,
+            metadata: None,
         },
         Operation {
             operation_identifier: Box::new(OperationIdentifier {
-                index:         1,
+                index: 1,
                 network_index: None,
             }),
-            related_operations:   None,
-            _type:                "transfer".to_string(),
-            status:               None,
-            account:              Some(Box::new(AccountIdentifier {
-                address:     receiver_addr,
+            related_operations: None,
+            _type: "transfer".to_string(),
+            status: None,
+            account: Some(Box::new(AccountIdentifier {
+                address: receiver_addr,
                 sub_account: None,
-                metadata:    None,
+                metadata: None,
             })),
-            amount:               Some(Box::new(Amount {
+            amount: Some(Box::new(Amount {
                 value: amount.to_string(),
                 currency,
                 metadata: None,
             })),
-            coin_change:          None,
-            metadata:             None,
+            coin_change: None,
+            metadata: None,
         },
     ]
 }

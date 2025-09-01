@@ -11,7 +11,7 @@ use crate::version::*;
 
 #[derive(Clone)]
 pub struct NetworkApi {
-    validator:    NetworkValidator,
+    validator: NetworkValidator,
     query_helper: QueryHelper,
 }
 
@@ -30,7 +30,8 @@ impl NetworkApi {
     }
 
     pub async fn network_options(&self, req: NetworkRequest) -> ApiResult<NetworkOptionsResponse> {
-        self.validator.validate_network_identifier(*req.network_identifier)?;
+        self.validator
+            .validate_network_identifier(*req.network_identifier)?;
         let node_version = self.query_helper.query_node_version().await?;
         Ok(NetworkOptionsResponse {
             version: Box::new(Version {
@@ -39,18 +40,18 @@ impl NetworkApi {
                 middleware_version: Some(SERVER_VERSION.to_string()),
                 metadata: None,
             }),
-            allow:   Box::new(Allow {
-                operation_statuses:        vec![
+            allow: Box::new(Allow {
+                operation_statuses: vec![
                     OperationStatus {
-                        status:     OPERATION_STATUS_OK.to_string(),
+                        status: OPERATION_STATUS_OK.to_string(),
                         successful: true,
                     },
                     OperationStatus {
-                        status:     OPERATION_STATUS_FAIL.to_string(),
+                        status: OPERATION_STATUS_FAIL.to_string(),
                         successful: false,
                     },
                 ],
-                operation_types:           vec![
+                operation_types: vec![
                     OPERATION_TYPE_UNKNOWN.to_string(),
                     OPERATION_TYPE_FEE.to_string(),
                     OPERATION_TYPE_MINT_BAKING_REWARD.to_string(),
@@ -87,7 +88,7 @@ impl NetworkApi {
                     OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION.to_string(),
                     OPERATION_TYPE_VALIDATOR_SUSPENDED.to_string(),
                 ],
-                errors:                    vec![
+                errors: vec![
                     handler_error::invalid_input_unsupported_field_error(None),
                     handler_error::invalid_input_missing_field_error(None),
                     handler_error::invalid_input_invalid_value_or_identifier_error(
@@ -102,28 +103,35 @@ impl NetworkApi {
                     handler_error::proxy_client_query_error(None),
                 ],
                 historical_balance_lookup: true,
-                timestamp_start_index:     None, /* not populated as the genesis block has a
-                                                  * valid time stamp */
-                call_methods:              vec![], // Call API is not implemented
-                balance_exemptions:        vec![],
-                mempool_coins:             false, // mempool is not available
-                block_hash_case:           Some(Case::Null), // case insensitive
-                transaction_hash_case:     Some(Case::Null), // case insensitive
+                timestamp_start_index: None, /* not populated as the genesis block has a
+                                              * valid time stamp */
+                call_methods: vec![], // Call API is not implemented
+                balance_exemptions: vec![],
+                mempool_coins: false,              // mempool is not available
+                block_hash_case: Some(Case::Null), // case insensitive
+                transaction_hash_case: Some(Case::Null), // case insensitive
             }),
         })
     }
 
     pub async fn network_status(&self, req: NetworkRequest) -> ApiResult<NetworkStatusResponse> {
-        self.validator.validate_network_identifier(*req.network_identifier)?;
+        self.validator
+            .validate_network_identifier(*req.network_identifier)?;
         let consensus_status = self.query_helper.query_consensus_info().await?;
-        let peer_list = self.query_helper.client.clone().get_peers_info().await?.peers;
+        let peer_list = self
+            .query_helper
+            .client
+            .clone()
+            .get_peers_info()
+            .await?
+            .peers;
         Ok(NetworkStatusResponse {
             // Defining "current" block as last finalized block.
             current_block_identifier: Box::new(BlockIdentifier {
                 index: consensus_status.last_finalized_block_height.height as i64,
-                hash:  consensus_status.last_finalized_block.to_string(),
+                hash: consensus_status.last_finalized_block.to_string(),
             }),
-            current_block_timestamp:  self
+            current_block_timestamp: self
                 .query_helper
                 .query_block_info_by_hash(&consensus_status.last_finalized_block)
                 .await?
@@ -131,17 +139,17 @@ impl NetworkApi {
                 .timestamp_millis(),
             genesis_block_identifier: Box::new(BlockIdentifier {
                 index: 0,
-                hash:  consensus_status.genesis_block.to_string(),
+                hash: consensus_status.genesis_block.to_string(),
             }),
-            oldest_block_identifier:  None, /* not relevant as the implementation doesn't prune
-                                             * blocks */
-            sync_status:              None, /* the connected node's sync status is not easily
-                                             * available and thus currently not exposed here */
-            peers:                    Some(
+            oldest_block_identifier: None, /* not relevant as the implementation doesn't prune
+                                            * blocks */
+            sync_status: None, /* the connected node's sync status is not easily
+                                * available and thus currently not exposed here */
+            peers: Some(
                 peer_list
                     .iter()
                     .map(|p| Peer {
-                        peer_id:  p.peer_id.0.clone(),
+                        peer_id: p.peer_id.0.clone(),
                         metadata: Some(json!({ "ip": p.addr.ip(), "port": p.addr.port() })),
                     })
                     .collect(),

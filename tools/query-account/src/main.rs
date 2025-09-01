@@ -11,8 +11,12 @@ use std::{thread::sleep, time::Duration};
     version
 )]
 struct Args {
-    #[clap(long = "url", help = "URL of Rosetta server.", default_value = "http://localhost:8080")]
-    url:     String,
+    #[clap(
+        long = "url",
+        help = "URL of Rosetta server.",
+        default_value = "http://localhost:8080"
+    )]
+    url: String,
     #[clap(
         long = "network",
         help = "Network name. Used in network identifier.",
@@ -80,7 +84,10 @@ fn traverse_block_range(
     address: String,
     mut computed_balance: i128,
 ) -> Result<i128> {
-    eprintln!("Querying blocks from height {} to {}...", from_block_height, to_block_height);
+    eprintln!(
+        "Querying blocks from height {} to {}...",
+        from_block_height, to_block_height
+    );
     for block_height in from_block_height..=to_block_height {
         if block_height % 100 == 0 {
             eprintln!("Querying block at height {}...", block_height);
@@ -148,7 +155,7 @@ fn call_rosetta_status(
         .post(url)
         .json(&NetworkRequest {
             network_identifier: Box::new(network_id),
-            metadata:           None,
+            metadata: None,
         })
         .send()?
         .json()
@@ -166,9 +173,9 @@ fn call_rosetta_block(
         .post(url)
         .json(&BlockRequest {
             network_identifier: Box::new(network_id),
-            block_identifier:   Box::new(PartialBlockIdentifier {
+            block_identifier: Box::new(PartialBlockIdentifier {
                 index: Some(block_height),
-                hash:  None,
+                hash: None,
             }),
         })
         .send()?
@@ -188,12 +195,12 @@ fn call_rosetta_balance(
         .post(url)
         .json(&AccountBalanceRequest {
             network_identifier: Box::new(network_id),
-            block_identifier:   Some(Box::new(PartialBlockIdentifier {
+            block_identifier: Some(Box::new(PartialBlockIdentifier {
                 index: Some(block_height),
-                hash:  None,
+                hash: None,
             })),
             account_identifier: Box::new(AccountIdentifier::new(address)),
-            currencies:         None,
+            currencies: None,
         })
         .send()?
         .json()

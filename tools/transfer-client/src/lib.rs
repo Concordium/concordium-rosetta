@@ -15,10 +15,10 @@ pub struct Metadata {
 
 #[derive(Serialize)]
 pub struct Payload {
-    pub account_nonce:      u64,
-    pub signature_count:    u32,
+    pub account_nonce: u64,
+    pub signature_count: u32,
     pub expiry_unix_millis: u64,
-    pub memo:               Option<Memo>,
+    pub memo: Option<Memo>,
 }
 
 type SignatureMap = BTreeMap<CredentialIndex, BTreeMap<KeyIndex, Signature>>;
@@ -47,15 +47,18 @@ pub fn sign_payload(payload: &SigningPayload, keys: &AccountKeys) -> Result<Sign
                             u8::from(*key_idx),
                             hex::encode(sig)
                         );
-                        (*key_idx, Signature {
-                            signing_payload: Box::new(payload.clone()),
-                            public_key:      Box::new(PublicKey {
-                                hex_bytes:  public_key_hex,
-                                curve_type: CurveType::Edwards25519,
-                            }),
-                            signature_type:  SignatureType::Ed25519,
-                            hex_bytes:       sig_hex,
-                        })
+                        (
+                            *key_idx,
+                            Signature {
+                                signing_payload: Box::new(payload.clone()),
+                                public_key: Box::new(PublicKey {
+                                    hex_bytes: public_key_hex,
+                                    curve_type: CurveType::Edwards25519,
+                                }),
+                                signature_type: SignatureType::Ed25519,
+                                hex_bytes: sig_hex,
+                            },
+                        )
                     })
                     .collect(),
             )
@@ -72,6 +75,10 @@ pub fn sign_hash(keys: &AccountKeys, hash: &str) -> Result<TransactionSignature>
 pub fn signature_maps_to_signatures(signatures: Vec<SignatureMap>) -> Vec<Signature> {
     signatures
         .into_iter()
-        .flat_map(|s| s.values().flat_map(|x| x.values().cloned()).collect::<Vec<Signature>>())
+        .flat_map(|s| {
+            s.values()
+                .flat_map(|x| x.values().cloned())
+                .collect::<Vec<Signature>>()
+        })
         .collect()
 }

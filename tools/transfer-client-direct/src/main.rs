@@ -27,34 +27,37 @@ struct Args {
         help = "Hostname or IP of the node's gRPC endpoint.",
         default_value = "localhost"
     )]
-    grpc_host:           String,
+    grpc_host: String,
     #[clap(
         long = "grpc-port",
         help = "Port of the node's gRPC endpoint.",
         default_value = "10000"
     )]
-    grpc_port:           u16,
+    grpc_port: u16,
     #[clap(
         long = "sender-account-file",
         help = "Path of file containing the address and keys for the sender account."
     )]
     sender_account_file: PathBuf,
-    #[clap(long = "receiver", help = "Address of the account receiving the transfer.")]
-    receiver_address:    AccountAddress,
+    #[clap(
+        long = "receiver",
+        help = "Address of the account receiving the transfer."
+    )]
+    receiver_address: AccountAddress,
     #[clap(long = "amount", help = "Amount of CCD to transfer.")]
-    amount:              Amount,
+    amount: Amount,
     #[clap(
         long = "memo-hex",
         help = "Hex-encoded memo to attach to the transaction.",
         group = "memo"
     )]
-    memo_hex:            Option<String>,
+    memo_hex: Option<String>,
     #[clap(
         long = "memo-string",
         help = "Memo string to attach (CBOR-encoded) to the transaction.",
         group = "memo"
     )]
-    memo_str:            Option<String>,
+    memo_str: Option<String>,
 }
 
 #[tokio::main]
@@ -84,13 +87,19 @@ async fn main() -> Result<()> {
     let sender_keys = sender_account.keys;
 
     // Configure client.
-    let client = Client::new(Endpoint::from_shared(format!("http://{}:{}", grpc_host, grpc_port))?)
-        .await
-        .context("Cannot connect to the node.")?;
+    let client = Client::new(Endpoint::from_shared(format!(
+        "http://{}:{}",
+        grpc_host, grpc_port
+    ))?)
+    .await
+    .context("Cannot connect to the node.")?;
 
     // Configure and send transfer.
-    let consensus_info =
-        client.clone().get_consensus_info().await.context("cannot resolve latest block")?;
+    let consensus_info = client
+        .clone()
+        .get_consensus_info()
+        .await
+        .context("cannot resolve latest block")?;
     let sender_info = client
         .clone()
         .get_account_info(
@@ -101,10 +110,7 @@ async fn main() -> Result<()> {
         .context("cannot resolve next nonce of sender account")?;
 
     let payload = match memo {
-        None => Payload::Transfer {
-            to_address,
-            amount,
-        },
+        None => Payload::Transfer { to_address, amount },
         Some(m) => Payload::TransferWithMemo {
             to_address,
             amount,
@@ -117,7 +123,7 @@ async fn main() -> Result<()> {
         TransactionTime::from_seconds(Utc::now().add(Duration::hours(2)).timestamp_millis() as u64), /* TODO Make configurable. */
         GivenEnergy::Add {
             num_sigs: sender_keys.num_keys(),
-            energy:   cost::SIMPLE_TRANSFER,
+            energy: cost::SIMPLE_TRANSFER,
         },
         payload,
     );

@@ -3,16 +3,12 @@ use crate::api::{
     transaction::*,
 };
 use concordium_rust_sdk::{
-    common::types::Amount,
-    endpoints::{BlocksAtHeightInput, QueryError},
-    id::types::AccountAddress,
-    types::{
+    common::types::Amount, endpoints::{BlocksAtHeightInput, QueryError}, id::types::AccountAddress, protocol_level_tokens::{AccountToken}, types::{
         hashes::{BlockHash, TransactionHash},
         queries::{BlockInfo, ConsensusInfo},
         smart_contracts::InstanceInfo,
         *,
-    },
-    v2::{self, Client, IntoBlockIdentifier, RPCError},
+    }, v2::{self, Client, IntoBlockIdentifier, RPCError}
 };
 use futures::{Stream, TryStreamExt};
 use rosetta::models::{AccountIdentifier, PartialBlockIdentifier};
@@ -32,11 +28,11 @@ impl QueryHelper {
         &self,
         block_identifier: Option<Box<PartialBlockIdentifier>>,
         account_identifier: &AccountIdentifier,
-    ) -> ApiResult<(BlockInfo, Amount)> {
+    ) -> ApiResult<(BlockInfo, (Amount, Vec<AccountToken>))> {
         let block_info = self.query_block_info(block_identifier).await?;
         let block_hash = block_info.block_hash;
         let address = account_address_from_identifier(account_identifier)?;
-        let amount = match address {
+        let account_balance_and_plt_tokens = match address {
             Address::Account(addr) => {
                 let acc_id = v2::AccountIdentifier::Address(addr);
                 match self
@@ -45,8 +41,14 @@ impl QueryHelper {
                     .get_account_info(&acc_id, &block_hash)
                     .await
                 {
-                    Ok(i) => i.response.account_amount,
-                    Err(err) => handle_query_error(err)?,
+                    // TODO - rob, when querying the account balances, we get back a response containing: account_amount and tokens
+                    // we will need to build this into an object that makes sense i think, so the signature of this function should be updated to return
+                    // perhaps a Vec of Amounts somehow
+                    Ok(i) => (i.response.account_amount, i.response.tokens),
+                    Err(err) => {
+                        let (amount, tokens) = handle_query_error_amounts_including_plt_tokens(err)?;
+                        (amount, tokens)
+                    },
                 }
             }
             Address::Contract(addr) => {
@@ -57,20 +59,20 @@ impl QueryHelper {
                     .await
                 {
                     Ok(i) => match i.response {
-                        InstanceInfo::V0 { amount, .. } => amount,
-                        InstanceInfo::V1 { amount, .. } => amount,
+                        InstanceInfo::V0 { amount, .. } => (amount, vec![]), // TODO - rob verify this: i believe here we wont handle smart contract amounts for PLT just yet?
+                        InstanceInfo::V1 { amount, .. } => (amount, vec![]) // TODO - rob same as above
                     },
-                    Err(err) => handle_query_error(err)?,
+                    Err(err) => handle_query_error_amounts_including_plt_tokens(err)?,
                 }
             }
             Address::BakingRewardAccount => match self.query_tokenomics_info(&block_hash).await? {
-                RewardsOverview::V0 { data } => data.baking_reward_account,
-                RewardsOverview::V1 { common, .. } => common.baking_reward_account,
+                RewardsOverview::V0 { data } => (data.baking_reward_account, vec![]),
+                RewardsOverview::V1 { common, .. } => (common.baking_reward_account, vec![]),
             },
             Address::FinalizationRewardAccount => {
                 match self.query_tokenomics_info(&block_hash).await? {
-                    RewardsOverview::V0 { data } => data.finalization_reward_account,
-                    RewardsOverview::V1 { common, .. } => common.finalization_reward_account,
+                    RewardsOverview::V0 { data } => (data.finalization_reward_account, vec![]),
+                    RewardsOverview::V1 { common, .. } => (common.finalization_reward_account, vec![]),
                 }
             }
             Address::FoundationAccrueAccount => {
@@ -83,16 +85,19 @@ impl QueryHelper {
                     RewardsOverview::V1 {
                         foundation_transaction_rewards,
                         ..
-                    } => foundation_transaction_rewards,
+                    } => (foundation_transaction_rewards,vec![]),
                 }
             }
             Address::PoolAccrueAccount(baker_id) => match baker_id {
                 Some(id) => match self.client.clone().get_pool_info(&block_hash, id).await {
                     Ok(i) => match i.response.current_payday_status {
-                        None => Amount::from_ccd(0),
-                        Some(s) => s.transaction_fees_earned,
+                        None => (Amount::from_ccd(0), vec![]),
+                        Some(s) => (s.transaction_fees_earned, vec![]),
                     },
-                    Err(err) => handle_query_error(err)?,
+                    Err(err) => {
+                        let amount = handle_query_error(err)?;
+                        (amount, vec![])
+                    },
                 },
                 None => match self
                     .client
@@ -100,12 +105,12 @@ impl QueryHelper {
                     .get_passive_delegation_info(&block_hash)
                     .await
                 {
-                    Ok(i) => i.response.current_payday_transaction_fees_earned,
-                    Err(err) => handle_query_error(err)?,
+                    Ok(i) => (i.response.current_payday_transaction_fees_earned, vec![]),
+                    Err(err) => handle_query_error_amounts_including_plt_tokens(err)?,
                 },
             },
         };
-        Ok((block_info, amount))
+        Ok((block_info, account_balance_and_plt_tokens))
     }
 
     pub async fn query_consensus_info(&self) -> ApiResult<ConsensusInfo> {
@@ -278,6 +283,17 @@ pub fn handle_query_error(err: QueryError) -> ApiResult<Amount> {
         match err {
             QueryError::RPCError(err) => Err(err.into()),
             QueryError::NotFound => Ok(Amount::from_micro_ccd(0)),
+        }
+    }
+}
+
+pub fn handle_query_error_amounts_including_plt_tokens(err: QueryError) -> ApiResult<(Amount, Vec<AccountToken>)> {
+    if QueryError::is_not_found(&err) {
+        Ok((Amount::from_micro_ccd(0), vec![]))
+    } else {
+        match err {
+            QueryError::RPCError(err) => Err(err.into()),
+            QueryError::NotFound => Ok((Amount::from_micro_ccd(0), vec![])),
         }
     }
 }

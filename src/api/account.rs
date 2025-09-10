@@ -1,5 +1,5 @@
 use crate::{
-    api::{amount::amount_from_uccd, error::ApiResult},
+    api::{amount::{amount_from_uccd, amounts_from_plt_tokens}, error::ApiResult},
     validate::network::NetworkValidator,
     AccountValidator, QueryHelper,
 };
@@ -37,12 +37,19 @@ impl AccountApi {
             .query_helper
             .query_account_balance(req.block_identifier, req.account_identifier.deref())
             .await?;
+
+        let mut balances_result = vec![amount_from_uccd(amount.0.micro_ccd as i128)];
+
+        amounts_from_plt_tokens(amount.1).iter().for_each(|plt_amount| {
+            balances_result.push(plt_amount.clone());
+        });
+
         Ok(AccountBalanceResponse::new(
             BlockIdentifier::new(
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            vec![amount_from_uccd(amount.micro_ccd() as i128)],
+            balances_result
         ))
     }
 }

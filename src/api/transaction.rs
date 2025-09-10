@@ -6,11 +6,7 @@ use concordium_rust_sdk::{
     common::{
         types::{Amount, Timestamp, TransactionTime},
         SerdeSerialize,
-    },
-    constants::EncryptedAmountsCurve,
-    encrypted_transfers::types::*,
-    id::types::AccountAddress,
-    types::*,
+    }, constants::EncryptedAmountsCurve, encrypted_transfers::types::*, id::types::AccountAddress, protocol_level_tokens::TokenEvent, types::*
 };
 use rosetta::models::{
     AccountIdentifier, Operation, OperationIdentifier, Transaction, TransactionIdentifier,
@@ -214,6 +210,18 @@ struct ChainUpdateMetadata {
     payload: UpdatePayload,
 }
 
+#[derive(SerdeSerialize)]
+struct TokenCreateMetadata {
+    create_plt: CreatePlt,
+    events: Vec<TokenEvent>,
+}
+
+#[derive(SerdeSerialize)]
+struct TokenUpdateMetadata {
+    events: Vec<TokenEvent>,
+}
+
+
 pub const ACCOUNT_REWARD_BAKING: &str = "baking_reward_account";
 pub const ACCOUNT_REWARD_FINALIZATION: &str = "finalization_reward_account";
 pub const ACCOUNT_ACCRUE_FOUNDATION: &str = "foundation_accrue_account";
@@ -261,6 +269,7 @@ pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
 pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 pub const OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION: &str = "validator_primed_for_suspension";
 pub const OPERATION_TYPE_VALIDATOR_SUSPENDED: &str = "validator_suspended";
+pub const OPERATION_TYPE_TOKEN_UPDATE: &str = "token_update";
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
@@ -300,6 +309,10 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             operations_and_metadata_from_chain_update_details(details),
             None,
         ),
+        BlockItemSummaryDetails::TokenCreationDetails(details) => (
+            operations_and_metadata_from_token_creation_details(details),
+            None,
+        ),
     };
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
@@ -334,6 +347,19 @@ fn operations_and_metadata_from_account_transaction_details(
                     .unwrap(),
                 ),
             }],
+            None,
+        ),
+        // TODO - rob come back here to check
+        AccountTransactionEffects::TokenUpdate { events } => (
+            // TODO - rob need to figure out is this what we need
+            vec![normal_account_transaction_operation(
+                0,
+                details,
+                None,
+                Some(&TokenUpdateMetadata {
+                    events: events.clone(),
+                }),
+            )],
             None,
         ),
         AccountTransactionEffects::ModuleDeployed { module_ref } => (
@@ -891,6 +917,31 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
     }]
 }
 
+
+// TODO - Rob come back to review if this is correct
+fn operations_and_metadata_from_token_creation_details(details: &TokenCreationDetails) -> Vec<Operation> {
+     vec![Operation {
+        operation_identifier: Box::new(OperationIdentifier {
+            index: 0,
+            network_index: None,
+        }),
+        related_operations: None,
+        _type: OPERATION_TYPE_TOKEN_UPDATE.to_string(),
+        status: Some(OPERATION_STATUS_OK.to_string()),
+        account: None,
+        amount: None,
+        coin_change: None,
+        metadata: Some(
+            serde_json::to_value(&TokenCreateMetadata {
+                // TODO - Rob check here is this what we want?
+                create_plt: details.create_plt.clone(),
+                events: details.events.clone(),
+            })
+            .unwrap(),
+        ),
+    }]
+}
+
 fn contract_update_operations(
     details: &AccountTransactionDetails,
     effects: &[ContractTraceElement],
@@ -1097,6 +1148,7 @@ pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> Str
             TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,
             TransactionType::ConfigureBaker => OPERATION_TYPE_CONFIGURE_BAKER,
             TransactionType::ConfigureDelegation => OPERATION_TYPE_CONFIGURE_DELEGATION,
+            TransactionType::TokenUpdate => OPERATION_TYPE_TOKEN_UPDATE,
         },
     };
     res.to_string()

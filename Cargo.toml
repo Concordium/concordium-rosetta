@@ -8,7 +8,7 @@ rust-version = "1.73"
 
 [dependencies.concordium-rust-sdk]
 path = "./concordium-rust-sdk"
-version = "*"
+version = "7.0.0-alpha.4"
 
 [dependencies.rosetta]
 path = "./rosetta"

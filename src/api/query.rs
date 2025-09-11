@@ -19,6 +19,18 @@ pub struct QueryHelper {
     pub client: Client,
 }
 
+/// Account Balance Response Structure. It will contain an `amount` for the micro ccd of the account, and `tokens` which is a list of the Account tokens
+pub struct AccountBalance {
+    pub amount: Amount,
+    pub tokens: Vec<AccountToken>
+}
+
+impl Default for AccountBalance {
+    fn default() -> Self {
+        AccountBalance { amount: Amount::default(), tokens: vec![] } 
+    }
+}
+
 impl QueryHelper {
     pub fn new(client: Client) -> Self {
         Self { client }
@@ -28,7 +40,7 @@ impl QueryHelper {
         &self,
         block_identifier: Option<Box<PartialBlockIdentifier>>,
         account_identifier: &AccountIdentifier,
-    ) -> ApiResult<(BlockInfo, (Amount, Vec<AccountToken>))> {
+    ) -> ApiResult<(BlockInfo, AccountBalance)> {
         let block_info = self.query_block_info(block_identifier).await?;
         let block_hash = block_info.block_hash;
         let address = account_address_from_identifier(account_identifier)?;
@@ -44,10 +56,12 @@ impl QueryHelper {
                     // TODO - rob, when querying the account balances, we get back a response containing: account_amount and tokens
                     // we will need to build this into an object that makes sense i think, so the signature of this function should be updated to return
                     // perhaps a Vec of Amounts somehow
-                    Ok(i) => (i.response.account_amount, i.response.tokens),
+                    Ok(i) => AccountBalance { 
+                        amount: i.response.account_amount,
+                        tokens: i.response.tokens,
+                    },
                     Err(err) => {
-                        let (amount, tokens) = handle_query_error_amounts_including_plt_tokens(err)?;
-                        (amount, tokens)
+                        handle_query_error_amounts_including_plt_tokens(err)?
                     },
                 }
             }
@@ -59,20 +73,20 @@ impl QueryHelper {
                     .await
                 {
                     Ok(i) => match i.response {
-                        InstanceInfo::V0 { amount, .. } => (amount, vec![]), // TODO - rob verify this: i believe here we wont handle smart contract amounts for PLT just yet?
-                        InstanceInfo::V1 { amount, .. } => (amount, vec![]) // TODO - rob same as above
+                        InstanceInfo::V0 { amount, .. } => AccountBalance { amount: amount, ..Default::default()},
+                        InstanceInfo::V1 { amount, .. } => AccountBalance { amount: amount, ..Default::default()}, 
                     },
                     Err(err) => handle_query_error_amounts_including_plt_tokens(err)?,
                 }
             }
             Address::BakingRewardAccount => match self.query_tokenomics_info(&block_hash).await? {
-                RewardsOverview::V0 { data } => (data.baking_reward_account, vec![]),
-                RewardsOverview::V1 { common, .. } => (common.baking_reward_account, vec![]),
+                RewardsOverview::V0 { data } => AccountBalance { amount: data.baking_reward_account, ..Default::default()},
+                RewardsOverview::V1 { common, .. } => AccountBalance { amount: common.baking_reward_account, ..Default::default()},
             },
             Address::FinalizationRewardAccount => {
                 match self.query_tokenomics_info(&block_hash).await? {
-                    RewardsOverview::V0 { data } => (data.finalization_reward_account, vec![]),
-                    RewardsOverview::V1 { common, .. } => (common.finalization_reward_account, vec![]),
+                    RewardsOverview::V0 { data } => AccountBalance { amount: data.finalization_reward_account, ..Default::default()},
+                    RewardsOverview::V1 { common, .. } => AccountBalance { amount: common.finalization_reward_account, ..Default::default()},
                 }
             }
             Address::FoundationAccrueAccount => {
@@ -85,18 +99,18 @@ impl QueryHelper {
                     RewardsOverview::V1 {
                         foundation_transaction_rewards,
                         ..
-                    } => (foundation_transaction_rewards,vec![]),
+                    } => AccountBalance { amount: foundation_transaction_rewards, ..Default::default() },
                 }
             }
             Address::PoolAccrueAccount(baker_id) => match baker_id {
                 Some(id) => match self.client.clone().get_pool_info(&block_hash, id).await {
                     Ok(i) => match i.response.current_payday_status {
-                        None => (Amount::from_ccd(0), vec![]),
-                        Some(s) => (s.transaction_fees_earned, vec![]),
+                        None => AccountBalance::default(),
+                        Some(s) => AccountBalance { amount: s.transaction_fees_earned, ..Default::default() },
                     },
                     Err(err) => {
                         let amount = handle_query_error(err)?;
-                        (amount, vec![])
+                        AccountBalance { amount: amount, ..Default::default() }
                     },
                 },
                 None => match self
@@ -105,7 +119,7 @@ impl QueryHelper {
                     .get_passive_delegation_info(&block_hash)
                     .await
                 {
-                    Ok(i) => (i.response.current_payday_transaction_fees_earned, vec![]),
+                    Ok(i) => AccountBalance { amount: i.response.current_payday_transaction_fees_earned, ..Default::default() },
                     Err(err) => handle_query_error_amounts_including_plt_tokens(err)?,
                 },
             },
@@ -287,13 +301,13 @@ pub fn handle_query_error(err: QueryError) -> ApiResult<Amount> {
     }
 }
 
-pub fn handle_query_error_amounts_including_plt_tokens(err: QueryError) -> ApiResult<(Amount, Vec<AccountToken>)> {
+pub fn handle_query_error_amounts_including_plt_tokens(err: QueryError) -> ApiResult<AccountBalance> {
     if QueryError::is_not_found(&err) {
-        Ok((Amount::from_micro_ccd(0), vec![]))
+        Ok(AccountBalance::default())
     } else {
         match err {
             QueryError::RPCError(err) => Err(err.into()),
-            QueryError::NotFound => Ok((Amount::from_micro_ccd(0), vec![])),
+            QueryError::NotFound => Ok(AccountBalance::default()),
         }
     }
 }

@@ -33,23 +33,21 @@ impl AccountApi {
         self.network_validator
             .validate_network_identifier(*req.network_identifier)?;
         self.account_validator.validate_currencies(req.currencies)?;
-        let (block_info, amount) = self
+        let (block_info, account_balance) = self
             .query_helper
             .query_account_balance(req.block_identifier, req.account_identifier.deref())
             .await?;
 
-        let mut balances_result = vec![amount_from_uccd(amount.0.micro_ccd as i128)];
-
-        amounts_from_plt_tokens(amount.1).iter().for_each(|plt_amount| {
-            balances_result.push(plt_amount.clone());
-        });
+        // collect all balances of plt tokens into a vector, then also add the ccd balance
+        let mut balances: Vec<Amount> = amounts_from_plt_tokens(&account_balance.tokens).into_iter().collect();
+        balances.push(amount_from_uccd(account_balance.amount.micro_ccd as i128));
 
         Ok(AccountBalanceResponse::new(
             BlockIdentifier::new(
                 block_info.block_height.height as i64,
                 block_info.block_hash.to_string(),
             ),
-            balances_result
+            balances
         ))
     }
 }

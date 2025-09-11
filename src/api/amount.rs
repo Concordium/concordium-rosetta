@@ -10,7 +10,7 @@ pub fn amount_from_uccd(v: i128) -> Amount {
     Amount::new(v.to_string(), Currency::new("CCD".to_string(), 6))
 }
 
-pub fn amounts_from_plt_tokens(tokens: Vec<AccountToken>) -> Vec<Amount> {
+pub fn amounts_from_plt_tokens(tokens: &Vec<AccountToken>) -> Vec<Amount> {
     tokens.iter().map(|plt_token| {
         Amount::new(plt_token.state.balance.value().to_string(), Currency::new(String::from(plt_token.token_id.clone()), i32::from(plt_token.state.balance.decimals())))
     }).collect()

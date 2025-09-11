@@ -3,10 +3,10 @@ use crate::api::{
     error::{ApiError, ApiResult},
 };
 use concordium_rust_sdk::{
-    common::{
+    base::transactions::construct::token_update_operations, common::{
         types::{Amount, Timestamp, TransactionTime},
         SerdeSerialize,
-    }, constants::EncryptedAmountsCurve, encrypted_transfers::types::*, id::types::AccountAddress, protocol_level_tokens::TokenEvent, types::*
+    }, constants::EncryptedAmountsCurve, encrypted_transfers::types::*, id::types::AccountAddress, protocol_level_tokens::{TokenEvent, TokenEventDetails}, types::*
 };
 use rosetta::models::{
     AccountIdentifier, Operation, OperationIdentifier, Transaction, TransactionIdentifier,
@@ -350,18 +350,19 @@ fn operations_and_metadata_from_account_transaction_details(
             None,
         ),
         // TODO - rob come back here to check
-        AccountTransactionEffects::TokenUpdate { events } => (
-            // TODO - rob need to figure out is this what we need
-            vec![normal_account_transaction_operation(
-                0,
-                details,
-                None,
-                Some(&TokenUpdateMetadata {
-                    events: events.clone(),
-                }),
-            )],
-            None,
-        ),
+        AccountTransactionEffects::TokenUpdate { events } => {
+
+            // here we have to get all the operatios for each event that has occurred
+            let mut index: i64 = 0;
+            let operations = events.iter()
+                .map(|event|  {
+                    let operation = token_event_operation::<Value>(index, &event.event, None, None);
+                    index += 1;
+                    operation
+                })
+                .collect();
+            (operations, None)
+        },
         AccountTransactionEffects::ModuleDeployed { module_ref } => (
             vec![normal_account_transaction_operation(
                 0,
@@ -1060,6 +1061,32 @@ fn normal_account_transaction_operation<T: SerdeSerialize>(
 ) -> Operation {
     let account_address = details.sender.to_string();
     account_transaction_operation(index, details, account_address, amount, metadata)
+}
+
+/// TODO - rob the idea here is that, we take each token event details and then produce the corresponding operation, not sure if this is correct.
+fn token_event_operation<T: SerdeSerialize>(
+    index: i64,
+    details: &TokenEventDetails,
+    amount: Option<rosetta::models::Amount>, // probably needed for mint burn transfer
+    metadata: Option<&T>,
+) -> Operation {
+
+    match details {
+        TokenEventDetails::Module(token_module_event) => {
+
+        },
+        TokenEventDetails::Transfer(token_transfer_event) => {
+
+        },
+        TokenEventDetails::Mint(token_supply_update_event) => {
+
+        },
+        TokenEventDetails::Burn(token_supply_update_event) => {
+
+        },
+    }
+
+    Operation::new(OperationIdentifier::new(index), "event type here".to_string())
 }
 
 fn account_transaction_operation<T: SerdeSerialize>(

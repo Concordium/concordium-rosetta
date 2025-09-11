@@ -3,7 +3,7 @@ use crate::api::{
     transaction::*,
 };
 use concordium_rust_sdk::{
-    common::types::Amount, endpoints::{BlocksAtHeightInput, QueryError}, id::types::AccountAddress, protocol_level_tokens::{AccountToken}, types::{
+    common::types::Amount, endpoints::{BlocksAtHeightInput, QueryError}, id::types::AccountAddress, protocol_level_tokens::{AccountToken, TokenId}, types::{
         hashes::{BlockHash, TransactionHash},
         queries::{BlockInfo, ConsensusInfo},
         smart_contracts::InstanceInfo,
@@ -169,6 +169,23 @@ impl QueryHelper {
                 .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )
+    }
+
+    // TODO - rob review this one and make sure its signature is right...
+    pub async fn query_plt_token_list(
+        &self,
+        block_id: impl IntoBlockIdentifier,
+    ) -> ApiResult<impl Stream<Item = Result<TokenId, ApiError>>> {
+        let response = self.client
+            .clone()
+            .get_token_list(block_id)
+            .await
+            .map_err(|_| ApiError::NoBlocksMatched)?;
+
+        let mapped_stream = response.response
+            .map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x)));
+
+        Ok(mapped_stream)
     }
 
     pub async fn query_block_item_summary(

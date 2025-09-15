@@ -171,23 +171,6 @@ impl QueryHelper {
         )
     }
 
-    // TODO - rob review this one and make sure its signature is right...
-    pub async fn query_plt_token_list(
-        &self,
-        block_id: impl IntoBlockIdentifier,
-    ) -> ApiResult<impl Stream<Item = Result<TokenId, ApiError>>> {
-        let response = self.client
-            .clone()
-            .get_token_list(block_id)
-            .await
-            .map_err(|_| ApiError::NoBlocksMatched)?;
-
-        let mapped_stream = response.response
-            .map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x)));
-
-        Ok(mapped_stream)
-    }
-
     pub async fn query_block_item_summary(
         &self,
         block_id: impl IntoBlockIdentifier,

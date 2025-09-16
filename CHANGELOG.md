@@ -2,6 +2,11 @@
 
 ## Unreleased changes
 
+##
+
+- Bumping up Rust SDK version to newer one which support protocol version 9. No PLT operations
+are supported yet, they are marked with todo macro
+
 ## 1.3.0
 
 - Support protocol version 8:

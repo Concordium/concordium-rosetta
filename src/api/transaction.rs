@@ -261,6 +261,7 @@ pub const OPERATION_TYPE_CONFIGURE_BAKER: &str = "configure_baker";
 pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 pub const OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION: &str = "validator_primed_for_suspension";
 pub const OPERATION_TYPE_VALIDATOR_SUSPENDED: &str = "validator_suspended";
+pub const OPERATION_TYPE_TOKEN_UPDATE: &str = "token_update";
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 
@@ -300,6 +301,7 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             operations_and_metadata_from_chain_update_details(details),
             None,
         ),
+        BlockItemSummaryDetails::TokenCreationDetails(details) => todo!("Token creation not yet supported"),
     };
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
@@ -834,6 +836,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 .collect(),
             None,
         ),
+        AccountTransactionEffects::TokenUpdate{ .. } => todo!("Token update not yet supported"),
     }
 }
 
@@ -1097,6 +1100,7 @@ pub fn transaction_type_to_operation_type(type_: Option<TransactionType>) -> Str
             TransactionType::UpdateCredentials => OPERATION_TYPE_UPDATE_CREDENTIALS,
             TransactionType::ConfigureBaker => OPERATION_TYPE_CONFIGURE_BAKER,
             TransactionType::ConfigureDelegation => OPERATION_TYPE_CONFIGURE_DELEGATION,
+            TransactionType::TokenUpdate => OPERATION_TYPE_TOKEN_UPDATE,
         },
     };
     res.to_string()

@@ -301,7 +301,9 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             operations_and_metadata_from_chain_update_details(details),
             None,
         ),
-        BlockItemSummaryDetails::TokenCreationDetails(details) => todo!("Token creation not yet supported"),
+        BlockItemSummaryDetails::TokenCreationDetails(details) => {
+            todo!("Token creation not yet supported")
+        }
     };
     Transaction {
         transaction_identifier: Box::new(TransactionIdentifier {
@@ -836,7 +838,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 .collect(),
             None,
         ),
-        AccountTransactionEffects::TokenUpdate{ .. } => todo!("Token update not yet supported"),
+        AccountTransactionEffects::TokenUpdate { .. } => todo!("Token update not yet supported"),
     }
 }
 

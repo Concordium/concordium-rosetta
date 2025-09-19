@@ -302,7 +302,8 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             None,
         ),
         BlockItemSummaryDetails::TokenCreationDetails(details) => {
-            todo!("Token creation not yet supported")
+            log::warn!("Token creation not yet supported");
+            (vec![], None)
         }
     };
     Transaction {
@@ -838,7 +839,10 @@ fn operations_and_metadata_from_account_transaction_details(
                 .collect(),
             None,
         ),
-        AccountTransactionEffects::TokenUpdate { .. } => todo!("Token update not yet supported"),
+        AccountTransactionEffects::TokenUpdate { .. } => { 
+            log::warn!("Token update not yet supported");
+            (vec![], None)
+        }
     }
 }
 

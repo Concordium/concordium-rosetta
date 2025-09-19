@@ -839,7 +839,7 @@ fn operations_and_metadata_from_account_transaction_details(
                 .collect(),
             None,
         ),
-        AccountTransactionEffects::TokenUpdate { .. } => { 
+        AccountTransactionEffects::TokenUpdate { .. } => {
             log::warn!("Token update not yet supported");
             (vec![], None)
         }

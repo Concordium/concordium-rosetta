@@ -6,7 +6,7 @@ on:
       - "*.*.*"
 
 env:
-  RUST_VERSION: '1.73'
+  RUST_VERSION: '1.85'
   IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
   BASE_IMAGE: "debian:bullseye-slim"
 

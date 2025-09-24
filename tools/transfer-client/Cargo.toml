@@ -5,7 +5,6 @@ edition = "2018"
 
 [dependencies.concordium-rust-sdk]
 path = "../../concordium-rust-sdk"
-version = "*"
 
 [dependencies.rosetta]
 path = "../../rosetta"

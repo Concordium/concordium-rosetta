@@ -2,6 +2,11 @@
 
 ## Unreleased changes
 
+##
+
+- Bumping up Rust SDK version to newer one which support protocol version 9.
+- Setting rust version to be 1.85
+
 ## 1.3.0
 
 - Support protocol version 8:

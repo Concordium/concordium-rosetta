@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 
-## 1.3.1
+## [1.3.1] - 2025-09-24 
 
 - Bumping up Rust SDK version to newer one which support protocol version 9.
 - Setting rust version to be 1.85

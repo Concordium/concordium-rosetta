@@ -6,9 +6,7 @@ on:
       - "*.*.*"
 
 env:
-  RUST_VERSION: '1.85'
-  IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta" 
-  BASE_IMAGE: "debian:bullseye-slim"
+  IAM_ROLE: "arn:aws:iam::192549843005:role/github_concordium-rosetta"
 
 permissions:
   id-token: write
@@ -72,7 +70,6 @@ jobs:
 
       - name: Build
         run: |
-          rustup default ${{ env.RUST_VERSION }}
           cargo run --release -- --version
 
       - name: Publish
@@ -115,7 +112,6 @@ jobs:
 
       - name: Build
         run: |
-          rustup default ${{ env.RUST_VERSION }}
           cargo run --release -- --version
 
       - name: Publish
@@ -169,9 +165,6 @@ jobs:
           tags: ${{ env.FULL_IMAGE_TAG }}
           no-cache: true
           push: true
-          build-args: |
-            base_image=${{ env.BASE_IMAGE }}
-            build_image=rust:${{ env.RUST_VERSION }}-slim-bullseye
 
   release-rosetta-linux:
     runs-on: ubuntu-latest
@@ -208,7 +201,6 @@ jobs:
 
       - name: Build
         run: |
-          rustup default ${{ env.RUST_VERSION }}
           cargo run --release -- --version
 
       - name: Publish

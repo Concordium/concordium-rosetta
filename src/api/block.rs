@@ -1,18 +1,18 @@
 use crate::{
+    NetworkValidator,
     api::{
         amount::amount_from_uccd,
         error::{ApiError, ApiResult},
         query::QueryHelper,
         transaction::*,
     },
-    NetworkValidator,
 };
 use concordium_rust_sdk::{
     common::SerdeSerialize,
     types::{BakerId, SpecialTransactionOutcome},
     v2::IntoBlockIdentifier,
 };
-use futures::{stream::StreamExt, TryStreamExt};
+use futures::{TryStreamExt, stream::StreamExt};
 use rosetta::models::*;
 use std::cmp::max;
 

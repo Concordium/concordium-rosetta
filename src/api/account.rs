@@ -1,7 +1,7 @@
 use crate::{
+    AccountValidator, QueryHelper,
     api::{amount::amount_from_uccd, error::ApiResult},
     validate::network::NetworkValidator,
-    AccountValidator, QueryHelper,
 };
 use rosetta::models::*;
 use std::ops::Deref;

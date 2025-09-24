@@ -1,29 +1,29 @@
 use crate::{
+    NetworkValidator, QueryHelper,
     api::{
         amount::{amount_from_uccd, uccd_from_amount},
         error::{ApiError, ApiResult, InvalidSignatureError},
-        query::{account_address_from_identifier, Address},
+        query::{Address, account_address_from_identifier},
         transaction::{
-            transaction_type_from_operation_type, transaction_type_to_operation_type, MemoMetadata,
-            OPERATION_TYPE_TRANSFER,
+            MemoMetadata, OPERATION_TYPE_TRANSFER, transaction_type_from_operation_type,
+            transaction_type_to_operation_type,
         },
     },
-    NetworkValidator, QueryHelper,
 };
 use concordium_rust_sdk::{
     common::{
+        SerdeDeserialize, SerdeSerialize,
         types::{
             Amount as CCAmount, CredentialIndex, KeyIndex, TransactionSignature, TransactionTime,
         },
-        SerdeDeserialize, SerdeSerialize,
     },
     id::types::AccountAddress,
     types::{
-        transactions::{
-            compute_transaction_sign_hash, construct, construct::GivenEnergy, cost,
-            AccountTransaction, BlockItem, EncodedPayload, Payload, PayloadLike, TransactionHeader,
-        },
         Memo, Nonce, TransactionType,
+        transactions::{
+            AccountTransaction, BlockItem, EncodedPayload, Payload, PayloadLike, TransactionHeader,
+            compute_transaction_sign_hash, construct, construct::GivenEnergy, cost,
+        },
     },
 };
 use rosetta::models::*;
@@ -267,7 +267,7 @@ impl ConstructionApi {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::MissingSeparator('/'.to_string()),
-                    ))
+                    ));
                 }
                 Some(v) => v,
             };
@@ -276,7 +276,7 @@ impl ConstructionApi {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::MissingIndexSeparator(':'.to_string()),
-                    ))
+                    ));
                 }
                 Some(v) => v,
             };
@@ -286,7 +286,7 @@ impl ConstructionApi {
                         return Err(ApiError::InvalidSignature(
                             hex_bytes.clone(),
                             InvalidSignatureError::InvalidCredentialIndex(cred_idx_str.to_string()),
-                        ))
+                        ));
                     }
                     Ok(v) => v,
                 },
@@ -296,7 +296,7 @@ impl ConstructionApi {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::InvalidKeyIndex(key_idx_str.to_string()),
-                    ))
+                    ));
                 }
                 Ok(v) => v,
             });
@@ -305,7 +305,7 @@ impl ConstructionApi {
                     return Err(ApiError::InvalidSignature(
                         hex_bytes.clone(),
                         InvalidSignatureError::InvalidSignatureHexBytes(sig_hex_bytes.to_string()),
-                    ))
+                    ));
                 }
                 Ok(v) => v,
             };
@@ -397,9 +397,10 @@ fn parse_operations(ops: &[Operation]) -> ApiResult<Vec<ParsedOperation>> {
 
 fn parse_transaction(ops: &[ParsedOperation]) -> ApiResult<ParsedTransaction> {
     match ops {
-        [ParsedOperation::Transfer(sender), ParsedOperation::Transfer(receiver)] => {
-            parse_transfer_transaction(sender, receiver)
-        }
+        [
+            ParsedOperation::Transfer(sender),
+            ParsedOperation::Transfer(receiver),
+        ] => parse_transfer_transaction(sender, receiver),
         _ => Err(ApiError::InconsistentOperations(
             "invalid type or number of operations".to_string(),
         )),

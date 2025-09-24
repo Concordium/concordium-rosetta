@@ -1,7 +1,7 @@
 use crate::api::error::ApiError;
 use rosetta::models::*;
 use serde_json::{Map, Value};
-use warp::{http::StatusCode, reply, Rejection, Reply};
+use warp::{Rejection, Reply, http::StatusCode, reply};
 
 pub async fn handle_rejection(rej: Rejection) -> Result<impl Reply, Rejection> {
     // Error code structure:

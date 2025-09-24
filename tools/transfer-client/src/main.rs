@@ -1,11 +1,11 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use concordium_rust_sdk::{
     common::types::Amount as ConcordiumAmount,
-    types::{transactions::ExactSizeTransactionSigner, Memo, WalletAccount},
+    types::{Memo, WalletAccount, transactions::ExactSizeTransactionSigner},
 };
-use reqwest::{blocking::*, Url};
+use reqwest::{Url, blocking::*};
 use rosetta::models::*;
 use serde_json::value::Value;
 use std::{convert::TryFrom, ops::Add, path::PathBuf};

@@ -3,10 +3,10 @@ use std::convert::Infallible;
 use warp::{Filter, Rejection, Reply};
 
 use crate::{
+    AccountApi, ConstructionApi,
     api::{block::BlockApi, network::NetworkApi},
     handler,
     handler_error::handle_rejection,
-    AccountApi, ConstructionApi,
 };
 
 fn network_list(

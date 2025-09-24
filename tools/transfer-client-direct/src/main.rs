@@ -5,10 +5,10 @@ use concordium_rust_sdk::{
     common::types::{Amount, TransactionTime},
     id::types::AccountAddress,
     types::{
-        transactions::{
-            construct, construct::GivenEnergy, cost, BlockItem, ExactSizeTransactionSigner, Payload,
-        },
         Memo, WalletAccount,
+        transactions::{
+            BlockItem, ExactSizeTransactionSigner, Payload, construct, construct::GivenEnergy, cost,
+        },
     },
     v2::{AccountIdentifier, Client, Endpoint},
 };

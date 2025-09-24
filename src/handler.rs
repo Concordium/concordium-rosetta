@@ -1,11 +1,11 @@
 use crate::{
-    api::{block::BlockApi, construction::ConstructionApi},
     AccountApi,
+    api::{block::BlockApi, construction::ConstructionApi},
 };
 use rosetta::models::*;
 use serde::Serialize;
 use std::convert::Infallible;
-use warp::{reject, reject::Reject, reply, Rejection, Reply};
+use warp::{Rejection, Reply, reject, reject::Reject, reply};
 
 use crate::api::network::NetworkApi;
 

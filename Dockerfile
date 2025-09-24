@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y libssl-dev pkg-config && rm -rf /var/li
 
 WORKDIR /build
 COPY . .
-RUN cargo build --release
+RUN cargo build --release -p concordium-rosetta
 
 # Make default entrypoint of this stage build Debian package at '/out/concordium-rosetta_<version>.deb'.
 # Use '--target=build' to create the image and do bind mount on '/out' when running to extract the file.

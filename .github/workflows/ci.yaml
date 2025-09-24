@@ -12,7 +12,7 @@ on:
   workflow_dispatch: # allow manual trigger
 
 env:
-  RUST_TOOLCHAIN: "1.73"
+  RUST_TOOLCHAIN: "1.85"
 
 jobs:
   fmt:

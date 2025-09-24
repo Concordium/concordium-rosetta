@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use clap::Parser;
-use reqwest::{blocking::*, Url};
+use reqwest::{Url, blocking::*};
 use rosetta::models::*;
 use std::{thread::sleep, time::Duration};
 

@@ -95,7 +95,13 @@ pub enum ApiError {
 
     // Proxy errors.
     #[error("client RPC error: {0}")]
-    ClientRpcError(#[from] RPCError),
+    ClientRpcError(Box<RPCError>),
+}
+
+impl From<RPCError> for ApiError {
+    fn from(value: RPCError) -> Self {
+        Self::ClientRpcError(Box::new(value))
+    }
 }
 
 impl warp::reject::Reject for ApiError {}

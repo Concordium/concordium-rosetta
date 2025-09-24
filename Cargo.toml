@@ -1,17 +1,24 @@
+[workspace]
+resolver = "3"
+
+members = [
+    "tools/query-account",
+    "tools/transfer-client",
+    "tools/transfer-client-direct",
+    "rosetta",
+]
+
 [package]
 name = "concordium-rosetta"
 version = "1.3.0"
-edition = "2018"
-rust-version = "1.85"
+edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies.concordium-rust-sdk]
 path = "./concordium-rust-sdk"
 
 [dependencies.rosetta]
 path = "./rosetta"
-version = "*"
 
 [dependencies]
 anyhow = "1"

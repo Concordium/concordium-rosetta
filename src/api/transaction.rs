@@ -4,8 +4,8 @@ use crate::api::{
 };
 use concordium_rust_sdk::{
     common::{
-        types::{Amount, Timestamp, TransactionTime},
         SerdeSerialize,
+        types::{Amount, Timestamp, TransactionTime},
     },
     constants::EncryptedAmountsCurve,
     encrypted_transfers::types::*,
@@ -301,7 +301,7 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             operations_and_metadata_from_chain_update_details(details),
             None,
         ),
-        BlockItemSummaryDetails::TokenCreationDetails(details) => {
+        BlockItemSummaryDetails::TokenCreationDetails(_details) => {
             log::warn!("Token creation not yet supported");
             (vec![], None)
         }

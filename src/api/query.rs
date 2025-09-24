@@ -78,7 +78,7 @@ impl QueryHelper {
                     RewardsOverview::V0 { .. } => {
                         return Err(ApiError::InvalidAccountAddress(
                             ACCOUNT_ACCRUE_FOUNDATION.to_string(),
-                        ))
+                        ));
                     }
                     RewardsOverview::V1 {
                         foundation_transaction_rewards,
@@ -164,7 +164,7 @@ impl QueryHelper {
                 .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )?;
-        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
+        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(Box::new(RPCError::CallError(x)))))
     }
 
     pub async fn query_block_special_events(
@@ -179,7 +179,7 @@ impl QueryHelper {
                 .map(|x| x.response),
             ApiError::NoBlocksMatched,
         )?;
-        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(RPCError::CallError(x))))
+        Ok(mapped_stream.map_err(|x| ApiError::ClientRpcError(Box::new(RPCError::CallError(x)))))
     }
 
     pub async fn query_tokenomics_info(

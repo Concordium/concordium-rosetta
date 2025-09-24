@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use concordium_rust_sdk::{
     common::types::{CredentialIndex, KeyIndex, TransactionSignature},
     id::types::AccountKeys,
-    types::{hashes::TransactionSignHash, transactions::TransactionSigner, Memo},
+    types::{Memo, hashes::TransactionSignHash, transactions::TransactionSigner},
 };
 use rosetta::models::*;
 use serde::{Deserialize, Serialize};

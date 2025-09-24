@@ -1,11 +1,10 @@
 [package]
 name = "query-account"
 version = "0.2.2"
-edition = "2018"
+edition = "2024"
 
 [dependencies.rosetta]
 path = "../../rosetta"
-version = "*"
 
 [dependencies]
 anyhow = "1"

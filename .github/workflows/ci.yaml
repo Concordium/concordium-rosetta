@@ -1,74 +1,55 @@
-name: Fmt and Clippy
-
-# Run 'rustfmt' and 'clippy' linting.
+name: Build and test
 
 on:
   push:
     branches: main
 
   pull_request:
-    branches: main
 
-  workflow_dispatch: # allow manual trigger
-
-env:
-  RUST_TOOLCHAIN: "1.85"
+  workflow_dispatch: # allows manual trigger
 
 jobs:
-  fmt:
-    name: lint:fmt
-    # Skip for draft pull requests.
-    if: ${{ !github.event.pull_request.draft }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Install Rust
-        run: |
-          rustup override set "${{ env.RUST_TOOLCHAIN }}"
-          rustup component add rustfmt
-      - name: Format
-        run: |
-          cargo fmt -- --color=always --check
-      - name: Format (query-account)
-        run: |
-          cargo fmt --manifest-path=./tools/query-account/Cargo.toml -- --color=always --check
-      - name: Format (transfer-client)
-        run: |
-          cargo fmt --manifest-path=./tools/transfer-client/Cargo.toml -- --color=always --check
-      - name: Format (transfer-client-direct)
-        run: |
-          cargo fmt --manifest-path=./tools/transfer-client-direct/Cargo.toml -- --color=always --check
 
-  clippy:
-    name: lint:clippy
-    needs: fmt
-    # Skip for draft pull requests.
-    if: ${{ !github.event.pull_request.draft }}
+  rustfmt:
+    name: Rustfmt
     runs-on: ubuntu-latest
     steps:
-      - name: Install protobuf
-        run: |
-          wget https://github.com/protocolbuffers/protobuf/releases/download/v3.15.3/protoc-3.15.3-linux-x86_64.zip
-          unzip protoc-3.15.3-linux-x86_64.zip
-          sudo mv ./bin/protoc /usr/bin/protoc
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install Rust
+      - name: Run cargo fmt
         run: |
-          rustup override set "${{ env.RUST_TOOLCHAIN }}"
+          rustup component add rustfmt
+          cargo fmt --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Clippy
+        run: |
           rustup component add clippy
-      - name: Clippy
+      - name: Run Clippy
         run: |
-          cargo clippy --color=always --tests --benches -- -Dclippy::all
-      - name: Clippy (query-account)
+          cargo clippy --locked --all-targets --all-features --no-deps -- -D warnings
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup dependencies
         run: |
-          cargo clippy --color=always --tests --benches --manifest-path=./tools/query-account/Cargo.toml -- -Dclippy::all
-      - name: Clippy (transfer-client)
+          cd notification-server
+          make setup-db && make
+      - name: Run tests
         run: |
-          cargo clippy --color=always --tests --benches --manifest-path=./tools/transfer-client/Cargo.toml -- -Dclippy::all
-      - name: Clippy (transfer-client-direct)
-        run: |
-          cargo clippy --color=always --tests --benches --manifest-path=./tools/transfer-client-direct/Cargo.toml -- -Dclippy::all
+          cargo test --locked --all-features --release

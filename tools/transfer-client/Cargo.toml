@@ -1,14 +1,13 @@
 [package]
 name = "transfer-client"
 version = "0.2.2"
-edition = "2018"
+edition = "2024"
 
 [dependencies.concordium-rust-sdk]
 path = "../../concordium-rust-sdk"
 
 [dependencies.rosetta]
 path = "../../rosetta"
-version = "*"
 
 [dependencies]
 anyhow = "1"

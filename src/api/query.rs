@@ -3,7 +3,7 @@ use crate::api::{
     transaction::*,
 };
 use concordium_rust_sdk::{
-    common::types::Amount,
+    common::{types::Amount , upward::Upward},
     endpoints::{BlocksAtHeightInput, QueryError},
     id::types::AccountAddress,
     types::{
@@ -170,7 +170,7 @@ impl QueryHelper {
     pub async fn query_block_special_events(
         &self,
         block_id: impl IntoBlockIdentifier,
-    ) -> ApiResult<impl Stream<Item = ApiResult<SpecialTransactionOutcome>>> {
+    ) -> ApiResult<impl Stream<Item = ApiResult<Upward<SpecialTransactionOutcome>>>> {
         let mapped_stream = map_query_result(
             self.client
                 .clone()

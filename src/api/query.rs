@@ -3,7 +3,7 @@ use crate::api::{
     transaction::*,
 };
 use concordium_rust_sdk::{
-    common::{types::Amount , upward::Upward},
+    common::{types::Amount, upward::Upward},
     endpoints::{BlocksAtHeightInput, QueryError},
     id::types::AccountAddress,
     types::{

@@ -134,7 +134,11 @@ impl BlockApi {
 
         while let Some(e) = special_events.next().await.transpose()? {
             let Upward::Known(e) = e else {
-                warn!("Encountered unknown special transaction outcome; skipping.");
+                warn!(
+                    "Encountered unknown special transaction outcome; skipping. \
+                     The node/protocol version may not be fully supported by this version of {}.",
+                    env!("CARGO_PKG_NAME")
+                );
                 continue;
             };
             match e {

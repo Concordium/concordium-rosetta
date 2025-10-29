@@ -338,12 +338,22 @@ fn operations_and_metadata_from_account_transaction_details(
                 account: Some(Box::new(AccountIdentifier::new(details.sender.to_string()))),
                 amount: None,
                 coin_change: None,
-                metadata: reject_reason.as_known().map(|reject_reason| {
-                    serde_json::to_value(&TransactionRejectedMetadata {
-                        reject_reason: reject_reason.clone(),
+                metadata: reject_reason
+                    .as_known()
+                    .map(|reject_reason| {
+                        serde_json::to_value(&TransactionRejectedMetadata {
+                            reject_reason: reject_reason.clone(),
+                        })
+                        .unwrap()
                     })
-                    .unwrap()
-                }),
+                    .or_else(|| {
+                        log::warn!(
+                            "Unknown reject reason in transaction effects. \
+                             The node/protocol version may not be fully supported by this version of {}.",
+                            env!("CARGO_PKG_NAME")
+                        );
+                        None
+                    }),
             }],
             None,
         ),
@@ -580,7 +590,14 @@ fn operations_and_metadata_from_account_transaction_details(
                 .iter()
                 .enumerate()
                 .filter_map(|(i, event)| {
-                    event.as_known().map(|event| match event {
+                    event.as_known().or_else(|| {
+                        log::warn!(
+                            "Encountered unknown baker configure event; skipping. \
+                             The node/protocol version may not be fully supported by this version of {}.",
+                            env!("CARGO_PKG_NAME")
+                        );
+                        None
+                    }).map(|event| match event {
                         BakerEvent::DelegationRemoved { delegator_id } => {
                             normal_account_transaction_operation(
                                 i as i64,
@@ -765,7 +782,14 @@ fn operations_and_metadata_from_account_transaction_details(
                 .iter()
                 .enumerate()
                 .filter_map(|(i, event)| {
-                    event.as_known().map(|event| match event {
+                    event.as_known().or_else(|| {
+                        log::warn!(
+                            "Encountered unknown delegation configure event; skipping. \
+                             The node/protocol version may not be fully supported by this version of {}.",
+                            env!("CARGO_PKG_NAME")
+                        );
+                        None
+                    }).map(|event| match event {
                         DelegationEvent::BakerRemoved { baker_id } => {
                             normal_account_transaction_operation(
                                 i as i64,
@@ -911,7 +935,14 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
         account: None,
         amount: None,
         coin_change: None,
-        metadata: details.payload.as_known().map(|payload| {
+        metadata: details.payload.as_known().or_else(|| {
+            log::warn!(
+                "Encountered unknown chain update event. \
+                 The node/protocol version may not be fully supported by this version of {}.",
+                env!("CARGO_PKG_NAME")
+            );
+            None
+        }).map(|payload| {
             serde_json::to_value(&ChainUpdateMetadata {
                 effective_time: details.effective_time,
                 payload: payload.clone(),
@@ -971,7 +1002,13 @@ fn contract_update_operations(
             Known(ContractTraceElement::Interrupted { .. }) => {}
             Known(ContractTraceElement::Resumed { .. }) => {}
             Known(ContractTraceElement::Upgraded { .. }) => {}
-            Unknown(_) => {}
+            Unknown(_) => {
+                log::warn!(
+                    "Unknown contract trace element in contract update effects; skipping. \
+                     The node/protocol version may not be fully supported by this version of {}.",
+                    env!("CARGO_PKG_NAME")
+                );
+            }
         }
     }
     ops

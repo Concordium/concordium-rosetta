@@ -2,6 +2,10 @@
 
 ## Unreleased changes
 
+- Bumping Rust SDK version. Unknown events introduced in future protocol
+  versions will be skipped, but generate warning log messages:
+  "The node/protocol version may not be fully supported by this version of concordium-rosetta".
+
 ## [1.3.1] - 2025-09-24 
 
 - Bumping up Rust SDK version to newer one which support protocol version 9.

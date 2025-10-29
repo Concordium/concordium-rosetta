@@ -757,7 +757,7 @@ dependencies = [
 
 [[package]]
 name = "concordium-rust-sdk"
-version = "7.0.0-alpha.4"
+version = "8.0.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -834,7 +834,7 @@ dependencies = [
 
 [[package]]
 name = "concordium_base"
-version = "8.0.0-alpha.3"
+version = "9.0.0"
 dependencies = [
  "aes",
  "anyhow",

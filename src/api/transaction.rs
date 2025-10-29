@@ -308,7 +308,11 @@ pub fn map_transaction(info: BlockItemSummary) -> Transaction {
             (vec![], None)
         }
         Unknown(_) => {
-            log::warn!("Unknown block item details");
+            log::warn!(
+                "Encountered unknown block item details; skipping. \
+                 The node/protocol version may not be fully supported by this version of {}.",
+                env!("CARGO_PKG_NAME")
+            );
             (vec![], None)
         }
     };
@@ -885,7 +889,11 @@ fn operations_and_metadata_from_account_transaction_details(
             (vec![], None)
         }
         Unknown(_) => {
-            log::warn!("Unknown account transaction effects");
+            log::warn!(
+                "Unknown account transaction effects. \
+                 The node/protocol version may not be fully supported by this version of {}.",
+                env!("CARGO_PKG_NAME")
+            );
             (vec![], None)
         }
     }
@@ -935,20 +943,24 @@ fn operations_and_metadata_from_chain_update_details(details: &UpdateDetails) ->
         account: None,
         amount: None,
         coin_change: None,
-        metadata: details.payload.as_known().or_else(|| {
-            log::warn!(
-                "Encountered unknown chain update event. \
-                 The node/protocol version may not be fully supported by this version of {}.",
-                env!("CARGO_PKG_NAME")
-            );
-            None
-        }).map(|payload| {
-            serde_json::to_value(&ChainUpdateMetadata {
-                effective_time: details.effective_time,
-                payload: payload.clone(),
+        metadata: details
+            .payload
+            .as_known()
+            .or_else(|| {
+                log::warn!(
+                    "Encountered unknown chain update event. \
+                     The node/protocol version may not be fully supported by this version of {}.",
+                    env!("CARGO_PKG_NAME")
+                );
+                None
             })
-            .unwrap()
-        }),
+            .map(|payload| {
+                serde_json::to_value(&ChainUpdateMetadata {
+                    effective_time: details.effective_time,
+                    payload: payload.clone(),
+                })
+                .unwrap()
+            }),
     }]
 }
 

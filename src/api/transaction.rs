@@ -264,6 +264,8 @@ pub const OPERATION_TYPE_CONFIGURE_DELEGATION: &str = "configure_delegation";
 pub const OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION: &str = "validator_primed_for_suspension";
 pub const OPERATION_TYPE_VALIDATOR_SUSPENDED: &str = "validator_suspended";
 pub const OPERATION_TYPE_TOKEN_UPDATE: &str = "token_update";
+// Note: All operations should be returned by the `network_options` endpoint.
+// If you add a new operation type, make sure to add it there as well.
 
 pub const TRANSACTION_HASH_TOKENOMICS: &str = "tokenomics";
 

@@ -87,6 +87,7 @@ impl NetworkApi {
                     OPERATION_TYPE_CONFIGURE_DELEGATION.to_string(),
                     OPERATION_TYPE_VALIDATOR_PRIMED_FOR_SUSPENSION.to_string(),
                     OPERATION_TYPE_VALIDATOR_SUSPENDED.to_string(),
+                    OPERATION_TYPE_TOKEN_UPDATE.to_string(),
                 ],
                 errors: vec![
                     handler_error::invalid_input_unsupported_field_error(None),

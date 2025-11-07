@@ -10,9 +10,10 @@ use crate::{
 use concordium_rust_sdk::{
     common::SerdeSerialize,
     types::{BakerId, SpecialTransactionOutcome},
-    v2::IntoBlockIdentifier,
+    v2::{IntoBlockIdentifier, Upward},
 };
 use futures::{TryStreamExt, stream::StreamExt};
+use log::warn;
 use rosetta::models::*;
 use std::cmp::max;
 
@@ -132,6 +133,14 @@ impl BlockApi {
             .await?;
 
         while let Some(e) = special_events.next().await.transpose()? {
+            let Upward::Known(e) = e else {
+                warn!(
+                    "Encountered unknown special transaction outcome; skipping. \
+                     The node/protocol version may not be fully supported by this version of {}.",
+                    env!("CARGO_PKG_NAME")
+                );
+                continue;
+            };
             match e {
                 SpecialTransactionOutcome::Mint {
                     mint_baking_reward,

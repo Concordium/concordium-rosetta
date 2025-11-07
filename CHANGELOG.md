@@ -2,6 +2,14 @@
 
 ## Unreleased changes
 
+## [1.4.0] - 2025-10-30
+
+- Bumping Rust SDK version. Unknown events introduced in future protocol
+  versions will be skipped, but generate warning log messages:
+  "The node/protocol version may not be fully supported by this version of concordium-rosetta".
+- Fix an issue where the `token_update` operation type was not reported by
+  `/network/options`.
+
 ## [1.3.1] - 2025-09-24 
 
 - Bumping up Rust SDK version to newer one which support protocol version 9.
